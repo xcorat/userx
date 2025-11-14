@@ -14,7 +14,7 @@ const bootstrap: Handle = async ({ event, resolve }) => {
 	if (!isInitialized) {
 		isInitialized = true;
 		try {
-			ServerRepositoryFactory.initialize(event.platform);
+			await ServerRepositoryFactory.initialize(event.platform);
 			console.log('[App Bootstrap] Database initialized:', ServerRepositoryFactory.getType());
 		} catch (error) {
 			console.error('[App Bootstrap] Failed to initialize database:', error);

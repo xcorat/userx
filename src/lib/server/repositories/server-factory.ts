@@ -6,11 +6,18 @@ import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestion
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
 
-import { SQLiteAdapter } from '$lib/server/repositories/adapters/sqlite-adapter';
+// Only import D1Adapter statically (safe for Cloudflare Workers)
 import { D1Adapter } from '$lib/server/repositories/adapters/d1-adapter';
 
 type RepositoryType = 'sqlite' | 'd1';
-type DatabaseAdapter = SQLiteAdapter | D1Adapter;
+
+interface DatabaseAdapter {
+	userRepo: IUserRepository;
+	questionRepo: IQuestionRepository;
+	answerRepo: IAnswerRepository;
+	dmRepo: IDMRepository;
+	getType(): RepositoryType;
+}
 
 /**
  * Server-side Repository Factory
@@ -25,13 +32,14 @@ export class ServerRepositoryFactory {
 	 * Initialize the factory with platform environment
 	 * Should be called once at app startup (in hooks.server.ts)
 	 */
-	static initialize(platform?: App.Platform): void {
+	static async initialize(platform?: App.Platform): Promise<void> {
 		if (platform?.env?.DB) {
 			// Cloudflare Workers environment with D1 binding
 			this.adapter = D1Adapter.create(platform.env.DB);
 			console.log('[ServerRepositoryFactory] Initialized with D1 database');
 		} else {
-			// Local development with SQLite
+			// Local development with SQLite - dynamically import to avoid bundling Node.js code
+			const { SQLiteAdapter } = await import('$lib/server/repositories/adapters/sqlite-adapter');
 			this.adapter = SQLiteAdapter.create();
 			console.log('[ServerRepositoryFactory] Initialized with SQLite database');
 		}
