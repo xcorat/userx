@@ -1,59 +1,49 @@
 // API Route: Database Test/Debug Endpoint
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getDatabase } from '$lib/server/db/database';
+import { ServerRepositoryFactory } from '$lib/server/repositories/server-factory';
 
-interface TableInfo {
-	name: string;
-	count: number;
-	sampleRows: any[];
-}
-
-// GET /tests - Get database debug information
+// GET /tests - Get repository debug information
 export const GET: RequestHandler = async () => {
 	try {
-		const db = getDatabase();
+		// Get repository type and basic info
+		const repoType = ServerRepositoryFactory.getType();
 		
-		// Get all table names
-		const tables = db.prepare(`
-			SELECT name FROM sqlite_master 
-			WHERE type='table' 
-			AND name NOT LIKE 'sqlite_%'
-			ORDER BY name
-		`).all() as { name: string }[];
+		// Test all repositories to ensure they're working
+		const userRepo = ServerRepositoryFactory.getUserRepository();
+		const questionRepo = ServerRepositoryFactory.getQuestionRepository();
+		const answerRepo = ServerRepositoryFactory.getAnswerRepository();
+		const dmRepo = ServerRepositoryFactory.getDMRepository();
 		
-		// Get counts and sample data for each table
-		const tableData: TableInfo[] = [];
+		const users = await userRepo.findAll();
+		const questions = await questionRepo.findAll();
+		const answers = await answerRepo.findAll();
 		
-		for (const table of tables) {
-			const tableName = table.name;
-			
-			// Get count
-			const countResult = db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get() as { count: number };
-			const count = countResult.count;
-			
-			// Get sample rows (limit 10)
-			const sampleRows = db.prepare(`SELECT * FROM ${tableName} LIMIT 10`).all();
-			
-			tableData.push({
-				name: tableName,
-				count,
-				sampleRows
-			});
-		}
+		// Get a sample user ID for DM queries (avoid empty result)
+		const sampleUserId = users.length > 0 ? users[0].id : 'no-users';
+		const dmQuestions = await dmRepo.findAllQuestions(sampleUserId);
 		
-		// Get database metadata
-		const dbStats = {
-			tableCount: tables.length,
+		return json({
+			success: true,
+			repoType,
 			timestamp: new Date().toISOString(),
-			tables: tableData
-		};
-		
-		return json(dbStats);
+			counts: {
+				users: users.length,
+				questions: questions.length,
+				answers: answers.length,
+				dmQuestions: dmQuestions.length
+			},
+			sampleData: {
+				firstUser: users[0] || null,
+				firstQuestion: questions[0] || null,
+				firstAnswer: answers[0] || null,
+				firstDMQuestion: dmQuestions[0] || null
+			}
+		});
 	} catch (error) {
 		console.error('GET /tests error:', error);
 		return json(
-			{ error: error instanceof Error ? error.message : 'Failed to fetch database info' },
+			{ error: error instanceof Error ? error.message : 'Failed to fetch repository info' },
 			{ status: 500 }
 		);
 	}
