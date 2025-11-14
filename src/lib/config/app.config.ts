@@ -22,9 +22,12 @@ export const appConfig = {
 	},
 
 	storage: {
-		type: 'api' as 'mock' | 'sqlite' | 'api',
+		type: 'api' as 'mock' | 'sqlite' | 'd1' | 'api',
 		localStorageKey: 'qna_app_state',
-		// Database configuration (for SQLite or future DB adapters)
+		// Database configuration
+		// - SQLite: Local development (better-sqlite3)
+		// - D1: Cloudflare Workers production (auto-detected)
+		// - API: Client-side access through SvelteKit API routes
 		dbPath: 'qna-app.db',
 		// API configuration - relative URL since SvelteKit serves both frontend and API
 		apiBaseUrl: '/api'

@@ -1,13 +1,13 @@
 // API Route: Questions
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { SQLiteQuestionRepository } from '$lib/server/repositories';
+import { ServerRepositoryFactory } from '$lib/server/repositories/server-factory';
 import type { CreateQuestionDTO } from '$lib/models';
 
 // GET /api/questions - List all public questions with pagination support
 export const GET: RequestHandler = async ({ url }) => {
 	try {
-		const repo = new SQLiteQuestionRepository();
+		const repo = ServerRepositoryFactory.getQuestionRepository();
 		const creatorId = url.searchParams.get('creatorId');
 		const page = parseInt(url.searchParams.get('page') || '1');
 		const limit = parseInt(url.searchParams.get('limit') || '20');
@@ -45,7 +45,7 @@ export const GET: RequestHandler = async ({ url }) => {
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const data: CreateQuestionDTO = await request.json();
-		const repo = new SQLiteQuestionRepository();
+		const repo = ServerRepositoryFactory.getQuestionRepository();
 		const question = await repo.create(data);
 		return json(question, { status: 201 });
 	} catch (error) {

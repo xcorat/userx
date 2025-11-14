@@ -23,10 +23,10 @@ export const GET: RequestHandler = async ({ params }) => {
 	}
 };
 
-// DELETE /api/questions/[id] - Delete question (future)
+// DELETE /api/questions/[id] - Delete question
 export const DELETE: RequestHandler = async ({ params }) => {
 	try {
-		const repo = new SQLiteQuestionRepository();
+		const repo = ServerRepositoryFactory.getQuestionRepository();
 		await repo.delete(params.id);
 		return json({ success: true }, { status: 200 });
 	} catch (error) {

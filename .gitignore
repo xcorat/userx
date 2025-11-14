@@ -1,6 +1,7 @@
 # Manually Added
-
 docs
+
+!docs/pub/*
 
 # ----
 node_modules

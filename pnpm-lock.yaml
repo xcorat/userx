@@ -18,6 +18,9 @@ importers:
         specifier: ^1.0.6
         version: 1.0.6(svelte@5.43.6)
     devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20251113.0
+        version: 4.20251113.0
       '@internationalized/date':
         specifier: ^3.10.0
         version: 3.10.0

@@ -1,13 +1,13 @@
 // API Route: Answers
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { SQLiteAnswerRepository } from '$lib/server/repositories';
+import { ServerRepositoryFactory } from '$lib/server/repositories/server-factory';
 import type { CreateAnswerDTO } from '$lib/models';
 
-// GET /api/answers - Query answers with filters
+// GET /api/answers - List answers with filters
 export const GET: RequestHandler = async ({ url }) => {
 	try {
-		const repo = new SQLiteAnswerRepository();
+		const repo = ServerRepositoryFactory.getAnswerRepository();
 		const userId = url.searchParams.get('userId');
 		const questionId = url.searchParams.get('questionId');
 		const publicOnly = url.searchParams.get('publicOnly') === 'true';
@@ -39,7 +39,7 @@ export const GET: RequestHandler = async ({ url }) => {
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const data: CreateAnswerDTO = await request.json();
-		const repo = new SQLiteAnswerRepository();
+		const repo = ServerRepositoryFactory.getAnswerRepository();
 		const answer = await repo.create(data);
 		return json(answer, { status: 201 });
 	} catch (error) {

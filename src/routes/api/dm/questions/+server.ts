@@ -1,13 +1,13 @@
 // API Route: DM Questions
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { SQLiteDMRepository } from '$lib/server/repositories';
+import { ServerRepositoryFactory } from '$lib/server/repositories/server-factory';
 import type { CreateDMQuestionDTO } from '$lib/models';
 
 // GET /api/dm/questions - Get DM questions for user
 export const GET: RequestHandler = async ({ url }) => {
 	try {
-		const repo = new SQLiteDMRepository();
+		const repo = ServerRepositoryFactory.getDMRepository();
 		const userId = url.searchParams.get('userId');
 		const sent = url.searchParams.get('sent') === 'true';
 		const received = url.searchParams.get('received') === 'true';
@@ -41,7 +41,7 @@ export const GET: RequestHandler = async ({ url }) => {
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const data: CreateDMQuestionDTO = await request.json();
-		const repo = new SQLiteDMRepository();
+		const repo = ServerRepositoryFactory.getDMRepository();
 		const question = await repo.createQuestion(data);
 		return json(question, { status: 201 });
 	} catch (error) {

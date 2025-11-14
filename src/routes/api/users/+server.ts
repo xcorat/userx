@@ -1,13 +1,13 @@
 // API Route: Users
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { SQLiteUserRepository } from '$lib/server/repositories';
+import { ServerRepositoryFactory } from '$lib/server/repositories/server-factory';
 import type { CreateUserDTO } from '$lib/models';
 
-// GET /api/users - List all users (admin only - future)
+// GET /api/users - List all users
 export const GET: RequestHandler = async () => {
 	try {
-		const repo = new SQLiteUserRepository();
+		const repo = ServerRepositoryFactory.getUserRepository();
 		const users = await repo.findAll();
 		return json(users);
 	} catch (error) {
@@ -23,7 +23,7 @@ export const GET: RequestHandler = async () => {
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const data: CreateUserDTO = await request.json();
-		const repo = new SQLiteUserRepository();
+		const repo = ServerRepositoryFactory.getUserRepository();
 		const user = await repo.create(data);
 		return json(user, { status: 201 });
 	} catch (error) {

@@ -1,13 +1,13 @@
 // API Route: Find user by email
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { SQLiteUserRepository } from '$lib/server/repositories';
+import { ServerRepositoryFactory } from '$lib/server/repositories/server-factory';
 
 // GET /api/users/email/[email] - Find user by email
 export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const email = decodeURIComponent(params.email);
-		const repo = new SQLiteUserRepository();
+		const repo = ServerRepositoryFactory.getUserRepository();
 		const user = await repo.findByEmail(email);
 		
 		if (!user) {

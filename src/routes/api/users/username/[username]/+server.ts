@@ -1,13 +1,13 @@
 // API Route: Find user by username
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { SQLiteUserRepository } from '$lib/server/repositories';
+import { ServerRepositoryFactory } from '$lib/server/repositories/server-factory';
 
 // GET /api/users/username/[username] - Find user by username
 export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const username = decodeURIComponent(params.username);
-		const repo = new SQLiteUserRepository();
+		const repo = ServerRepositoryFactory.getUserRepository();
 		const user = await repo.findByUsername(username);
 		
 		if (!user) {

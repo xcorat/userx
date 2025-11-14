@@ -1,9 +1,17 @@
 {
-	"name": "qna-app",
+	"name": "userx",
 	"main": ".svelte-kit/cloudflare/_worker.js",
-	"type": "service",
 	"compatibility_date": "2025-01-01",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"d1_databases": [
+		{
+			"binding": "qna_app_db",
+			"database_name": "qna-app-db",
+			"database_id": "e75db648-de0c-4235-90c6-53357b6d1a31"
+		}
+	],
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"

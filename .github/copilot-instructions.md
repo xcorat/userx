@@ -46,7 +46,7 @@ lib/
 
 ### Read Flow
 ```
-Component → Store → Service → Repository → Mock Data → back up the chain
+Component → Store → Service → Repository → Database (SQLite/D1) → back up the chain
 ```
 
 ### Write Flow
@@ -63,6 +63,20 @@ async getPublicQuestions(sortBy: SortOption, userId?: string): Promise<QuestionW
   return enhanced;
 }
 ```
+
+### Server-Side Data Storage
+
+The app uses different database adapters based on the runtime environment:
+
+- **Development** (`pnpm dev`): SQLite via `better-sqlite3` (local file `qna-app.db`)
+- **Production** (Cloudflare Workers): D1 via `platform.env.DB` binding
+
+The `ServerRepositoryFactory` in `src/lib/server/repositories/server-factory.ts` automatically selects the correct implementation:
+- Initialized once in `src/hooks.server.ts` at app startup
+- Detects Cloudflare D1 binding (`platform?.env?.DB`) or defaults to SQLite
+- All API routes use `ServerRepositoryFactory.getXxxRepository()` instead of direct instantiation
+
+This allows seamless switching between environments without code changes.
 
 ## Svelte 5 State Management
 
@@ -143,20 +157,37 @@ Components import stores and access reactive properties directly:
 
 ## Repository Pattern
 
-All repositories implement interfaces from `repositories/interfaces/`. Mock implementations store data in-memory arrays:
+All repositories implement interfaces from `repositories/interfaces/`. 
 
+### Server-Side Repositories (API Routes)
+
+Server-side code uses `ServerRepositoryFactory` which automatically selects:
+- **SQLite repositories** (`repositories/sqlite/`) for local development
+- **D1 repositories** (`repositories/d1/`) for Cloudflare Workers production
+
+The factory is initialized once in `src/hooks.server.ts`:
 ```typescript
-// Mock repositories maintain in-memory state
-class MockQuestionRepository implements IQuestionRepository {
-  private questions: PublicQuestion[] = [...mockQuestions];
-  
-  async findAll(): Promise<PublicQuestion[]> {
-    return this.questions;
-  }
-}
+ServerRepositoryFactory.initialize(event.platform);
 ```
 
-**Future migration**: Create `repositories/implementations/sqlite/` with same interfaces.
+API routes use the factory to get repository instances:
+```typescript
+const repo = ServerRepositoryFactory.getQuestionRepository();
+const questions = await repo.findAll();
+```
+
+### Client-Side Repositories (Browser)
+
+Client-side code uses:
+- **Mock repositories** (`repositories/implementations/mock/`) for demos
+- **API repositories** (`repositories/implementations/api/`) for production (calls SvelteKit API routes via fetch)
+
+Configured via `RepositoryFactory` based on `appConfig.storage.type`.
+
+**Future migration**: The modular architecture allows adding new storage adapters (PostgreSQL, etc.) by:
+1. Creating new repository implementations in `repositories/implementations/`
+2. Updating the appropriate factory (client or server)
+3. Zero changes needed in services, stores, or components
 
 ## Component Conventions
 
@@ -216,16 +247,22 @@ Use `DIContainer.setRepositories()` to inject test doubles.
 ### Adding a new feature:
 1. Define models in `lib/models/`
 2. Create repository interface in `repositories/interfaces/`
-3. Implement mock version in `repositories/implementations/mock/`
+3. Implement in **both** `repositories/implementations/api/` (client) AND `repositories/sqlite/` + `repositories/d1/` (server)
 4. Create service in `lib/services/` with business logic
-5. Register in `di-container.ts`
+5. Register in `di-container.ts` (client) - server uses `ServerRepositoryFactory`
 6. Create store if needed for UI state
 7. Build components in `components/features/`
 
-### Migrating to SQLite:
-1. Create `repositories/implementations/sqlite/` with same interfaces
-2. Update `di-container.ts` to return SQLite implementations
-3. Zero changes needed in services, stores, or components
+### Adding a new database adapter:
+1. Create new repository implementations following the interface (e.g., `repositories/postgres/`)
+2. Update `ServerRepositoryFactory` to support new type
+3. Update `hooks.server.ts` to detect new platform
+4. Zero changes needed in services, stores, or components
+
+### Testing with different storage:
+- **Dev with SQLite**: `pnpm dev` (default)
+- **Dev with D1 local**: `wrangler pages dev .svelte-kit/cloudflare --d1=DB=qna-app-db`
+- **Production**: Deploy to Cloudflare Workers (auto-detects D1)
 
 ## Error Handling
 
