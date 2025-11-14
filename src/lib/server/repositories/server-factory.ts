@@ -6,7 +6,11 @@ import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestion
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
 
+import { SQLiteAdapter } from './adapters/sqlite-adapter';
+import { D1Adapter } from './adapters/d1-adapter';
+
 type RepositoryType = 'sqlite' | 'd1';
+type DatabaseAdapter = SQLiteAdapter | D1Adapter;
 
 /**
  * Server-side Repository Factory
@@ -15,14 +19,7 @@ type RepositoryType = 'sqlite' | 'd1';
  * - D1 for Cloudflare Workers production
  */
 export class ServerRepositoryFactory {
-	private static repositoryType: RepositoryType | null = null;
-	private static d1Database: D1Database | null = null;
-
-	// Singleton instances
-	private static _userRepo: IUserRepository | null = null;
-	private static _questionRepo: IQuestionRepository | null = null;
-	private static _answerRepo: IAnswerRepository | null = null;
-	private static _dmRepo: IDMRepository | null = null;
+	private static adapter: DatabaseAdapter | null = null;
 
 	/**
 	 * Initialize the factory with platform environment
@@ -31,12 +28,11 @@ export class ServerRepositoryFactory {
 	static initialize(platform?: App.Platform): void {
 		if (platform?.env?.DB) {
 			// Cloudflare Workers environment with D1 binding
-			this.repositoryType = 'd1';
-			this.d1Database = platform.env.DB;
+			this.adapter = D1Adapter.create(platform.env.DB);
 			console.log('[ServerRepositoryFactory] Initialized with D1 database');
 		} else {
 			// Local development with SQLite
-			this.repositoryType = 'sqlite';
+			this.adapter = SQLiteAdapter.create();
 			console.log('[ServerRepositoryFactory] Initialized with SQLite database');
 		}
 	}
@@ -45,109 +41,56 @@ export class ServerRepositoryFactory {
 	 * Get current repository type
 	 */
 	static getType(): RepositoryType {
-		if (!this.repositoryType) {
-			// Auto-initialize with SQLite if not explicitly initialized
-			console.warn('[ServerRepositoryFactory] Not initialized, defaulting to SQLite');
-			this.repositoryType = 'sqlite';
+		if (!this.adapter) {
+			throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
 		}
-		return this.repositoryType;
+		return this.adapter.getType();
 	}
 
 	/**
 	 * Reset factory (useful for testing)
 	 */
 	static reset(): void {
-		this.repositoryType = null;
-		this.d1Database = null;
-		this._userRepo = null;
-		this._questionRepo = null;
-		this._answerRepo = null;
-		this._dmRepo = null;
+		this.adapter = null;
 	}
 
 	/**
-	 * Create User Repository
+	 * Get User Repository
 	 */
 	static getUserRepository(): IUserRepository {
-		if (!this._userRepo) {
-			const type = this.getType();
-			
-			if (type === 'd1') {
-				if (!this.d1Database) {
-					throw new Error('D1 database not initialized. Call ServerRepositoryFactory.initialize() first.');
-				}
-				// Dynamic import to avoid loading SQLite modules in Cloudflare
-				const { D1UserRepository } = require('./d1/D1UserRepository');
-				this._userRepo = new D1UserRepository(this.d1Database);
-			} else {
-				// Dynamic import to avoid loading in Cloudflare
-				const { SQLiteUserRepository } = require('./sqlite/SQLiteUserRepository');
-				this._userRepo = new SQLiteUserRepository();
-			}
+		if (!this.adapter) {
+			throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
 		}
-		return this._userRepo;
+		return this.adapter.userRepo;
 	}
 
 	/**
-	 * Create Question Repository
+	 * Get Question Repository
 	 */
 	static getQuestionRepository(): IQuestionRepository {
-		if (!this._questionRepo) {
-			const type = this.getType();
-			
-			if (type === 'd1') {
-				if (!this.d1Database) {
-					throw new Error('D1 database not initialized. Call ServerRepositoryFactory.initialize() first.');
-				}
-				const { D1QuestionRepository } = require('./d1/D1QuestionRepository');
-				this._questionRepo = new D1QuestionRepository(this.d1Database);
-			} else {
-				const { SQLiteQuestionRepository } = require('./sqlite/SQLiteQuestionRepository');
-				this._questionRepo = new SQLiteQuestionRepository();
-			}
+		if (!this.adapter) {
+			throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
 		}
-		return this._questionRepo;
+		return this.adapter.questionRepo;
 	}
 
 	/**
-	 * Create Answer Repository
+	 * Get Answer Repository
 	 */
 	static getAnswerRepository(): IAnswerRepository {
-		if (!this._answerRepo) {
-			const type = this.getType();
-			
-			if (type === 'd1') {
-				if (!this.d1Database) {
-					throw new Error('D1 database not initialized. Call ServerRepositoryFactory.initialize() first.');
-				}
-				const { D1AnswerRepository } = require('./d1/D1AnswerRepository');
-				this._answerRepo = new D1AnswerRepository(this.d1Database);
-			} else {
-				const { SQLiteAnswerRepository } = require('./sqlite/SQLiteAnswerRepository');
-				this._answerRepo = new SQLiteAnswerRepository();
-			}
+		if (!this.adapter) {
+			throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
 		}
-		return this._answerRepo;
+		return this.adapter.answerRepo;
 	}
 
 	/**
-	 * Create DM Repository
+	 * Get DM Repository
 	 */
 	static getDMRepository(): IDMRepository {
-		if (!this._dmRepo) {
-			const type = this.getType();
-			
-			if (type === 'd1') {
-				if (!this.d1Database) {
-					throw new Error('D1 database not initialized. Call ServerRepositoryFactory.initialize() first.');
-				}
-				const { D1DMRepository } = require('./d1/D1DMRepository');
-				this._dmRepo = new D1DMRepository(this.d1Database);
-			} else {
-				const { SQLiteDMRepository } = require('./sqlite/SQLiteDMRepository');
-				this._dmRepo = new SQLiteDMRepository();
-			}
+		if (!this.adapter) {
+			throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
 		}
-		return this._dmRepo;
+		return this.adapter.dmRepo;
 	}
 }
