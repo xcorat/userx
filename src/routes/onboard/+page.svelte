@@ -178,6 +178,7 @@
 						placeholder="••••••••"
 						bind:value={password}
 						disabled={isSubmitting}
+						autocomplete="new-password"
 					/>
 					<p class="text-xs text-muted-foreground">
 						In this demo, password is optional and not validated

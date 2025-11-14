@@ -50,6 +50,7 @@
 						type="password"
 						bind:value={password}
 						placeholder="••••••••"
+						autocomplete="current-password"
 						required
 					/>
 				</div>

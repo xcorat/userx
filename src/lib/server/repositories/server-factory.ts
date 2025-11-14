@@ -31,23 +31,22 @@ export class ServerRepositoryFactory {
      * Should be called once at app startup (in hooks.server.ts)
      */
     static async initialize(platform?: App.Platform): Promise<void> {
-        // Check if we're running in a real Cloudflare Workers environment
-        // vs SvelteKit dev server with adapter emulation
+        // Environment detection:
+        // - NODE_ENV=development: Use SQLite (local development)
+        // - NODE_ENV=production or undefined: Use D1 (Cloudflare Workers)
+        const isProduction = typeof process !== 'undefined' 
+            ? process.env.NODE_ENV === 'production' || process.env.CF_PAGES === '1'
+            : true; // No process object means Workers environment
         const hasD1Binding = !!platform?.env?.DB;
-        const isRealCloudflare = hasD1Binding && (
-            typeof process === 'undefined' || // Workers runtime has no process
-            process.env.CF_PAGES === '1' ||   // Cloudflare Pages
-            process.env.CLOUDFLARE_ACCOUNT_ID // Wrangler environment
-        );
         
         console.log('[ServerRepositoryFactory] Environment detection:', {
             hasD1Binding,
-            isRealCloudflare,
+            isProduction,
             hasProcess: typeof process !== 'undefined',
-            nodeEnv: typeof process !== 'undefined' ? process.env.NODE_ENV : 'unknown'
+            nodeEnv: typeof process !== 'undefined' ? process.env.NODE_ENV : 'workers-runtime'
         });
         
-        if (isRealCloudflare) {
+        if (isProduction && hasD1Binding) {
             // True Cloudflare Workers environment
             D1RepositoryFactory.initialize(platform!.env.DB);
             activeFactory = 'd1';

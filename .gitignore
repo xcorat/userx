@@ -27,3 +27,5 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+qna-app.db-shm
+qna-app.db-wal
