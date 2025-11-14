@@ -2,12 +2,16 @@
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { PublicAnswer, CreateAnswerDTO } from '$lib/models';
 import { AnswerVisibility } from '$lib/models/types';
-import { getDatabase, generateId } from '$lib/server/db/database';
 import { AppError, ErrorCode } from '$lib/utils/error-handling';
+import type Database from 'better-sqlite3';
 
 export class SQLiteAnswerRepository implements IAnswerRepository {
-	private get db() {
-		return getDatabase();
+	private db: Database.Database;
+	private generateId: () => string;
+
+	constructor(database: Database.Database, generateIdFn: () => string) {
+		this.db = database;
+		this.generateId = generateIdFn;
 	}
 
 	async findAll(): Promise<PublicAnswer[]> {
@@ -120,7 +124,7 @@ export class SQLiteAnswerRepository implements IAnswerRepository {
 			throw new AppError(ErrorCode.DUPLICATE_ERROR, 'User has already answered this question');
 		}
 
-		const id = generateId();
+		const id = this.generateId();
 		const now = new Date().toISOString();
 
 		const stmt = this.db.prepare(`

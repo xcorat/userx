@@ -1,12 +1,16 @@
 // SQLite Question Repository
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
 import type { PublicQuestion, CreateQuestionDTO, QuestionChoice } from '$lib/models';
-import { getDatabase, generateId } from '$lib/server/db/database';
 import { AppError, ErrorCode } from '$lib/utils/error-handling';
+import type Database from 'better-sqlite3';
 
 export class SQLiteQuestionRepository implements IQuestionRepository {
-	private get db() {
-		return getDatabase();
+	private db: Database.Database;
+	private generateId: () => string;
+
+	constructor(database: Database.Database, generateIdFn: () => string) {
+		this.db = database;
+		this.generateId = generateIdFn;
 	}
 
 	async findAll(): Promise<PublicQuestion[]> {
@@ -80,7 +84,7 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 	}
 
 	async create(data: CreateQuestionDTO): Promise<PublicQuestion> {
-		const questionId = generateId();
+		const questionId = this.generateId();
 		const now = new Date().toISOString();
 
 		// Insert question
@@ -98,7 +102,7 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 		`);
 
 		for (let i = 0; i < data.choices.length; i++) {
-			const choiceId = generateId();
+			const choiceId = this.generateId();
 			insertChoice.run(choiceId, questionId, data.choices[i], i);
 		}
 

@@ -1,12 +1,16 @@
 // SQLite DM Repository
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
-import type { DMQuestion, DMAnswer, CreateDMQuestionDTO, CreateDMAnswerDTO } from '$lib/models';
-import { getDatabase, generateId } from '$lib/server/db/database';
+import type { DMQuestion, DMAnswer, CreateDMQuestionDTO, CreateDMAnswerDTO, QuestionChoice } from '$lib/models';
 import { AppError, ErrorCode } from '$lib/utils/error-handling';
+import type Database from 'better-sqlite3';
 
 export class SQLiteDMRepository implements IDMRepository {
-	private get db() {
-		return getDatabase();
+	private db: Database.Database;
+	private generateId: () => string;
+
+	constructor(database: Database.Database, generateIdFn: () => string) {
+		this.db = database;
+		this.generateId = generateIdFn;
 	}
 
 	// DM Questions
@@ -114,7 +118,7 @@ export class SQLiteDMRepository implements IDMRepository {
 	}
 
 	async createQuestion(data: CreateDMQuestionDTO): Promise<DMQuestion> {
-		const questionId = generateId();
+		const questionId = this.generateId();
 		const now = new Date().toISOString();
 
 		// Insert question
@@ -133,7 +137,7 @@ export class SQLiteDMRepository implements IDMRepository {
 			`);
 
 			for (let i = 0; i < data.choices.length; i++) {
-				const choiceId = generateId();
+				const choiceId = this.generateId();
 				insertChoice.run(choiceId, questionId, data.choices[i], i);
 			}
 		}
@@ -246,7 +250,7 @@ export class SQLiteDMRepository implements IDMRepository {
 			throw new AppError(ErrorCode.DUPLICATE_ERROR, 'User has already answered this DM question');
 		}
 
-		const id = generateId();
+		const id = this.generateId();
 		const now = new Date().toISOString();
 
 		const stmt = this.db.prepare(`
