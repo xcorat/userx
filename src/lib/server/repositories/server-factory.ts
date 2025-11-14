@@ -6,8 +6,8 @@ import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestion
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
 
-import { SQLiteAdapter } from './adapters/sqlite-adapter';
-import { D1Adapter } from './adapters/d1-adapter';
+import { SQLiteAdapter } from '$lib/server/repositories/adapters/sqlite-adapter';
+import { D1Adapter } from '$lib/server/repositories/adapters/d1-adapter';
 
 type RepositoryType = 'sqlite' | 'd1';
 type DatabaseAdapter = SQLiteAdapter | D1Adapter;
