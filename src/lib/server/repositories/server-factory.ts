@@ -31,9 +31,25 @@ export class ServerRepositoryFactory {
      * Should be called once at app startup (in hooks.server.ts)
      */
     static async initialize(platform?: App.Platform): Promise<void> {
-        if (platform?.env?.DB) {
-            // Cloudflare Workers environment with D1 binding
-            D1RepositoryFactory.initialize(platform.env.DB);
+        // Check if we're running in a real Cloudflare Workers environment
+        // vs SvelteKit dev server with adapter emulation
+        const hasD1Binding = !!platform?.env?.DB;
+        const isRealCloudflare = hasD1Binding && (
+            typeof process === 'undefined' || // Workers runtime has no process
+            process.env.CF_PAGES === '1' ||   // Cloudflare Pages
+            process.env.CLOUDFLARE_ACCOUNT_ID // Wrangler environment
+        );
+        
+        console.log('[ServerRepositoryFactory] Environment detection:', {
+            hasD1Binding,
+            isRealCloudflare,
+            hasProcess: typeof process !== 'undefined',
+            nodeEnv: typeof process !== 'undefined' ? process.env.NODE_ENV : 'unknown'
+        });
+        
+        if (isRealCloudflare) {
+            // True Cloudflare Workers environment
+            D1RepositoryFactory.initialize(platform!.env.DB);
             activeFactory = 'd1';
             console.log('[ServerRepositoryFactory] Initialized with D1 database');
         } else {
@@ -42,7 +58,7 @@ export class ServerRepositoryFactory {
             // Bundler cannot statically resolve this, so SQLite won't be bundled for Cloudflare
             try {
                 const modulePath = './sqlite-factory' + ''; // opaque path - bundler can't resolve
-                sqliteFactory = (await import(modulePath)).SQLiteRepositoryFactory;
+                sqliteFactory = (await import(/* @vite-ignore */ modulePath)).SQLiteRepositoryFactory;
                 sqliteFactory.initialize();
                 activeFactory = 'sqlite';
                 console.log('[ServerRepositoryFactory] Initialized with SQLite database');

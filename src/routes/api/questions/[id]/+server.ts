@@ -1,12 +1,12 @@
 // API Route: Question by ID
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { SQLiteQuestionRepository } from '$lib/server/repositories';
+import { ServerRepositoryFactory } from '$lib/server/repositories/server-factory';
 
 // GET /api/questions/[id] - Get question by ID
 export const GET: RequestHandler = async ({ params }) => {
 	try {
-		const repo = new SQLiteQuestionRepository();
+		const repo = ServerRepositoryFactory.getQuestionRepository();
 		const question = await repo.findById(params.id);
 		
 		if (!question) {
