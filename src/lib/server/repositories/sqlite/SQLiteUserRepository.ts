@@ -1,12 +1,16 @@
 // SQLite User Repository
 import type { IUserRepository } from '$lib/repositories/interfaces/IUserRepository';
 import type { User, CreateUserDTO, UpdateUserDTO } from '$lib/models';
-import { getDatabase, generateId } from '$lib/server/db/database';
 import { AppError, ErrorCode } from '$lib/utils/error-handling';
+import type Database from 'better-sqlite3';
 
 export class SQLiteUserRepository implements IUserRepository {
-	private get db() {
-		return getDatabase();
+	private db: Database.Database;
+	private generateId: () => string;
+
+	constructor(database: Database.Database, generateIdFn: () => string) {
+		this.db = database;
+		this.generateId = generateIdFn;
 	}
 
 	async findAll(): Promise<User[]> {
@@ -90,7 +94,7 @@ export class SQLiteUserRepository implements IUserRepository {
 			}
 		}
 
-		const id = generateId();
+		const id = this.generateId();
 		const now = new Date().toISOString();
 
 		const stmt = this.db.prepare(`
