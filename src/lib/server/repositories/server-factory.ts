@@ -6,20 +6,6 @@ import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestion
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
 
-import {
-	SQLiteUserRepository,
-	SQLiteQuestionRepository,
-	SQLiteAnswerRepository,
-	SQLiteDMRepository
-} from './sqlite';
-
-import {
-	D1UserRepository,
-	D1QuestionRepository,
-	D1AnswerRepository,
-	D1DMRepository
-} from './d1';
-
 type RepositoryType = 'sqlite' | 'd1';
 
 /**
@@ -90,8 +76,12 @@ export class ServerRepositoryFactory {
 				if (!this.d1Database) {
 					throw new Error('D1 database not initialized. Call ServerRepositoryFactory.initialize() first.');
 				}
+				// Dynamic import to avoid loading SQLite modules in Cloudflare
+				const { D1UserRepository } = require('./d1/D1UserRepository');
 				this._userRepo = new D1UserRepository(this.d1Database);
 			} else {
+				// Dynamic import to avoid loading in Cloudflare
+				const { SQLiteUserRepository } = require('./sqlite/SQLiteUserRepository');
 				this._userRepo = new SQLiteUserRepository();
 			}
 		}
@@ -109,8 +99,10 @@ export class ServerRepositoryFactory {
 				if (!this.d1Database) {
 					throw new Error('D1 database not initialized. Call ServerRepositoryFactory.initialize() first.');
 				}
+				const { D1QuestionRepository } = require('./d1/D1QuestionRepository');
 				this._questionRepo = new D1QuestionRepository(this.d1Database);
 			} else {
+				const { SQLiteQuestionRepository } = require('./sqlite/SQLiteQuestionRepository');
 				this._questionRepo = new SQLiteQuestionRepository();
 			}
 		}
@@ -128,8 +120,10 @@ export class ServerRepositoryFactory {
 				if (!this.d1Database) {
 					throw new Error('D1 database not initialized. Call ServerRepositoryFactory.initialize() first.');
 				}
+				const { D1AnswerRepository } = require('./d1/D1AnswerRepository');
 				this._answerRepo = new D1AnswerRepository(this.d1Database);
 			} else {
+				const { SQLiteAnswerRepository } = require('./sqlite/SQLiteAnswerRepository');
 				this._answerRepo = new SQLiteAnswerRepository();
 			}
 		}
@@ -147,8 +141,10 @@ export class ServerRepositoryFactory {
 				if (!this.d1Database) {
 					throw new Error('D1 database not initialized. Call ServerRepositoryFactory.initialize() first.');
 				}
+				const { D1DMRepository } = require('./d1/D1DMRepository');
 				this._dmRepo = new D1DMRepository(this.d1Database);
 			} else {
+				const { SQLiteDMRepository } = require('./sqlite/SQLiteDMRepository');
 				this._dmRepo = new SQLiteDMRepository();
 			}
 		}

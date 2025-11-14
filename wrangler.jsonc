@@ -7,7 +7,7 @@
 	],
 	"d1_databases": [
 		{
-			"binding": "qna_app_db",
+			"binding": "DB",
 			"database_name": "qna-app-db",
 			"database_id": "e75db648-de0c-4235-90c6-53357b6d1a31"
 		}

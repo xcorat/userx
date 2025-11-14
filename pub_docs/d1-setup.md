@@ -42,6 +42,8 @@ Add the D1 binding to your `wrangler.jsonc`:
 }
 ```
 
+**Important**: The binding name MUST be `"DB"` (uppercase) to match the TypeScript interface in `app.d.ts`.
+
 Replace `YOUR_DATABASE_ID_HERE` with the database ID from Step 1.
 
 ## Step 3: Run Migration
