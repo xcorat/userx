@@ -87,6 +87,15 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 		const questionId = this.generateId();
 		const now = new Date().toISOString();
 
+		// Validate required fields
+		if (!data.text?.trim() || !data.createdBy) {
+			throw new AppError(ErrorCode.VALIDATION_ERROR, 'Question text and createdBy are required');
+		}
+
+		if (!Array.isArray(data.choices) || data.choices.length === 0) {
+			throw new AppError(ErrorCode.VALIDATION_ERROR, 'At least one choice is required');
+		}
+
 		// Insert question
 		const insertQuestion = this.db.prepare(`
 			INSERT INTO public_questions (id, text, created_by, created_at)
@@ -103,7 +112,7 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 
 		for (let i = 0; i < data.choices.length; i++) {
 			const choiceId = this.generateId();
-			insertChoice.run(choiceId, questionId, data.choices[i], i);
+			insertChoice.run(choiceId, questionId, data.choices[i].text, i);
 		}
 
 		const question = await this.findById(questionId);

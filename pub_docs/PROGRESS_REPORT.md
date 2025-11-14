@@ -266,7 +266,69 @@ private parseQuestion(question: any): PublicQuestion {
 
 ---
 
-## Phase 4: Core Features - Answer Submission & DM System ✅
+## Phase 4: Cloudflare D1 Integration & Environment Detection ✅
+**Status**: Completed (November 14, 2025)
+
+### Issues Fixed:
+
+#### 1. **API Route Bug - Direct Repository Instantiation**
+- **Problem**: `/api/questions/[id]` was directly instantiating `SQLiteQuestionRepository()` without required constructor parameters
+- **Result**: `db` property was `undefined`, causing "Cannot read properties of undefined (reading 'prepare')" error
+- **Fix**: Changed to use `ServerRepositoryFactory.getQuestionRepository()` to get properly initialized repositories
+- **Verification**: Tested with curl - endpoint now returns question data successfully
+
+#### 2. **Environment Detection for Multi-Database Support**
+- **Problem**: Complex platform detection logic caused false positives - Cloudflare was trying to use SQLite instead of D1
+- **Root Cause**: `hasD1Binding` is `true` in dev mode (SvelteKit Cloudflare adapter creates mock binding), making it impossible to distinguish between local dev and production
+- **Fix**: Simplified to use `NODE_ENV` as primary indicator:
+  - `NODE_ENV=development` → SQLite (local development with `pnpm dev`)
+  - `NODE_ENV=production` or `CF_PAGES=1` → D1 (Cloudflare Workers production)
+  - No `process` object → D1 (Workers runtime)
+- **Fallback**: Check `hasD1Binding` as secondary confirmation
+
+#### 3. **Password Input Autocomplete Warnings**
+- **Problem**: DOM warning about missing autocomplete attributes on password fields
+- **Fix**: 
+  - Added `autocomplete="current-password"` to login form password input
+  - Added `autocomplete="new-password"` to signup form password input
+- **Browser Benefit**: Enables password manager integration and browser autocomplete
+
+#### 4. **Database Test Endpoint Data Structure**
+- **Problem**: Frontend component expected `{ tableCount, timestamp, tables: TableInfo[] }` but endpoint returned `{ success, repoType, counts, sampleData }`
+- **Result**: Tests page showed no data
+- **Fix**: Transformed endpoint response to match frontend expectations:
+  ```typescript
+  tables: [
+    { name: 'users', count, sampleRows },
+    { name: 'questions', count, sampleRows },
+    { name: 'answers', count, sampleRows },
+    { name: 'dm_questions', count, sampleRows }
+  ]
+  ```
+
+#### 5. **Git Cleanup**
+- **Problem**: SQLite WAL files (`qna-app.db-shm`, `qna-app.db-wal`) were tracked in git
+- **Fix**: Removed from tracking with `git rm --cached` and added to `.gitignore`
+- **Reason**: WAL files are temporary SQLite runtime files that should never be committed
+
+### Files Modified:
+- `src/lib/server/repositories/server-factory.ts` - Simplified environment detection
+- `src/routes/api/questions/[id]/+server.ts` - Fixed to use ServerRepositoryFactory
+- `src/routes/login/+page.svelte` - Added autocomplete attribute
+- `src/routes/onboard/+page.svelte` - Added autocomplete attribute
+- `src/routes/tests/+server.ts` - Fixed response data structure
+- `.gitignore` - Added SQLite WAL files
+
+### Key Architectural Improvement:
+The environment detection now clearly separates local development from production without relying on unreliable platform binding detection. This ensures:
+- ✅ Local dev (`pnpm dev`) reliably uses SQLite with `better-sqlite3`
+- ✅ Production (Cloudflare Workers) reliably uses D1
+- ✅ No cross-contamination between environments
+- ✅ Opaque dynamic imports still prevent bundling SQLite into Cloudflare
+
+---
+
+## Phase 5: Core Features - Answer Submission & DM System ✅
 **Status**: Completed
 
 ### Implemented:
