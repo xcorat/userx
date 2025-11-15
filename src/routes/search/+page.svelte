@@ -214,12 +214,13 @@
 
 					{#if authStore.currentUser}
 						{@const buttonInfo = getRelationButtonContent(user.id)}
+						{@const IconComponent = buttonInfo.icon}
 						<Button 
 							variant={buttonInfo.variant} 
 							size="sm"
 							onclick={buttonInfo.action}
 						>
-							<svelte:component this={buttonInfo.icon} class="w-4 h-4 mr-1" />
+							<IconComponent class="w-4 h-4 mr-1" />
 							{buttonInfo.text}
 						</Button>
 					{/if}
