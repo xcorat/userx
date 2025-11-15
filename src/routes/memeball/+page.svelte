@@ -52,7 +52,7 @@
 	];
 
 	const swipeThreshold = 110;
-	const joinDestination = '/signup';
+	const joinDestination = '/memeball/main';
 
 	let activeIndex = $state(0);
 	let showExitNotice = $state(false);	function skipBriefing() {

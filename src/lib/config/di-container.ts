@@ -5,6 +5,7 @@ import type { IUserRepository } from '$lib/repositories/interfaces/IUserReposito
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
+import type { IMemeBallRepository } from '$lib/repositories/interfaces/IMemeBallRepository';
 
 import { AuthService } from '$lib/services/auth.service.js';
 import { QuestionService } from '$lib/services/question.service.js';
@@ -13,6 +14,7 @@ import { AggregateService } from '$lib/services/aggregate.service.js';
 import { ProfileService } from '$lib/services/profile.service.js';
 import { DMService } from '$lib/services/dm.service.js';
 import { UserService } from '$lib/services/user.service.js';
+import { MemeService } from '$lib/services/meme.service.js';
 
 /**
  * Dependency Injection Container
@@ -25,6 +27,7 @@ class DIContainer {
 	private static _questionRepo: IQuestionRepository | null = null;
 	private static _answerRepo: IAnswerRepository | null = null;
 	private static _dmRepo: IDMRepository | null = null;
+	private static _memeRepo: IMemeBallRepository | null = null;
 
 	// Service instances (singleton)
 	private static _authService: AuthService | null = null;
@@ -34,6 +37,7 @@ class DIContainer {
 	private static _aggregateService: AggregateService | null = null;
 	private static _profileService: ProfileService | null = null;
 	private static _dmService: DMService | null = null;
+	private static _memeService: MemeService | null = null;
 
 	// Repository Getters
 	private static get userRepo(): IUserRepository {
@@ -62,6 +66,13 @@ class DIContainer {
 			this._dmRepo = RepositoryFactory.createDMRepository();
 		}
 		return this._dmRepo;
+	}
+
+	private static get memeRepo(): IMemeBallRepository {
+		if (!this._memeRepo) {
+			this._memeRepo = RepositoryFactory.createMemeBallRepository();
+		}
+		return this._memeRepo;
 	}
 
 	// Service Getters (Public API)
@@ -122,12 +133,20 @@ class DIContainer {
 		return this._dmService;
 	}
 
+	static getMemeService(): MemeService {
+		if (!this._memeService) {
+			this._memeService = new MemeService(this.memeRepo, this.userRepo);
+		}
+		return this._memeService;
+	}
+
 	// Utility Methods
 	static reset(): void {
 		this._userRepo = null;
 		this._questionRepo = null;
 		this._answerRepo = null;
 		this._dmRepo = null;
+		this._memeRepo = null;
 		this._authService = null;
 		this._userService = null;
 		this._questionService = null;
@@ -135,6 +154,7 @@ class DIContainer {
 		this._aggregateService = null;
 		this._profileService = null;
 		this._dmService = null;
+		this._memeService = null;
 	}
 
 	static setRepositories(repos: {
@@ -142,11 +162,13 @@ class DIContainer {
 		questionRepo?: IQuestionRepository;
 		answerRepo?: IAnswerRepository;
 		dmRepo?: IDMRepository;
+		memeRepo?: IMemeBallRepository;
 	}): void {
 		if (repos.userRepo) this._userRepo = repos.userRepo;
 		if (repos.questionRepo) this._questionRepo = repos.questionRepo;
 		if (repos.answerRepo) this._answerRepo = repos.answerRepo;
 		if (repos.dmRepo) this._dmRepo = repos.dmRepo;
+		if (repos.memeRepo) this._memeRepo = repos.memeRepo;
 
 		// Reset services so they use new repositories
 		this._authService = null;
@@ -156,6 +178,7 @@ class DIContainer {
 		this._aggregateService = null;
 		this._profileService = null;
 		this._dmService = null;
+		this._memeService = null;
 	}
 }
 

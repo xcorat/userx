@@ -78,3 +78,21 @@ INSERT INTO dm_question_choices (id, dm_question_id, text, order_index) VALUES (
 INSERT INTO dm_questions (id, text, from_user_id, to_user_id, created_at) VALUES ('dmq_3', 'How are you feeling today?', 'user_3', 'user_4', '2024-03-12T00:00:00.000Z');
 INSERT INTO dm_answers (id, dm_question_id, user_id, choice_id, text_answer, created_at) VALUES ('dmans_1', 'dmq_1', 'user_2', 'dmq1_c2', NULL, '2024-03-11T00:00:00.000Z');
 INSERT INTO dm_answers (id, dm_question_id, user_id, choice_id, text_answer, created_at) VALUES ('dmans_2', 'dmq_3', 'user_4', NULL, 'I''m doing great, thanks for asking!', '2024-03-12T00:00:00.000Z');
+
+-- Meme data for Memeball feature
+INSERT INTO memes (id, content_hash, image_url, alt_text, submitted_by, submitted_at, width, height, is_animated, frame_count) VALUES 
+('meme_1', 'hash_distracted_bf', 'https://i.imgflip.com/1ur9b0.jpg', 'Distracted Boyfriend meme - man looking at another woman while his girlfriend looks disapproving', 'user_1', '2024-11-13T10:00:00.000Z', 680, 450, 0, NULL),
+('meme_2', 'hash_drake_pointing', 'https://i.imgflip.com/30b1gx.jpg', 'Drake pointing meme - Drake rejecting something, then pointing approvingly at something else', 'user_2', '2024-11-13T11:30:00.000Z', 500, 600, 0, NULL),
+('meme_3', 'hash_woman_yelling_cat', 'https://i.imgflip.com/345v97.jpg', 'Woman yelling at confused cat meme', 'user_3', '2024-11-13T14:15:00.000Z', 680, 438, 0, NULL),
+('meme_4', 'hash_this_is_fine', 'https://i.imgflip.com/1wz2x6.jpg', 'This is fine dog sitting in burning room', 'user_4', '2024-11-13T16:45:00.000Z', 580, 282, 0, NULL),
+('meme_5', 'hash_expanding_brain', 'https://i.imgflip.com/1jwhww.jpg', 'Expanding brain meme template', 'user_5', '2024-11-14T08:20:00.000Z', 857, 1202, 0, NULL);
+
+-- Sample meme interactions
+INSERT INTO meme_interactions (id, user_id, meme_id, interaction_type, interacted_at) VALUES
+('interaction_1', 'user_1', 'meme_2', 'pick', '2024-11-13T12:00:00.000Z'),
+('interaction_2', 'user_1', 'meme_3', 'reject', '2024-11-13T15:00:00.000Z'),
+('interaction_3', 'user_2', 'meme_1', 'pick', '2024-11-13T11:00:00.000Z'),
+('interaction_4', 'user_2', 'meme_4', 'pick', '2024-11-13T17:00:00.000Z'),
+('interaction_5', 'user_3', 'meme_1', 'pick', '2024-11-13T11:30:00.000Z'),
+('interaction_6', 'user_4', 'meme_2', 'reject', '2024-11-13T13:00:00.000Z'),
+('interaction_7', 'user_5', 'meme_1', 'pick', '2024-11-13T12:30:00.000Z');

@@ -5,3 +5,4 @@ export * from './question.model';
 export * from './answer.model';
 export * from './dm.model';
 export * from './aggregate.model';
+export * from './meme.model';
