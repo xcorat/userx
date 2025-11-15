@@ -5,6 +5,7 @@ import type { IUserRepository } from '$lib/repositories/interfaces/IUserReposito
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
+import type { IRelationRepository } from '$lib/repositories/interfaces/IRelationRepository';
 
 import { SQLiteAdapter } from '$lib/server/repositories/adapters/sqlite-adapter';
 
@@ -15,6 +16,7 @@ interface DatabaseAdapter {
 	questionRepo: IQuestionRepository;
 	answerRepo: IAnswerRepository;
 	dmRepo: IDMRepository;
+	relationRepo: IRelationRepository;
 	getType(): RepositoryType;
 }
 
@@ -88,5 +90,15 @@ export class SQLiteRepositoryFactory {
 			throw new Error('SQLiteRepositoryFactory not initialized. Call initialize() first.');
 		}
 		return this.adapter.dmRepo;
+	}
+
+	/**
+	 * Get Relation Repository
+	 */
+	static getRelationRepository(): IRelationRepository {
+		if (!this.adapter) {
+			throw new Error('SQLiteRepositoryFactory not initialized. Call initialize() first.');
+		}
+		return this.adapter.relationRepo;
 	}
 }

@@ -5,11 +5,13 @@ import type { IUserRepository } from '$lib/repositories/interfaces/IUserReposito
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
+import type { IRelationRepository } from '$lib/repositories/interfaces/IRelationRepository';
 
 import { D1UserRepository } from '$lib/server/repositories/d1/D1UserRepository';
 import { D1QuestionRepository } from '$lib/server/repositories/d1/D1QuestionRepository';
 import { D1AnswerRepository } from '$lib/server/repositories/d1/D1AnswerRepository';
 import { D1DMRepository } from '$lib/server/repositories/d1/D1DMRepository';
+import { D1RelationRepository } from '$lib/server/repositories/d1/D1RelationRepository';
 
 /**
  * D1 Database Adapter
@@ -21,12 +23,14 @@ export class D1Adapter {
 	public readonly questionRepo: IQuestionRepository;
 	public readonly answerRepo: IAnswerRepository;
 	public readonly dmRepo: IDMRepository;
+	public readonly relationRepo: IRelationRepository;
 
 	private constructor(db: D1Database) {
 		this.userRepo = new D1UserRepository(db);
 		this.questionRepo = new D1QuestionRepository(db);
 		this.answerRepo = new D1AnswerRepository(db);
 		this.dmRepo = new D1DMRepository(db);
+		this.relationRepo = new D1RelationRepository(db);
 	}
 
 	/**

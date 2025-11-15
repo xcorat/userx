@@ -22,6 +22,8 @@
 				</h1>
 				<nav class="flex items-center gap-4">
 					<a href="/" class="hover:text-primary">Questions</a>
+					<a href="/search" class="hover:text-primary">Search</a>
+					<a href="/friends" class="hover:text-primary">Friends</a>
 					<a href="/dm" class="hover:text-primary">DMs</a>
 					<a href="/profile" class="hover:text-primary">Profile</a>
 					<a href="/tests" class="hover:text-primary">DB Test</a>
