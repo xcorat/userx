@@ -6,6 +6,7 @@ import type { IUserRepository } from '$lib/repositories/interfaces/IUserReposito
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
+import type { IRelationRepository } from '$lib/repositories/interfaces/IRelationRepository';
 
 // Only static import D1 factory (safe for Cloudflare Workers)
 import { D1RepositoryFactory } from '$lib/server/repositories/d1-factory';
@@ -140,6 +141,19 @@ export class ServerRepositoryFactory {
             return D1RepositoryFactory.getDMRepository();
         } else if (activeFactory === 'sqlite' && sqliteFactory) {
             return sqliteFactory.getDMRepository();
+        } else {
+            throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
+        }
+    }
+
+    /**
+     * Get Relation Repository
+     */
+    static getRelationRepository(): IRelationRepository {
+        if (activeFactory === 'd1') {
+            return D1RepositoryFactory.getRelationRepository();
+        } else if (activeFactory === 'sqlite' && sqliteFactory) {
+            return sqliteFactory.getRelationRepository();
         } else {
             throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
         }

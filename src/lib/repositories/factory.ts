@@ -5,19 +5,22 @@ import type { IUserRepository } from './interfaces/IUserRepository';
 import type { IQuestionRepository } from './interfaces/IQuestionRepository';
 import type { IAnswerRepository } from './interfaces/IAnswerRepository';
 import type { IDMRepository } from './interfaces/IDMRepository';
+import type { IRelationRepository } from './interfaces/IRelationRepository';
 
 import {
 	MockUserRepository,
 	MockQuestionRepository,
 	MockAnswerRepository,
-	MockDMRepository
+	MockDMRepository,
+	MockRelationRepository
 } from './implementations/mock';
 
 import {
 	APIUserRepository,
 	APIQuestionRepository,
 	APIAnswerRepository,
-	APIDMRepository
+	APIDMRepository,
+	APIRelationRepository
 } from './implementations/api';
 
 import { appConfig } from '$lib/config/app.config';
@@ -104,6 +107,22 @@ export class RepositoryFactory {
 				return new MockDMRepository();
 			case 'api':
 				return new APIDMRepository();
+			default:
+				throw new Error(`Unknown storage type: ${this.storageType}`);
+		}
+	}
+
+	/**
+	 * Create Relation Repository
+	 */
+	static createRelationRepository(): IRelationRepository {
+		switch (this.storageType) {
+			case 'sqlite':
+				throw new Error('SQLite repositories must be used server-side only. Use API storage type for client-side access.');
+			case 'mock':
+				return new MockRelationRepository();
+			case 'api':
+				return new APIRelationRepository();
 			default:
 				throw new Error(`Unknown storage type: ${this.storageType}`);
 		}

@@ -9,11 +9,13 @@ import type { IUserRepository } from '$lib/repositories/interfaces/IUserReposito
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
+import type { IRelationRepository } from '$lib/repositories/interfaces/IRelationRepository';
 
 import { SQLiteUserRepository } from '$lib/server/repositories/sqlite/SQLiteUserRepository';
 import { SQLiteQuestionRepository } from '$lib/server/repositories/sqlite/SQLiteQuestionRepository';
 import { SQLiteAnswerRepository } from '$lib/server/repositories/sqlite/SQLiteAnswerRepository';
 import { SQLiteDMRepository } from '$lib/server/repositories/sqlite/SQLiteDMRepository';
+import { SQLiteRelationRepository } from '$lib/server/repositories/sqlite/SQLiteRelationRepository';
 
 const DB_PATH = 'qna-app.db';
 let db: Database.Database | null = null;
@@ -191,6 +193,7 @@ export class SQLiteAdapter {
 	public readonly questionRepo: IQuestionRepository;
 	public readonly answerRepo: IAnswerRepository;
 	public readonly dmRepo: IDMRepository;
+	public readonly relationRepo: IRelationRepository;
 
 	private constructor() {
 		// Initialize database connection
@@ -200,6 +203,7 @@ export class SQLiteAdapter {
 		this.questionRepo = new SQLiteQuestionRepository(database, generateId);
 		this.answerRepo = new SQLiteAnswerRepository(database, generateId);
 		this.dmRepo = new SQLiteDMRepository(database, generateId);
+		this.relationRepo = new SQLiteRelationRepository(database, generateId);
 	}
 
 	/**
