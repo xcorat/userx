@@ -58,7 +58,7 @@ This creates all tables, indexes, and constraints.
 
 ## Step 4: Seed Database (Optional)
 
-To populate the database with sample data for testing:
+To populate the database with sample data for testing (users, questions, answers, DM questions, memes, and meme interactions):
 
 ```bash
 pnpm tsx scripts/d1-seed.ts
@@ -86,6 +86,8 @@ You should see:
 - dm_questions
 - dm_question_choices
 - dm_answers
+- memes
+- meme_interactions
 
 ## Step 6: Deploy
 

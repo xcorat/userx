@@ -113,3 +113,40 @@ CREATE TABLE IF NOT EXISTS dm_answers (
 
 CREATE INDEX IF NOT EXISTS idx_dm_answers_dm_question_id ON dm_answers(dm_question_id);
 CREATE INDEX IF NOT EXISTS idx_dm_answers_user_id ON dm_answers(user_id);
+
+-- Memeball Feature Tables
+CREATE TABLE IF NOT EXISTS memes (
+  id TEXT PRIMARY KEY,
+  content_hash TEXT NOT NULL UNIQUE,      -- Hash of image content for deduplication
+  image_url TEXT NOT NULL,                 -- URL to meme image
+  alt_text TEXT,                           -- Accessibility alt text
+  submitted_by TEXT NOT NULL,              -- User ID who submitted
+  submitted_at TEXT NOT NULL,
+  width INTEGER,                           -- Image dimensions for display
+  height INTEGER,
+  is_animated BOOLEAN DEFAULT 0,           -- For GIFs/animated content
+  frame_count INTEGER,                     -- Number of frames for animated memes
+  FOREIGN KEY (submitted_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_memes_content_hash ON memes(content_hash);
+CREATE INDEX IF NOT EXISTS idx_memes_submitted_by ON memes(submitted_by);
+CREATE INDEX IF NOT EXISTS idx_memes_submitted_at ON memes(submitted_at);
+
+-- Meme User Interactions (Pick/Reject)
+CREATE TABLE IF NOT EXISTS meme_interactions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  meme_id TEXT NOT NULL,
+  interaction_type TEXT NOT NULL CHECK(interaction_type IN ('pick', 'reject')),
+  interacted_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (meme_id) REFERENCES memes(id) ON DELETE CASCADE,
+  UNIQUE(user_id, meme_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_meme_interactions_user_id ON meme_interactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_meme_interactions_meme_id ON meme_interactions(meme_id);
+CREATE INDEX IF NOT EXISTS idx_meme_interactions_type ON meme_interactions(interaction_type);
+
+```

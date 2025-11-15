@@ -10,6 +10,7 @@ Created complete D1 repository implementations that mirror the SQLite repositori
 - `src/lib/server/repositories/d1/D1QuestionRepository.ts`
 - `src/lib/server/repositories/d1/D1AnswerRepository.ts`
 - `src/lib/server/repositories/d1/D1DMRepository.ts`
+- `src/lib/server/repositories/d1/D1MemeRepository.ts` (Memeball feature)
 
 Key differences from SQLite:
 - Uses async D1 API (`db.prepare().bind().all()`, `.first()`, `.run()`)
@@ -58,9 +59,14 @@ Updated `wrangler.jsonc` with D1 binding:
 ```
 
 ### 6. Database Migration & Seeding
-- **Migration**: `src/lib/server/db/d1-migration.sql` - D1-compatible schema
-- **Seed Script**: `scripts/d1-seed.ts` - Generates seed SQL from mock data
+- **Migration**: `src/lib/server/db/d1-migration.sql` - D1-compatible schema (includes Memeball tables)
+- **Seed Script**: `scripts/d1-seed.ts` - Generates seed SQL from mock data (users, questions, DM questions, memes, and interactions)
 - **Setup Guide**: `docs/pub/d1-setup.md` - Complete Wrangler setup instructions
+
+Database tables include:
+- Core: `users`, `public_questions`, `question_choices`, `public_answers`, `question_images`
+- DM: `dm_questions`, `dm_question_choices`, `dm_answers`
+- **Memeball**: `memes`, `meme_interactions`
 
 ### 7. API Route Updates
 Updated all 12 API routes to use `ServerRepositoryFactory`:
@@ -144,16 +150,17 @@ wrangler deploy
 
 ```
 docs/pub/d1-setup.md                              # Setup guide
-scripts/d1-seed.ts                                # Seed data generator
+scripts/d1-seed.ts                                # Seed data generator (updated with meme data)
 src/app.d.ts                                      # Updated with Platform types
 src/hooks.server.ts                               # New: Initialize factory
 src/lib/config/app.config.ts                      # Updated with D1 docs
-src/lib/server/db/d1-migration.sql               # D1 schema
+src/lib/server/db/d1-migration.sql               # D1 schema (includes memes tables)
 src/lib/server/repositories/d1/                   # D1 repositories
   ├── D1UserRepository.ts
   ├── D1QuestionRepository.ts
   ├── D1AnswerRepository.ts
   ├── D1DMRepository.ts
+  ├── D1MemeRepository.ts                         # New: Memeball feature
   └── index.ts
 src/lib/server/repositories/server-factory.ts    # Factory for server-side repos
 src/lib/server/repositories/index.ts             # Updated exports

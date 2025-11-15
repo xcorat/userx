@@ -10,7 +10,7 @@
  *   pnpm tsx scripts/d1-seed.ts --generate-sql > scripts/d1-seed.sql
  */
 
-import { mockUsers, mockQuestions, mockAnswers, mockDMQuestions, mockDMAnswers } from '../src/lib/repositories/implementations/mock/mock-data';
+import { mockUsers, mockQuestions, mockAnswers, mockDMQuestions, mockDMAnswers, mockMemes, mockMemeInteractions } from '../src/lib/repositories/implementations/mock/mock-data';
 
 const generateSeedSQL = (): string => {
 	const statements: string[] = [];
@@ -81,6 +81,28 @@ const generateSeedSQL = (): string => {
 		);
 	}
 
+	// Insert memes
+	for (const meme of mockMemes) {
+		const escapedAltText = meme.altText ? `'${meme.altText.replace(/'/g, "''")}'` : 'NULL';
+		const isAnimated = meme.isAnimated ? 1 : 0;
+		const frameCount = meme.frameCount ? meme.frameCount : 'NULL';
+		const width = meme.width ? meme.width : 'NULL';
+		const height = meme.height ? meme.height : 'NULL';
+		
+		statements.push(
+			`INSERT INTO memes (id, content_hash, image_url, alt_text, submitted_by, submitted_at, width, height, is_animated, frame_count) ` +
+			`VALUES ('${meme.id}', '${meme.contentHash}', '${meme.imageUrl.replace(/'/g, "''")}', ${escapedAltText}, '${meme.submittedBy}', '${meme.submittedAt.toISOString()}', ${width}, ${height}, ${isAnimated}, ${frameCount});`
+		);
+	}
+
+	// Insert meme interactions
+	for (const interaction of mockMemeInteractions) {
+		statements.push(
+			`INSERT INTO meme_interactions (id, user_id, meme_id, interaction_type, interacted_at) ` +
+			`VALUES ('${interaction.id}', '${interaction.userId}', '${interaction.memeId}', '${interaction.interactionType}', '${interaction.interactedAt.toISOString()}');`
+		);
+	}
+
 	return statements.join('\n');
 };
 
@@ -115,4 +137,6 @@ if (args.includes('--generate-sql')) {
 	console.log(`  - ${mockAnswers.length} public answers`);
 	console.log(`  - ${mockDMQuestions.length} DM questions`);
 	console.log(`  - ${mockDMAnswers.length} DM answers`);
+	console.log(`  - ${mockMemes.length} memes`);
+	console.log(`  - ${mockMemeInteractions.length} meme interactions`);
 }
