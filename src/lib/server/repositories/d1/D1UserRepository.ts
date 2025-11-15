@@ -72,6 +72,25 @@ export class D1UserRepository implements IUserRepository {
 		} as User;
 	}
 
+	async searchUsers(query: string): Promise<User[]> {
+		if (!query.trim()) {
+			return [];
+		}
+
+		const { results } = await this.db.prepare(`
+			SELECT id, username, name, email, avatar_url as avatarUrl,
+			       birthdate, location, timezone, created_at as createdAt
+			FROM users
+			WHERE username LIKE ? OR email LIKE ? OR name LIKE ?
+			ORDER BY created_at DESC
+		`).bind(`%${query}%`, `%${query}%`, `%${query}%`).all();
+
+		return results.map((row: any) => ({
+			...row,
+			createdAt: new Date(row.createdAt)
+		}));
+	}
+
 	async create(data: CreateUserDTO): Promise<User> {
 		// Check if email already exists
 		const existingEmail = await this.findByEmail(data.email);

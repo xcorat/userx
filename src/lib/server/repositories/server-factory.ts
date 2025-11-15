@@ -6,6 +6,7 @@ import type { IUserRepository } from '$lib/repositories/interfaces/IUserReposito
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
+import type { IMemeBallRepository } from '$lib/repositories/interfaces/IMemeBallRepository';
 
 // Only static import D1 factory (safe for Cloudflare Workers)
 import { D1RepositoryFactory } from '$lib/server/repositories/d1-factory';
@@ -140,6 +141,19 @@ export class ServerRepositoryFactory {
             return D1RepositoryFactory.getDMRepository();
         } else if (activeFactory === 'sqlite' && sqliteFactory) {
             return sqliteFactory.getDMRepository();
+        } else {
+            throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
+        }
+    }
+
+    /**
+     * Get Memeball Repository
+     */
+    static getMemeRepository(): IMemeBallRepository {
+        if (activeFactory === 'd1') {
+            return D1RepositoryFactory.getMemeRepository();
+        } else if (activeFactory === 'sqlite' && sqliteFactory) {
+            return sqliteFactory.getMemeRepository();
         } else {
             throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
         }

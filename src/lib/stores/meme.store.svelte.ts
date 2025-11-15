@@ -2,12 +2,10 @@
 import type { 
 	MemeWithStats, 
 	CreateMemeDTO, 
-	MemeInteractionType, 
 	UserMemeStats,
-	MemeSubmissionStatus,
 	Meme 
 } from '$lib/models/meme.model';
-import { MemeInteractionType } from '$lib/models/meme.model';
+import { MemeInteractionType, MemeSubmissionStatus } from '$lib/models/meme.model';
 import DIContainer from '$lib/config/di-container';
 import { authStore } from './auth.store.svelte';
 
@@ -32,14 +30,10 @@ class MemeStore {
 	lastSubmissionStatus = $state<MemeSubmissionStatus | null>(null);
 	
 	// Current meme being viewed
-	currentMeme = $derived(() => {
-		return this.availableMemes[this.currentMemeIndex] || null;
-	});
+	currentMeme = $derived(this.availableMemes[this.currentMemeIndex] || null);
 	
 	// Whether user has more memes to view
-	hasMoreMemes = $derived(() => {
-		return this.currentMemeIndex < this.availableMemes.length - 1;
-	});
+	hasMoreMemes = $derived(this.currentMemeIndex < this.availableMemes.length - 1);
 	
 	// Token availability
 	canSubmitToday = $state(true);
@@ -80,7 +74,6 @@ class MemeStore {
 			this.submissionError = 'Must be logged in to submit memes';
 			return;
 		}
-
 		this.isSubmitting = true;
 		this.submissionError = null;
 
@@ -90,14 +83,12 @@ class MemeStore {
 				...data,
 				submittedBy: authStore.currentUser.id
 			});
-
 			this.lastSubmissionStatus = result.status;
 
 			// If successful, update token status
 			if (result.status === 'success') {
 				await this.updateTokenStatus();
 			}
-
 			return result;
 		} catch (e) {
 			this.submissionError = e instanceof Error ? e.message : 'Failed to submit meme';
@@ -165,7 +156,7 @@ class MemeStore {
 	 * Navigate to next meme without interacting
 	 */
 	goToNextMeme() {
-		if (this.hasMoreMemes) {
+		if (this.currentMemeIndex < this.availableMemes.length - 1) {
 			this.currentMemeIndex++;
 		}
 	}

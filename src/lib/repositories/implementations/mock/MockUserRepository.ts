@@ -23,6 +23,20 @@ export class MockUserRepository implements IUserRepository {
 		return this.users.find((u) => u.username === username) || null;
 	}
 
+	async searchUsers(query: string): Promise<User[]> {
+		if (!query.trim()) {
+			return [];
+		}
+
+		const lowerQuery = query.toLowerCase();
+		return this.users.filter(
+			(user) =>
+				user.username?.toLowerCase().includes(lowerQuery) ||
+				user.email.toLowerCase().includes(lowerQuery) ||
+				user.name.toLowerCase().includes(lowerQuery)
+		);
+	}
+
 	async create(data: CreateUserDTO): Promise<User> {
 		// Check for duplicate email
 		if (await this.findByEmail(data.email)) {

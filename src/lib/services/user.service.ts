@@ -20,4 +20,8 @@ export class UserService {
 	async getUserByUsername(username: string): Promise<User | null> {
 		return await this.userRepo.findByUsername(username);
 	}
+
+	async searchUsers(query: string): Promise<User[]> {
+		return await this.userRepo.searchUsers(query);
+	}
 }

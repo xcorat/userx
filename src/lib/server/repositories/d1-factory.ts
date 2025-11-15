@@ -5,6 +5,7 @@ import type { IUserRepository } from '$lib/repositories/interfaces/IUserReposito
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
+import type { IMemeBallRepository } from '$lib/repositories/interfaces/IMemeBallRepository';
 
 import { D1Adapter } from '$lib/server/repositories/adapters/d1-adapter';
 
@@ -15,6 +16,7 @@ interface DatabaseAdapter {
 	questionRepo: IQuestionRepository;
 	answerRepo: IAnswerRepository;
 	dmRepo: IDMRepository;
+	memeRepo: IMemeBallRepository;
 	getType(): RepositoryType;
 }
 
@@ -88,5 +90,15 @@ export class D1RepositoryFactory {
 			throw new Error('D1RepositoryFactory not initialized. Call initialize() first.');
 		}
 		return this.adapter.dmRepo;
+	}
+
+	/**
+	 * Get Memeball Repository
+	 */
+	static getMemeRepository(): IMemeBallRepository {
+		if (!this.adapter) {
+			throw new Error('D1RepositoryFactory not initialized. Call initialize() first.');
+		}
+		return this.adapter.memeRepo;
 	}
 }

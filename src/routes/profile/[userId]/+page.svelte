@@ -18,6 +18,11 @@
 	$effect(() => {
 		userId = $page.params.userId;
 		if (userId) {
+			// Redirect to /profile if viewing own profile
+			if (authStore.currentUser && authStore.currentUser.id === userId) {
+				goto('/profile');
+				return;
+			}
 			loadProfile();
 		}
 	});

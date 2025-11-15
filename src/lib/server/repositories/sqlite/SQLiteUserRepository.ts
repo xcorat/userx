@@ -79,6 +79,28 @@ export class SQLiteUserRepository implements IUserRepository {
 		};
 	}
 
+	async searchUsers(query: string): Promise<User[]> {
+		if (!query.trim()) {
+			return [];
+		}
+
+		const stmt = this.db.prepare(`
+			SELECT id, username, name, email, avatar_url as avatarUrl,
+			       birthdate, location, timezone, created_at as createdAt
+			FROM users
+			WHERE username LIKE ? OR email LIKE ? OR name LIKE ?
+			ORDER BY created_at DESC
+		`);
+
+		const searchTerm = `%${query}%`;
+		const rows = stmt.all(searchTerm, searchTerm, searchTerm) as any[];
+		
+		return rows.map((row) => ({
+			...row,
+			createdAt: new Date(row.createdAt)
+		}));
+	}
+
 	async create(data: CreateUserDTO): Promise<User> {
 		// Check if email already exists
 		const existingEmail = await this.findByEmail(data.email);

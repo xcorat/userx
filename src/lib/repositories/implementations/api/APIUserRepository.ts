@@ -49,6 +49,15 @@ export class APIUserRepository implements IUserRepository {
 		return result.user ? this.parseUser(result.user) : null;
 	}
 
+	async searchUsers(query: string): Promise<User[]> {
+		if (!query.trim()) {
+			return [];
+		}
+		const response = await fetch(`${API_BASE}/users/search?q=${encodeURIComponent(query)}`);
+		const users = await this.handleResponse<any[]>(response);
+		return users.map(u => this.parseUser(u));
+	}
+
 	async create(data: CreateUserDTO): Promise<User> {
 		const response = await fetch(`${API_BASE}/users`, {
 			method: 'POST',

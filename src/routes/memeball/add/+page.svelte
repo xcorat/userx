@@ -100,20 +100,19 @@
 				imageUrl: imageUrl.trim(),
 				altText: altText.trim() || undefined
 			});
-
 			switch (result.status) {
-				case MemeSubmissionStatus.SUCCESS:
+				case "success"://MemeSubmissionStatus.SUCCESS:
 					toast.success('Meme submitted successfully! It will be available for voting soon.');
 					goto('/memeball/main');
 					break;
-				case MemeSubmissionStatus.DAILY_LIMIT_REACHED:
+				case "daily_limit_reached"://MemeSubmissionStatus.DAILY_LIMIT_REACHED:
 					error = 'Daily submission limit reached. You can submit one meme per day.';
 					await updateTokenStatus();
 					break;
-				case MemeSubmissionStatus.DUPLICATE_DETECTED:
+				case "duplicate_detected"://	MemeSubmissionStatus.DUPLICATE_DETECTED:
 					error = 'This meme has already been submitted. Each meme can only be submitted once.';
 					break;
-				case MemeSubmissionStatus.INVALID_IMAGE:
+				case "invalid_image"://MemeSubmissionStatus.INVALID_IMAGE:
 					error = 'Invalid image. Please check the URL and try again.';
 					break;
 				default:

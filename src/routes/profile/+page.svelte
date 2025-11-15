@@ -11,6 +11,7 @@
 
 	let profile = $state<UserProfile | null>(null);
 	let answers = $state<AnswerWithQuestion[]>([]);
+	let allAnswers = $state<AnswerWithQuestion[]>([]);
 	let isLoading = $state(true);
 	let showPrivateAnswers = $state(true);
 	let updatingVisibility = $state<Record<string, boolean>>({});
@@ -26,7 +27,8 @@
 		try {
 			const profileService = DIContainer.getProfileService();
 			profile = await profileService.getUserProfile(authStore.currentUser.id);
-			answers = await profileService.getProfileAnswers(authStore.currentUser.id, true);
+			allAnswers = await profileService.getProfileAnswers(authStore.currentUser.id, true);
+			answers = allAnswers;
 		} catch (err) {
 			console.error('Failed to load profile:', err);
 		} finally {
@@ -44,7 +46,10 @@
 				: AnswerVisibility.PUBLIC;
 			await answerService.updateAnswerVisibility(answerId, newVisibility);
 			
-			// Update local state
+			// Update both arrays
+			allAnswers = allAnswers.map(a => 
+				a.id === answerId ? { ...a, visibility: newVisibility } : a
+			);
 			answers = answers.map(a => 
 				a.id === answerId ? { ...a, visibility: newVisibility } : a
 			);
@@ -69,7 +74,10 @@
 	$effect(() => {
 		if (!showPrivateAnswers) {
 			// Filter out private answers for display
-			answers = answers.filter(a => a.visibility === AnswerVisibility.PUBLIC);
+			answers = allAnswers.filter(a => a.visibility === AnswerVisibility.PUBLIC);
+		} else {
+			// Show all answers
+			answers = allAnswers;
 		}
 	});
 

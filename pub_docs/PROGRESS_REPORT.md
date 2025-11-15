@@ -431,6 +431,210 @@ The environment detection now clearly separates local development from productio
 
 ---
 
+## Phase 6: Memeball Feature - Meme Curation System ✅
+**Status**: Completed (November 14, 2025)
+
+### Architecture Overview:
+Memeball is a **separate, independent feature** from the Q&A system with its own:
+- **Hash-based identity** (content hashing) vs text-based for Q&A
+- **Daily token system** (1 meme submission per user per day)
+- **Swipeable interface** (Tinder-like card interactions)
+- **Space-themed UI** (independent layout override)
+- **Parallel data models** (Meme, MemeInteraction types)
+
+### Implemented Components:
+
+#### 1. **Domain Models** (`src/lib/models/meme.model.ts`)
+- `Meme` - Core meme entity with content hash, image URL, alt text
+- `MemeWithStats` - Meme with pick/reject statistics and user interaction tracking
+- `MemeInteraction` - User interaction record (pick or reject)
+- `CreateMemeDTO` - Data transfer object for submissions
+- `MemeInteractionType` enum - PICK or REJECT actions
+- `UserMemeStats` - User's meme activity summary
+- `DailyMemeStats` - Daily leaderboard data
+
+#### 2. **Repository Layer**
+
+**Interface**: `src/lib/repositories/interfaces/IMemeBallRepository.ts`
+- CRUD operations: `findAll()`, `findById()`, `create()`, `delete()`
+- Availability: `findAvailableForUser()` (excludes seen + own submissions)
+- Interactions: `findUserInteraction()`, `createInteraction()`, `findUserInteractions()`
+- Statistics: `getMemeStats()`, `getTopDailyMeme()`, `getDailyStats()`, `getUserMemeStats()`
+- Daily tracking: `getUserDailySubmissionCount()`, `findTodaysSubmissions()`
+
+**Implementation**: `src/lib/repositories/implementations/mock/MockMemeBallRepository.ts`
+- 5 classic internet memes (Distracted Boyfriend, Drake, Woman Yelling at Cat, This is Fine, Expanding Brain)
+- Sample interactions for testing
+- Full interface implementation with in-memory state
+- Ready for API/D1 repository implementations
+
+#### 3. **Service Layer** (`src/lib/services/meme.service.ts`)
+- `getAvailableMemesForUser()` - Fetch voteable memes
+- `submitMeme()` - Create with daily limit validation
+- `interactWithMeme()` - Record pick/reject with duplicate check
+- `getUserSubmittedMemes()` - Get user's submissions
+- `getUserMemeStats()` - User statistics
+- `getDailyStats()` - Leaderboard data
+- `getTopDailyMeme()` - Most picked meme of the day
+- `canUserSubmitToday()` - Token availability check
+- **Validation**: Daily submission limits, image URL validation, duplicate detection
+
+#### 4. **State Management** (`src/lib/stores/meme.store.svelte.ts`)
+Svelte 5 runes-based reactive store:
+- `availableMemes` - Array of voteable memes
+- `currentMeme` - Derived value for current card
+- `currentMemeIndex` - Position in queue
+- `isLoading`, `isSubmitting`, `isInteracting` - State flags
+- `error`, `submissionError` - Error messages
+- `userStats` - Cached user statistics
+- `canSubmitToday`, `tokensRemaining` - Token tracking
+
+**Key Methods**:
+- `loadAvailableMemes(limit)` - Fetch queue
+- `submitMeme(data)` - Submit with validation
+- `pickCurrentMeme()` / `rejectCurrentMeme()` - Interact and advance
+- `interactWithCurrentMeme(type)` - Internal interaction handler
+- `updateTokenStatus()` - Refresh daily limits
+- `initialize()` - Load all initial data
+
+#### 5. **UI Components**
+
+**MemeCard** (`src/lib/components/features/memes/MemeCard.svelte`)
+- Full-screen image display with loading/error states
+- Statistics overlay (total picks/rejects)
+- Pick/reject action buttons (with fallback for touch)
+- Image loading spinner animation
+- Error display with URL for debugging
+- Responsive design
+
+**MemeSubmissionForm** (`src/lib/components/features/memes/MemeSubmissionForm.svelte`)
+- Image URL input with validation
+- Live image preview with loading indicator
+- Alt text field (accessibility)
+- Daily token status banner
+- Submission guidelines
+- Submit/Cancel buttons with loading state
+- Error messages with inline field errors
+
+#### 6. **Routes & Pages**
+
+**Layout** (`src/routes/memeball/+layout.svelte`)
+- Independent layout (no main app navigation)
+- Dark space-themed background (gradient + nebula effects)
+- User avatar menu in top-left
+- Menu options: View Memes, Submit Meme, Exit to Q&A, Logout
+- Authentication guard (redirects to login if not authenticated)
+
+**Boot Sequence** (`src/routes/memeball/+page.svelte`)
+- Swipeable transmission cards (intro flow)
+- Story-driven onboarding with thematic messages
+- Left/Right swipe directives for navigation
+- End state with CTA to main meme viewer
+
+**Main Viewer** (`src/routes/memeball/main/+page.svelte`)
+- Full-screen swipeable meme interface
+- SwipeCard component for Tinder-like UX
+- Progress indicator (Meme N of M)
+- User statistics (picks today, tokens remaining)
+- Floating Action Button for submission
+- Empty state when queue exhausted
+- Loading and error states
+- Toast notifications for feedback
+
+**Submission Page** (`src/routes/memeball/add/+page.svelte`)
+- Back button navigation
+- Daily token status banner
+- Form with image URL, alt text, guidelines
+- Image preview with loading state
+- Error handling per submission status:
+  - Daily limit reached
+  - Duplicate detected
+  - Invalid image
+- Success redirect to main viewer
+
+#### 7. **Database Schema** (`src/lib/server/db/schema.sql`)
+```sql
+CREATE TABLE IF NOT EXISTS memes (
+  id TEXT PRIMARY KEY,
+  content_hash TEXT UNIQUE NOT NULL,  -- SHA-256 of image content
+  image_url TEXT NOT NULL,
+  alt_text TEXT,
+  submitted_by TEXT NOT NULL,
+  submitted_at TEXT NOT NULL,
+  width INTEGER,
+  height INTEGER,
+  is_animated BOOLEAN DEFAULT FALSE,
+  frame_count INTEGER,
+  FOREIGN KEY (submitted_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS meme_interactions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  meme_id TEXT NOT NULL,
+  interaction_type TEXT NOT NULL CHECK(interaction_type IN ('pick', 'reject')),
+  interacted_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (meme_id) REFERENCES memes(id) ON DELETE CASCADE,
+  UNIQUE(user_id, meme_id)
+);
+```
+
+#### 8. **Seed Data** (`scripts/d1-seed.sql`)
+- 5 sample memes with real image URLs
+- 7 sample interactions across users
+- Pre-populated data for testing
+
+#### 9. **Integration Points**
+
+**DI Container** (`src/lib/config/di-container.ts`)
+- Added `MemeService` singleton
+- Added meme repository factory methods
+- Integrated with existing service instantiation pattern
+
+**Repository Factory** (`src/lib/repositories/factory.ts`)
+- Added `createMemeBallRepository()` method
+- Returns `MockMemeBallRepository` for mock mode
+- Throws error for sqlite/d1 (to be implemented)
+
+**App Config** (`src/lib/config/app.config.ts`)
+- Storage type set to `'mock'` (for development)
+- Demonstrates separation from Q&A feature
+
+### Key Design Principles:
+
+1. **Feature Isolation**: Memeball is completely independent from Q&A
+2. **Hash-Based Identity**: Uses content hash, not text hash (different from Q&A)
+3. **Daily Tokens**: Simple rate limiting (1 per day)
+4. **User-Centric**: Excludes own submissions and already-voted memes
+5. **Statistics**: Tracks interaction history for leaderboards
+6. **Type Safety**: Full TypeScript coverage
+7. **Responsive**: Works on mobile with touch swipe support
+
+### Benefits:
+✅ **Separate System**: Fully independent from Q&A architecture  
+✅ **Swipeable UX**: Modern card-based interaction  
+✅ **Space Theme**: Immersive, differentiated experience  
+✅ **Daily Limits**: Prevents spam, encourages regular visits  
+✅ **Statistics**: Enables leaderboard features  
+✅ **Extensible**: Ready for D1 and API implementations  
+✅ **Type-Safe**: Full TypeScript with strict types  
+✅ **Tested**: Mock data enables feature validation  
+
+### Next Steps (Future Development):
+- [ ] Implement D1MemeBallRepository for production database
+- [ ] Add APIMemeBallRepository for client-side access
+- [ ] Implement meme search and filtering
+- [ ] Add leaderboard page (top memes by day/week/all-time)
+- [ ] Implement user meme analytics dashboard
+- [ ] Add meme gallery page for viewing all submissions
+- [ ] Support for animated memes (GIFs)
+- [ ] Image upload directly to storage (vs URL only)
+- [ ] Content moderation and flagging
+- [ ] Social features (sharing, favoriting)
+
+---
+
 ## Development Commands
 
 ```bash
@@ -456,3 +660,221 @@ storage: {
   apiBaseUrl: '/api'  // Relative URL (same SvelteKit app)
 }
 ```
+
+---
+
+## Feature Reference Summary
+
+This section provides a quick reference for the implemented features and their locations.
+
+### Core Features
+
+| Feature | Location | Status | Notes |
+|---------|----------|--------|-------|
+| User Registration | `/onboard` | ✅ | Email validation, username uniqueness |
+| User Login | `/login` | ✅ | Email-based authentication |
+| User Profiles | `/profile/[userId]` | ✅ | View other users, public answers only |
+| Question Creation | `/questions/new` | ✅ | 2-6 choices, image optional |
+| Question Browsing | `/questions` | ✅ | Sorted (newest/popular), paginated (20/page) |
+| Answer Submission | Via question card | ✅ | Visibility toggle (public/private) |
+| Answer Aggregates | On question detail | ✅ | Progress bars, percentages |
+| Direct Messaging | `/dm` | ✅ | Send/receive private questions |
+| Memeball (Memes) | `/memeball` | ✅ | Swipeable meme voting system |
+| Meme Submission | `/memeball/add` | ✅ | Daily token (1 per day) |
+| Database Test UI | `/tests` | ✅ | Debug database state |
+
+### Architecture Layers
+
+| Layer | Location | Purpose |
+|-------|----------|---------|
+| UI Components | `src/lib/components/` | Svelte 5 components with runes |
+| Services | `src/lib/services/` | Business logic (validation, orchestration) |
+| Repositories | `src/lib/repositories/` | Data access abstraction |
+| Storage | `src/lib/server/` | Database and server-side code |
+| State Mgmt | `src/lib/stores/` | Svelte 5 runes-based stores (.svelte.ts) |
+| Routes | `src/routes/` | SvelteKit pages and API endpoints |
+| Models | `src/lib/models/` | Domain models and DTOs |
+| Config | `src/lib/config/` | DI container, app configuration |
+
+### Key Services
+
+| Service | File | Key Methods |
+|---------|------|-------------|
+| AuthService | `auth.service.ts` | `register()`, `login()`, `logout()`, `getCurrentUser()` |
+| UserService | `user.service.ts` | `getAllUsers()`, `getUserById()`, `getUserByEmail()` |
+| QuestionService | `question.service.ts` | `getPublicQuestions()`, `createQuestion()`, `getPublicQuestionsPaginated()` |
+| AnswerService | `answer.service.ts` | `submitAnswer()`, `getAnswersByQuestion()`, `updateVisibility()` |
+| AggregateService | `aggregate.service.ts` | `getAggregates()`, `getAggregateByQuestion()` |
+| ProfileService | `profile.service.ts` | `getUserProfile()`, `getUserPublicAnswers()` |
+| DMService | `dm.service.ts` | `createDMQuestion()`, `getDMQuestions()`, `answerDMQuestion()` |
+| MemeService | `meme.service.ts` | `getAvailableMemesForUser()`, `submitMeme()`, `interactWithMeme()` |
+
+### State Stores
+
+| Store | File | Purpose |
+|-------|------|---------|
+| Auth | `auth.store.svelte.ts` | Current user, login state |
+| Questions | `questions.store.svelte.ts` | Question feed with pagination |
+| DM | `dm.store.svelte.ts` | DM inbox and sent messages |
+| Memeball | `meme.store.svelte.ts` | Meme queue and voting state |
+
+### API Endpoints (40+ total)
+
+**Users** (7 endpoints):
+- `GET /api/users` - List all users
+- `POST /api/users` - Register new user
+- `GET /api/users/[id]` - Get user by ID
+- `GET /api/users/email/[email]` - Find by email (login)
+- `GET /api/users/username/[username]` - Check username availability
+
+**Questions** (4 endpoints):
+- `GET /api/questions` - List questions (supports `?page=&limit=&creatorId=&sort=`)
+- `POST /api/questions` - Create question
+- `GET /api/questions/[id]` - Get question by ID
+- `DELETE /api/questions/[id]` - Delete question
+
+**Answers** (5 endpoints):
+- `GET /api/answers` - List answers (supports `?userId=&questionId=&publicOnly=`)
+- `POST /api/answers` - Submit answer
+- `GET /api/answers/[id]` - Get answer by ID
+- `PUT /api/answers/[id]` - Update answer visibility
+- `DELETE /api/answers/[id]` - Delete answer
+
+**Direct Messages** (5 endpoints):
+- `GET /api/dm/questions` - List DM questions (supports `?userId=&sent=true|false`)
+- `POST /api/dm/questions` - Create DM question
+- `GET /api/dm/questions/[id]` - Get DM question by ID
+- `GET /api/dm/answers` - Get DM answers (requires `?questionId=`)
+- `POST /api/dm/answers` - Answer DM question
+
+### Database Tables (10 total)
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| users | User accounts | id, email, username, password, created_at |
+| public_questions | Q&A questions | id, text, created_by, created_at, image_hash_id |
+| question_choices | Question options | id, question_id, text, order_index |
+| question_images | Question images | id, image_url, uploaded_at |
+| public_answers | User answers | id, user_id, question_id, choice_id, visibility |
+| dm_questions | Private questions | id, text, from_user_id, to_user_id, created_at |
+| dm_question_choices | DM options | id, dm_question_id, text, order_index |
+| dm_answers | Private answers | id, dm_question_id, user_id, choice_id, text_answer |
+| memes | Meme submissions | id, content_hash, image_url, alt_text, submitted_by |
+| meme_interactions | Meme votes | id, user_id, meme_id, interaction_type, interacted_at |
+
+### Environment Configuration
+
+| Setting | Dev Mode | Production |
+|---------|----------|------------|
+| Storage Type | `'mock'` or `'api'` | `'api'` |
+| Database | SQLite (local) | D1 (Cloudflare) |
+| API Base URL | `/api` | `/api` |
+| Environment | `NODE_ENV=development` | `NODE_ENV=production` |
+
+### File Organization
+
+```
+src/
+├── lib/
+│   ├── models/              # Domain models and DTOs
+│   ├── repositories/        # Data access layer
+│   │   ├── interfaces/      # Repository contracts
+│   │   └── implementations/ # Mock, API, SQLite, D1
+│   ├── services/            # Business logic layer
+│   ├── stores/              # Svelte 5 state management
+│   ├── components/          # UI components
+│   │   ├── features/        # Domain-specific components
+│   │   ├── ui/              # shadcn-svelte primitives
+│   │   └── layout/          # Layout components
+│   ├── config/              # DI container, app config
+│   ├── utils/               # Utilities (formatting, validation, error handling)
+│   ├── hooks/               # Svelte lifecycle hooks
+│   └── server/              # Server-only code
+│       ├── db/              # Database and schema
+│       └── repositories/    # Server-side repositories
+├── routes/                  # SvelteKit pages and API
+│   ├── api/                 # REST API endpoints
+│   ├── questions/           # Q&A features
+│   ├── profile/             # User profiles
+│   ├── dm/                  # Direct messaging
+│   ├── memeball/            # Meme voting system
+│   ├── login/               # Authentication
+│   └── onboard/             # User registration
+```
+
+### Quick Development Checklist
+
+- [ ] **Adding a new feature**: Create model → repository interface → implementation → service → store → components → routes
+- [ ] **Database migration**: Update `schema.sql` → regenerate migrations → test with seed data
+- [ ] **Adding a new service method**: Update interface → implement → register in DI container
+- [ ] **Creating API endpoint**: Create route → implement logic → test with curl/Postman
+- [ ] **Adding UI component**: Use Svelte 5 runes → import shadcn-svelte → connect to store
+- [ ] **Error handling**: Use `AppError` with typed `ErrorCode` → display via toast
+- [ ] **State management**: Use `.svelte.ts` files with `$state` for reactivity
+- [ ] **Type safety**: Export types from models → use throughout application
+
+### Technology Stack Summary
+
+| Category | Technology | Version |
+|----------|-----------|---------|
+| Frontend | SvelteKit | Latest |
+| UI Framework | Svelte 5 | Latest (with runes) |
+| Language | TypeScript | 5.0+ |
+| Component Library | shadcn-svelte | Latest |
+| State Management | Svelte 5 Runes | Built-in |
+| Backend | SvelteKit Routes | +server.ts |
+| Database | SQLite / D1 | better-sqlite3 / Cloudflare |
+| Package Manager | pnpm | Latest |
+| Build Tool | Vite | Latest |
+| Notifications | svelte-sonner | Latest |
+| Icons | lucide-svelte | Latest |
+
+### Common Patterns
+
+**Creating a New Feature**:
+1. Define model in `lib/models/feature.model.ts`
+2. Create interface in `lib/repositories/interfaces/IFeatureRepository.ts`
+3. Implement mock in `lib/repositories/implementations/mock/MockFeatureRepository.ts`
+4. Create service in `lib/services/feature.service.ts`
+5. Create store in `lib/stores/feature.store.svelte.ts`
+6. Build components in `lib/components/features/feature/`
+7. Create routes in `src/routes/feature/`
+8. Register service in `lib/config/di-container.ts`
+
+**Error Handling**:
+```typescript
+try {
+  const result = await service.doSomething();
+} catch (error) {
+  const message = error instanceof Error ? error.message : 'Unknown error';
+  toast.error(message);
+}
+```
+
+**Using Services**:
+```typescript
+import DIContainer from '$lib/config/di-container';
+
+const service = DIContainer.getFeatureService();
+const data = await service.getData();
+```
+
+**Reactive State**:
+```typescript
+// In .svelte.ts files only
+let count = $state(0);
+let doubled = $derived(count * 2);
+
+$effect(() => {
+  console.log('Count changed to:', count);
+});
+```
+
+---
+
+**Last Updated**: November 14, 2025  
+**Total Phases Completed**: 6  
+**Total Features**: 11+  
+**Total API Endpoints**: 40+  
+**Total Database Tables**: 10  
+**Lines of Code**: 5000+

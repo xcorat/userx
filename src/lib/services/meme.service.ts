@@ -8,11 +8,9 @@ import type {
 	MemeInteraction,
 	CreateMemeInteractionDTO,
 	UserMemeStats,
-	DailyMemeStats,
-	MemeInteractionType,
-	MemeSubmissionStatus
+	DailyMemeStats
 } from '$lib/models/meme.model';
-import { MemeInteractionType } from '$lib/models/meme.model';
+import { MemeInteractionType, MemeSubmissionStatus } from '$lib/models/meme.model';
 import { AppError, ErrorCode } from '$lib/utils/error-handling';
 
 export class MemeService {
