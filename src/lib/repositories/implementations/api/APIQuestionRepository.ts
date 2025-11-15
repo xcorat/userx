@@ -1,6 +1,6 @@
 // API Question Repository
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
-import type { PublicQuestion, CreateQuestionDTO } from '$lib/models';
+import type { PublicQuestion, CreateQuestionDTO, QuestionImage } from '$lib/models';
 import { appConfig } from '$lib/config/app.config';
 
 const API_BASE = appConfig.storage.apiBaseUrl || '/api';
@@ -84,5 +84,15 @@ export class APIQuestionRepository implements IQuestionRepository {
 			method: 'DELETE'
 		});
 		await this.handleResponse(response);
+	}
+
+	async findImageByQuestion(questionId: string): Promise<QuestionImage | null> {
+		const response = await fetch(`${API_BASE}/questions/${questionId}/image`);
+		if (response.status === 404) return null;
+		const image = await this.handleResponse<any>(response);
+		return {
+			...image,
+			uploadedAt: new Date(image.uploadedAt)
+		};
 	}
 }

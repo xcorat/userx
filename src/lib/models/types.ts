@@ -22,3 +22,9 @@ export type AnswerAggregate = {
 	count: number;
 	percentage: number;
 };
+
+export type QuestionImage = {
+	hashId: string;        // Unique identifier (e.g., "img_abc123")
+	imageUrl: string;      // For now: external URL to the image
+	uploadedAt: Date;      // When the image was stored
+};

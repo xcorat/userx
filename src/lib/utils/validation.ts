@@ -76,3 +76,46 @@ export function validateUsername(username: string): void {
 		);
 	}
 }
+
+export function validateImageUrl(url: string): void {
+	if (!url || url.trim().length === 0) {
+		throw new AppError(ErrorCode.VALIDATION_ERROR, 'Image URL is required');
+	}
+	if (url.length > appConfig.features.maxImageUrlLength) {
+		throw new AppError(
+			ErrorCode.VALIDATION_ERROR,
+			`Image URL must be ${appConfig.features.maxImageUrlLength} characters or less`
+		);
+	}
+
+	// Validate URL format
+	try {
+		const urlObj = new URL(url);
+		if (!['http:', 'https:'].includes(urlObj.protocol)) {
+			throw new AppError(ErrorCode.VALIDATION_ERROR, 'Image URL must use HTTP or HTTPS protocol');
+		}
+	} catch (e) {
+		throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid image URL format');
+	}
+
+	// Check allowed domains if configured
+	const allowedDomains = appConfig.features.allowedImageDomains;
+	if (allowedDomains && allowedDomains.length > 0) {
+		try {
+			const urlObj = new URL(url);
+			const hostname = urlObj.hostname.toLowerCase();
+			const isAllowed = allowedDomains.some(domain => 
+				hostname === domain.toLowerCase() || hostname.endsWith('.' + domain.toLowerCase())
+			);
+			if (!isAllowed) {
+				throw new AppError(
+					ErrorCode.VALIDATION_ERROR, 
+					`Image URL must be from allowed domains: ${allowedDomains.join(', ')}`
+				);
+			}
+		} catch (e) {
+			if (e instanceof AppError) throw e;
+			throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid image URL format');
+		}
+	}
+}

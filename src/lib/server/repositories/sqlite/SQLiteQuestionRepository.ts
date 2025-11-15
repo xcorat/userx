@@ -1,6 +1,6 @@
 // SQLite Question Repository
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
-import type { PublicQuestion, CreateQuestionDTO, QuestionChoice } from '$lib/models';
+import type { PublicQuestion, CreateQuestionDTO, QuestionChoice, QuestionImage } from '$lib/models';
 import { AppError, ErrorCode } from '$lib/utils/error-handling';
 import type Database from 'better-sqlite3';
 
@@ -15,7 +15,7 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 
 	async findAll(): Promise<PublicQuestion[]> {
 		const stmt = this.db.prepare(`
-			SELECT id, text, created_by as createdBy, created_at as createdAt
+			SELECT id, text, COALESCE(image_hash_id, NULL) as imageHashId, created_by as createdBy, created_at as createdAt
 			FROM public_questions
 			ORDER BY created_at DESC
 		`);
@@ -29,6 +29,7 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 				id: row.id,
 				text: row.text,
 				choices,
+				imageHashId: row.imageHashId || undefined,
 				createdBy: row.createdBy,
 				createdAt: new Date(row.createdAt)
 			});
@@ -39,7 +40,7 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 
 	async findById(id: string): Promise<PublicQuestion | null> {
 		const stmt = this.db.prepare(`
-			SELECT id, text, created_by as createdBy, created_at as createdAt
+			SELECT id, text, COALESCE(image_hash_id, NULL) as imageHashId, created_by as createdBy, created_at as createdAt
 			FROM public_questions
 			WHERE id = ?
 		`);
@@ -53,6 +54,7 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 			id: row.id,
 			text: row.text,
 			choices,
+			imageHashId: row.imageHashId || undefined,
 			createdBy: row.createdBy,
 			createdAt: new Date(row.createdAt)
 		};
@@ -60,7 +62,7 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 
 	async findByCreator(userId: string): Promise<PublicQuestion[]> {
 		const stmt = this.db.prepare(`
-			SELECT id, text, created_by as createdBy, created_at as createdAt
+			SELECT id, text, COALESCE(image_hash_id, NULL) as imageHashId, created_by as createdBy, created_at as createdAt
 			FROM public_questions
 			WHERE created_by = ?
 			ORDER BY created_at DESC
@@ -75,6 +77,7 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 				id: row.id,
 				text: row.text,
 				choices,
+				imageHashId: row.imageHashId || undefined,
 				createdBy: row.createdBy,
 				createdAt: new Date(row.createdAt)
 			});
@@ -86,6 +89,7 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 	async create(data: CreateQuestionDTO): Promise<PublicQuestion> {
 		const questionId = this.generateId();
 		const now = new Date().toISOString();
+		let imageHashId: string | null = null;
 
 		// Validate required fields
 		if (!data.text?.trim() || !data.createdBy) {
@@ -96,13 +100,31 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 			throw new AppError(ErrorCode.VALIDATION_ERROR, 'At least one choice is required');
 		}
 
-		// Insert question
+		// Insert question FIRST (without image reference)
 		const insertQuestion = this.db.prepare(`
-			INSERT INTO public_questions (id, text, created_by, created_at)
-			VALUES (?, ?, ?, ?)
+			INSERT INTO public_questions (id, text, image_hash_id, created_by, created_at)
+			VALUES (?, ?, ?, ?, ?)
 		`);
 
-		insertQuestion.run(questionId, data.text, data.createdBy, now);
+		insertQuestion.run(questionId, data.text, null, data.createdBy, now);
+
+		// Handle image if provided - INSERT AFTER question exists
+		if (data.imageUrl) {
+			imageHashId = 'img_' + this.generateId();
+			
+			// Insert image record (content-addressed, no FK constraint)
+			const insertImage = this.db.prepare(`
+				INSERT INTO question_images (id, image_url, uploaded_at)
+				VALUES (?, ?, ?)
+			`);
+			insertImage.run(imageHashId, data.imageUrl, now);
+
+			// Update question with image_hash_id
+			const updateQuestion = this.db.prepare(`
+				UPDATE public_questions SET image_hash_id = ? WHERE id = ?
+			`);
+			updateQuestion.run(imageHashId, questionId);
+		}
 
 		// Insert choices
 		const insertChoice = this.db.prepare(`
@@ -132,7 +154,33 @@ export class SQLiteQuestionRepository implements IQuestionRepository {
 		}
 	}
 
-	private getChoices(questionId: string) {
+	async findImageByQuestion(questionId: string): Promise<QuestionImage | null> {
+		// First get the question to find its image_hash_id
+		const questionStmt = this.db.prepare(`
+			SELECT image_hash_id FROM public_questions WHERE id = ?
+		`);
+		const questionRow = questionStmt.get(questionId) as any;
+		
+		if (!questionRow?.image_hash_id) return null;
+		
+		// Then get the image by its hash ID
+		const imageStmt = this.db.prepare(`
+			SELECT id as hashId, image_url as imageUrl, uploaded_at as uploadedAt
+			FROM question_images
+			WHERE id = ?
+		`);
+		
+		const row = imageStmt.get(questionRow.image_hash_id) as any;
+		if (!row) return null;
+
+		return {
+			hashId: row.hashId,
+			imageUrl: row.imageUrl,
+			uploadedAt: new Date(row.uploadedAt)
+		};
+	}
+
+	private getChoices(questionId: string): QuestionChoice[] {
 		const stmt = this.db.prepare(`
 			SELECT id, text, order_index as "order"
 			FROM question_choices

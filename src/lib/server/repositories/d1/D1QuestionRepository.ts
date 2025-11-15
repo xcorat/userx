@@ -1,6 +1,6 @@
 // D1 Question Repository
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
-import type { PublicQuestion, CreateQuestionDTO, QuestionChoice } from '$lib/models';
+import type { PublicQuestion, CreateQuestionDTO, QuestionChoice, QuestionImage } from '$lib/models';
 import { AppError, ErrorCode } from '$lib/utils/error-handling';
 
 export class D1QuestionRepository implements IQuestionRepository {
@@ -12,9 +12,9 @@ export class D1QuestionRepository implements IQuestionRepository {
 
 	async findAll(): Promise<PublicQuestion[]> {
 		const { results: rows } = await this.db.prepare(`
-			SELECT id, text, created_by as createdBy, created_at as createdAt
-			FROM public_questions
-			ORDER BY created_at DESC
+			SELECT pq.id, pq.text, pq.image_hash_id as imageHashId, pq.created_by as createdBy, pq.created_at as createdAt
+			FROM public_questions pq
+			ORDER BY pq.created_at DESC
 		`).all();
 		
 		const questions: PublicQuestion[] = [];
@@ -25,6 +25,7 @@ export class D1QuestionRepository implements IQuestionRepository {
 				id: row.id as string,
 				text: row.text as string,
 				choices,
+				imageHashId: (row.imageHashId as string) || undefined,
 				createdBy: row.createdBy as string,
 				createdAt: new Date(row.createdAt as string)
 			});
@@ -35,9 +36,9 @@ export class D1QuestionRepository implements IQuestionRepository {
 
 	async findById(id: string): Promise<PublicQuestion | null> {
 		const row = await this.db.prepare(`
-			SELECT id, text, created_by as createdBy, created_at as createdAt
-			FROM public_questions
-			WHERE id = ?
+			SELECT pq.id, pq.text, pq.image_hash_id as imageHashId, pq.created_by as createdBy, pq.created_at as createdAt
+			FROM public_questions pq
+			WHERE pq.id = ?
 		`).bind(id).first();
 		
 		if (!row) return null;
@@ -48,6 +49,7 @@ export class D1QuestionRepository implements IQuestionRepository {
 			id: row.id as string,
 			text: row.text as string,
 			choices,
+			imageHashId: (row.imageHashId as string) || undefined,
 			createdBy: row.createdBy as string,
 			createdAt: new Date(row.createdAt as string)
 		};
@@ -55,10 +57,10 @@ export class D1QuestionRepository implements IQuestionRepository {
 
 	async findByCreator(userId: string): Promise<PublicQuestion[]> {
 		const { results: rows } = await this.db.prepare(`
-			SELECT id, text, created_by as createdBy, created_at as createdAt
-			FROM public_questions
-			WHERE created_by = ?
-			ORDER BY created_at DESC
+			SELECT pq.id, pq.text, pq.image_hash_id as imageHashId, pq.created_by as createdBy, pq.created_at as createdAt
+			FROM public_questions pq
+			WHERE pq.created_by = ?
+			ORDER BY pq.created_at DESC
 		`).bind(userId).all();
 		
 		const questions: PublicQuestion[] = [];
@@ -69,6 +71,7 @@ export class D1QuestionRepository implements IQuestionRepository {
 				id: row.id as string,
 				text: row.text as string,
 				choices,
+				imageHashId: (row.imageHashId as string) || undefined,
 				createdBy: row.createdBy as string,
 				createdAt: new Date(row.createdAt as string)
 			});
@@ -80,12 +83,24 @@ export class D1QuestionRepository implements IQuestionRepository {
 	async create(data: CreateQuestionDTO): Promise<PublicQuestion> {
 		const questionId = this.generateId();
 		const now = new Date().toISOString();
+		let imageHashId: string | null = null;
+
+		// Handle image if provided
+		if (data.imageUrl) {
+			imageHashId = 'img_' + this.generateId();
+			
+			// Insert image record
+			await this.db.prepare(`
+				INSERT INTO question_images (id, question_id, image_url, uploaded_at)
+				VALUES (?, ?, ?, ?)
+			`).bind(imageHashId, questionId, data.imageUrl, now).run();
+		}
 
 		// Insert question
 		await this.db.prepare(`
-			INSERT INTO public_questions (id, text, created_by, created_at)
-			VALUES (?, ?, ?, ?)
-		`).bind(questionId, data.text, data.createdBy, now).run();
+			INSERT INTO public_questions (id, text, image_hash_id, created_by, created_at)
+			VALUES (?, ?, ?, ?, ?)
+		`).bind(questionId, data.text, imageHashId, data.createdBy, now).run();
 
 		// Insert choices
 		for (let i = 0; i < data.choices.length; i++) {
@@ -93,7 +108,7 @@ export class D1QuestionRepository implements IQuestionRepository {
 			await this.db.prepare(`
 				INSERT INTO question_choices (id, question_id, text, order_index)
 				VALUES (?, ?, ?, ?)
-			`).bind(choiceId, questionId, data.choices[i], i).run();
+			`).bind(choiceId, questionId, data.choices[i].text, i).run();
 		}
 
 		const question = await this.findById(questionId);
@@ -110,6 +125,22 @@ export class D1QuestionRepository implements IQuestionRepository {
 		if (!result.success || result.meta.changes === 0) {
 			throw new AppError(ErrorCode.NOT_FOUND, 'Question not found');
 		}
+	}
+
+	async findImageByQuestion(questionId: string): Promise<QuestionImage | null> {
+		const row = await this.db.prepare(`
+			SELECT id as hashId, image_url as imageUrl, uploaded_at as uploadedAt
+			FROM question_images
+			WHERE question_id = ?
+		`).bind(questionId).first();
+		
+		if (!row) return null;
+
+		return {
+			hashId: row.hashId as string,
+			imageUrl: row.imageUrl as string,
+			uploadedAt: new Date(row.uploadedAt as string)
+		};
 	}
 
 	private async getChoices(questionId: string): Promise<QuestionChoice[]> {

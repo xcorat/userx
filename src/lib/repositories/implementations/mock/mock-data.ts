@@ -55,6 +55,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q1_c3', text: 'Social gathering', order: 2 },
 			{ id: 'q1_c4', text: 'Creative projects', order: 3 }
 		],
+		imageHashId: 'img_weekend',
 		createdBy: 'user_1',
 		createdAt: new Date('2024-03-01')
 	},
@@ -102,6 +103,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q5_c2', text: 'Mountain getaway', order: 1 },
 			{ id: 'q5_c3', text: 'City exploration', order: 2 }
 		],
+		imageHashId: 'img_nature',
 		createdBy: 'user_2',
 		createdAt: new Date('2024-03-12')
 	},
@@ -138,6 +140,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q8_c3', text: 'Both!', order: 2 },
 			{ id: 'q8_c4', text: 'Neither', order: 3 }
 		],
+		imageHashId: 'img_pets',
 		createdBy: 'user_1',
 		createdAt: new Date('2024-03-18')
 	}

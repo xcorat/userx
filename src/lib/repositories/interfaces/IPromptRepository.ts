@@ -1,5 +1,5 @@
 // Question Repository Interface
-import type { PublicQuestion, CreateQuestionDTO, QuestionImage } from '$lib/models';
+import type { PublicQuestion, CreateQuestionDTO } from '$lib/models';
 
 export interface IQuestionRepository {
 	findAll(): Promise<PublicQuestion[]>;
@@ -7,5 +7,4 @@ export interface IQuestionRepository {
 	findByCreator(userId: string): Promise<PublicQuestion[]>;
 	create(data: CreateQuestionDTO): Promise<PublicQuestion>;
 	delete(id: string): Promise<void>;
-	findImageByQuestion(questionId: string): Promise<QuestionImage | null>;
 }

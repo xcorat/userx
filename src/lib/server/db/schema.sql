@@ -23,13 +23,22 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE TABLE IF NOT EXISTS public_questions (
   id TEXT PRIMARY KEY,
   text TEXT NOT NULL,
+  image_hash_id TEXT,                 -- Reference to image (nullable for backward compatibility)
   created_by TEXT NOT NULL,
   created_at TEXT NOT NULL,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (image_hash_id) REFERENCES question_images(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_public_questions_created_by ON public_questions(created_by);
 CREATE INDEX IF NOT EXISTS idx_public_questions_created_at ON public_questions(created_at);
+
+-- Question Images table (content-addressed store)
+CREATE TABLE IF NOT EXISTS question_images (
+  id TEXT PRIMARY KEY,                -- hashid (e.g., "img_abc123")
+  image_url TEXT NOT NULL,            -- External URL for now
+  uploaded_at TEXT NOT NULL
+);
 
 -- Question Choices table
 CREATE TABLE IF NOT EXISTS question_choices (

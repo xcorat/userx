@@ -15,6 +15,16 @@
 
 	let aggregates = $state<AggregatesType | null>(null);
 	let isLoadingAggregates = $state(false);
+	let imageUrl = $state<string | null>(null);
+	let isLoadingImage = $state(false);
+	let imageError = $state(false);
+
+	// Load image if present
+	$effect(() => {
+		if (question.imageHashId && !imageUrl && !imageError) {
+			loadImage();
+		}
+	});
 
 	// Load aggregates if user has answered
 	$effect(() => {
@@ -22,6 +32,37 @@
 			loadAggregates();
 		}
 	});
+
+	async function loadImage() {
+		if (!question.imageHashId) return;
+		
+		isLoadingImage = true;
+		try {
+			// Use fetch to call the API route directly
+			const response = await fetch(`/api/questions/${question.id}/image`);
+			if (response.ok) {
+				const image = await response.json();
+				imageUrl = image.imageUrl;
+			} else if (response.status !== 404) {
+				// Only log if it's not a 404 (no image found)
+				console.error('Failed to load question image:', response.statusText);
+				imageError = true;
+			}
+		} catch (error) {
+			console.error('Failed to load question image:', error);
+			imageError = true;
+		} finally {
+			isLoadingImage = false;
+		}
+	}
+
+	function getImageUrl(hashId: string): string {
+		return imageUrl || '';
+	}
+
+	function handleImageError() {
+		imageError = true;
+	}
 
 	async function loadAggregates() {
 		isLoadingAggregates = true;
@@ -44,6 +85,17 @@
 			{/if}
 		</CardDescription>
 	</CardHeader>
+	{#if question.imageHashId}
+		<div class="px-6 pb-4">
+			<img 
+				src={getImageUrl(question.imageHashId)} 
+				alt=""
+				class="w-full max-h-64 object-cover rounded-md"
+				loading="lazy"
+				onerror={handleImageError}
+			/>
+		</div>
+	{/if}
 	<CardContent>
 		{#if question.userAnswered}
 			{#if isLoadingAggregates}

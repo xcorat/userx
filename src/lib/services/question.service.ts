@@ -6,7 +6,8 @@ import { sortQuestions, type SortOption } from '$lib/utils/sorting';
 import {
 	validateQuestionText,
 	validateChoiceText,
-	validateChoicesCount
+	validateChoicesCount,
+	validateImageUrl
 } from '$lib/utils/validation';
 
 export class QuestionService {
@@ -129,6 +130,11 @@ export class QuestionService {
 		data.choices.forEach((choice) => {
 			validateChoiceText(choice.text);
 		});
+
+		// NEW: Validate image if provided
+		if (data.imageUrl) {
+			validateImageUrl(data.imageUrl);
+		}
 
 		return await this.questionRepo.create(data);
 	}

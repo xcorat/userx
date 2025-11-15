@@ -6,7 +6,7 @@ INSERT INTO users (id, username, name, email, password, avatar_url, created_at, 
 INSERT INTO users (id, username, name, email, password, avatar_url, created_at, updated_at) VALUES ('user_3', 'caroldavis', 'Carol Davis', 'carol@example.com', 'password', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carol', '2024-02-01T00:00:00.000Z', '2024-02-01T00:00:00.000Z');
 INSERT INTO users (id, username, name, email, password, avatar_url, created_at, updated_at) VALUES ('user_4', 'davidwilson', 'David Wilson', 'david@example.com', 'password', 'https://api.dicebear.com/7.x/avataaars/svg?seed=David', '2024-02-10T00:00:00.000Z', '2024-02-10T00:00:00.000Z');
 INSERT INTO users (id, username, name, email, password, avatar_url, created_at, updated_at) VALUES ('user_5', 'emmabrown', 'Emma Brown', 'emma@example.com', 'password', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma', '2024-02-15T00:00:00.000Z', '2024-02-15T00:00:00.000Z');
-INSERT INTO public_questions (id, text, created_by, created_at) VALUES ('q_1', 'What''s your ideal weekend activity?', 'user_1', '2024-03-01T00:00:00.000Z');
+INSERT INTO public_questions (id, text, image_hash_id, created_by, created_at) VALUES ('q_1', 'What''s your ideal weekend activity?', 'img_weekend', 'user_1', '2024-03-01T00:00:00.000Z');
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q1_c1', 'q_1', 'Outdoor adventure', 0);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q1_c2', 'q_1', 'Reading at home', 1);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q1_c3', 'q_1', 'Social gathering', 2);
@@ -26,7 +26,7 @@ INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q4_c2
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q4_c3', 'q_4', 'Hip Hop/Rap', 2);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q4_c4', 'q_4', 'Electronic', 3);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q4_c5', 'q_4', 'Jazz/Blues', 4);
-INSERT INTO public_questions (id, text, created_by, created_at) VALUES ('q_5', 'Beach or mountains?', 'user_2', '2024-03-12T00:00:00.000Z');
+INSERT INTO public_questions (id, text, image_hash_id, created_by, created_at) VALUES ('q_5', 'Beach or mountains?', 'img_nature', 'user_2', '2024-03-12T00:00:00.000Z');
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q5_c1', 'q_5', 'Beach vacation', 0);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q5_c2', 'q_5', 'Mountain getaway', 1);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q5_c3', 'q_5', 'City exploration', 2);
@@ -40,11 +40,18 @@ INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q7_c1
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q7_c2', 'q_7', 'Reading', 1);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q7_c3', 'q_7', 'Hands-on practice', 2);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q7_c4', 'q_7', 'Discussion', 3);
-INSERT INTO public_questions (id, text, created_by, created_at) VALUES ('q_8', 'Dogs or cats?', 'user_1', '2024-03-18T00:00:00.000Z');
+INSERT INTO public_questions (id, text, image_hash_id, created_by, created_at) VALUES ('q_8', 'Dogs or cats?', 'img_pets', 'user_1', '2024-03-18T00:00:00.000Z');
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q8_c1', 'q_8', 'Dogs', 0);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q8_c2', 'q_8', 'Cats', 1);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q8_c3', 'q_8', 'Both!', 2);
 INSERT INTO question_choices (id, question_id, text, order_index) VALUES ('q8_c4', 'q_8', 'Neither', 3);
+
+-- Sample question images
+-- Insert sample question images with seeded picsum.photos URLs
+INSERT INTO question_images (id, image_url, uploaded_at) VALUES 
+('img_weekend', 'https://picsum.photos/seed/weekend/400/300', '2024-03-01T00:00:00.000Z'),
+('img_nature', 'https://picsum.photos/seed/beachmountain/400/300', '2024-03-12T00:00:00.000Z'),
+('img_pets', 'https://picsum.photos/seed/pets/400/300', '2024-03-18T00:00:00.000Z');
 INSERT INTO public_answers (id, user_id, question_id, choice_id, visibility, created_at) VALUES ('ans_1', 'user_1', 'q_2', 'q2_c1', 'public', '2024-03-06T00:00:00.000Z');
 INSERT INTO public_answers (id, user_id, question_id, choice_id, visibility, created_at) VALUES ('ans_2', 'user_2', 'q_1', 'q1_c3', 'public', '2024-03-02T00:00:00.000Z');
 INSERT INTO public_answers (id, user_id, question_id, choice_id, visibility, created_at) VALUES ('ans_3', 'user_3', 'q_1', 'q1_c1', 'private', '2024-03-03T00:00:00.000Z');

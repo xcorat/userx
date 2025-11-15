@@ -12,7 +12,16 @@ export const appConfig = {
 		maxQuestionTextLength: 500,
 		maxChoiceTextLength: 100,
 		maxUserNameLength: 100,
-		defaultSortOption: 'newest' as const
+		defaultSortOption: 'newest' as const,
+		enableQuestionImages: true,
+		maxImageUrlLength: 2048,
+		allowedImageDomains: [
+			'imgur.com',
+			'unsplash.com',
+			'pexels.com',
+			'pixabay.com',
+			'picsum.photos'
+		]
 	},
 
 	ui: {

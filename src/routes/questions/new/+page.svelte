@@ -11,6 +11,10 @@
 	import { appConfig } from '$lib/config/app.config';
 
 	let questionText = $state('');
+	let imageUrl = $state('');
+	let imagePreview = $state<string | null>(null);
+	let imageError = $state('');
+	let isLoadingImage = $state(false);
 	let choices = $state<string[]>(['', '']);
 	let isSubmitting = $state(false);
 	let error = $state('');
@@ -34,6 +38,7 @@
 	function validateForm(): boolean {
 		fieldErrors = {};
 		error = '';
+		imageError = '';
 
 		// Validate question text
 		if (!questionText.trim()) {
@@ -47,6 +52,32 @@
 		if (questionText.trim().length > appConfig.features.maxQuestionTextLength) {
 			fieldErrors.questionText = `Question must be no more than ${appConfig.features.maxQuestionTextLength} characters`;
 			return false;
+		}
+
+		// Validate image URL if provided
+		if (imageUrl.trim()) {
+			try {
+				const url = new URL(imageUrl.trim());
+				if (!['http:', 'https:'].includes(url.protocol)) {
+					fieldErrors.imageUrl = 'Image URL must use HTTP or HTTPS protocol';
+					return false;
+				}
+				
+				// Check allowed domains if configured
+				if (appConfig.features.allowedImageDomains?.length > 0) {
+					const hostname = url.hostname.toLowerCase();
+					const isAllowed = appConfig.features.allowedImageDomains.some(domain => 
+						hostname === domain.toLowerCase() || hostname.endsWith('.' + domain.toLowerCase())
+					);
+					if (!isAllowed) {
+						fieldErrors.imageUrl = `Image must be from allowed domains: ${appConfig.features.allowedImageDomains.join(', ')}`;
+						return false;
+					}
+				}
+			} catch (e) {
+				fieldErrors.imageUrl = 'Please enter a valid URL';
+				return false;
+			}
 		}
 
 		// Validate choices
@@ -93,6 +124,7 @@
 			await questionService.createQuestion({
 				text: questionText.trim(),
 				createdBy: authStore.currentUser.id,
+				imageUrl: imageUrl.trim() || undefined,
 				choices: nonEmptyChoices.map((text, index) => ({
 					text: text.trim(),
 					order: index
@@ -109,6 +141,42 @@
 
 	function handleCancel() {
 		goto('/questions');
+	}
+
+	// Image preview handling
+	$effect(() => {
+		if (imageUrl.trim()) {
+			loadImagePreview();
+		} else {
+			imagePreview = null;
+			imageError = '';
+		}
+	});
+
+	async function loadImagePreview() {
+		if (!imageUrl.trim()) return;
+		
+		isLoadingImage = true;
+		imageError = '';
+		
+		try {
+			// Test if image loads
+			const img = new Image();
+			img.onload = () => {
+				imagePreview = imageUrl.trim();
+				isLoadingImage = false;
+			};
+			img.onerror = () => {
+				imageError = 'Failed to load image from this URL';
+				imagePreview = null;
+				isLoadingImage = false;
+			};
+			img.src = imageUrl.trim();
+		} catch (error) {
+			imageError = 'Invalid image URL';
+			imagePreview = null;
+			isLoadingImage = false;
+		}
 	}
 </script>
 
@@ -147,6 +215,45 @@
 						</p>
 					{/if}
 				</div>
+
+				<!-- Optional Image -->
+				{#if appConfig.features.enableQuestionImages}
+					<div class="space-y-2">
+						<Label for="imageUrl">Image URL (Optional)</Label>
+						<Input
+							id="imageUrl"
+							type="url"
+							placeholder="https://example.com/image.jpg"
+							bind:value={imageUrl}
+							disabled={isSubmitting}
+							class={fieldErrors.imageUrl ? 'border-destructive' : ''}
+						/>
+						{#if fieldErrors.imageUrl}
+							<p class="text-sm text-destructive">{fieldErrors.imageUrl}</p>
+						{:else if imageError}
+							<p class="text-sm text-destructive">{imageError}</p>
+						{:else if appConfig.features.allowedImageDomains?.length}
+							<p class="text-xs text-muted-foreground">
+								Allowed domains: {appConfig.features.allowedImageDomains.join(', ')}
+							</p>
+						{/if}
+						
+						<!-- Image Preview -->
+						{#if isLoadingImage}
+							<div class="w-full h-32 bg-muted rounded-md flex items-center justify-center">
+								<span class="text-sm text-muted-foreground">Loading image...</span>
+							</div>
+						{:else if imagePreview}
+							<div class="w-full max-h-48 overflow-hidden rounded-md border">
+								<img 
+									src={imagePreview} 
+									alt=""
+									class="w-full h-auto object-cover"
+								/>
+							</div>
+						{/if}
+					</div>
+				{/if}
 
 				<!-- Answer Choices -->
 				<div class="space-y-4">

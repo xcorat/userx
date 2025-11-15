@@ -5,6 +5,7 @@ export interface PublicQuestion {
 	id: string;
 	text: string;
 	choices: QuestionChoice[];
+	imageHashId?: string;  // Reference to image (stored in separate table)
 	createdBy: string;
 	createdAt: Date;
 }
@@ -12,6 +13,7 @@ export interface PublicQuestion {
 export interface CreateQuestionDTO {
 	text: string;
 	choices: Omit<QuestionChoice, 'id'>[];
+	imageUrl?: string;     // Client provides URL during creation
 	createdBy: string;
 }
 
