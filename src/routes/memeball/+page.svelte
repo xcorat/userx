@@ -325,7 +325,7 @@
 	}
 
 	.swipe-hint {
-		display: flex;
+		display: none;
 		justify-content: space-between;
 		margin-top: 2rem;
 		font-size: 0.8rem;
