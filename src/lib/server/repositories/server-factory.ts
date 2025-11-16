@@ -155,6 +155,12 @@ export class ServerRepositoryFactory {
             return D1RepositoryFactory.getMemeRepository();
         } else if (activeFactory === 'sqlite' && sqliteFactory) {
             return sqliteFactory.getMemeRepository();
+        } else {
+            throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
+        }
+    }
+
+    /**
      * Get Relation Repository
      */
     static getRelationRepository(): IRelationRepository {

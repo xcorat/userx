@@ -102,6 +102,9 @@ export class D1RepositoryFactory {
 			throw new Error('D1RepositoryFactory not initialized. Call initialize() first.');
 		}
 		return this.adapter.memeRepo;
+	}
+
+	/**
 	 * Get Relation Repository
 	 */
 	static getRelationRepository(): IRelationRepository {

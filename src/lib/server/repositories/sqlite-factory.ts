@@ -103,8 +103,9 @@ export class SQLiteRepositoryFactory {
 		}
 		return this.adapter.memeRepo;
 	}
-	 
-	/** Get Relation Repository
+
+	/**
+	 * Get Relation Repository
 	 */
 	static getRelationRepository(): IRelationRepository {
 		if (!this.adapter) {
