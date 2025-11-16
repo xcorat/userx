@@ -53,6 +53,7 @@
 
 	const joinDestination = '/memeball/main';
 	let showExitNotice = $state(false);
+	let showHints = $state(false);
 
 	function attemptShutdown() {
 		if (typeof window === 'undefined') {
@@ -128,10 +129,12 @@
 									<p class="footer-text">{transmission.footer}</p>
 								</Card.Footer>
 							{/if}
-							<div class="swipe-hint">
-								<span class="hint-left">← Abort + Shutdown</span>
-								<span class="hint-right">Accept Briefing →</span>
-							</div>
+							{#if showHints}
+								<div class="swipe-hint">
+									<span class="hint-left">← Abort + Shutdown</span>
+									<span class="hint-right">Accept Briefing →</span>
+								</div>
+							{/if}
 						</div>
 					{/snippet}
 				</SwipeCardStack>

@@ -13,15 +13,15 @@
 	]);
 
 	function handleSwipeLeft(card: any) {
-		// Left swipe handled
+		console.log('Swiped LEFT:', card);
 	}
 
 	function handleSwipeRight(card: any) {
-		// Right swipe handled
+		console.log('Swiped RIGHT:', card);
 	}
 
 	function handleCardsEmpty() {
-		// All cards have been swiped
+		console.log('All cards swiped!');
 	}
 
 	function resetCards() {
