@@ -4,12 +4,10 @@
 	
 	interface Props {
 		meme: MemeWithStats;
-		onPick: () => void;
-		onReject: () => void;
 		disabled?: boolean;
 	}
 
-	let { meme, onPick, onReject, disabled = false }: Props = $props();
+	let { meme, disabled = false }: Props = $props();
 	
 	let imageLoaded = $state(false);
 	let imageError = $state(false);
@@ -69,26 +67,6 @@
 				<span class="stat-label">rejects</span>
 			</div>
 		</div>
-	</div>
-
-	<!-- Swipe action buttons (for non-touch devices) -->
-	<div class="action-buttons">
-		<button
-			class="action-btn reject"
-			onclick={onReject}
-			{disabled}
-			aria-label="Reject meme"
-		>
-			✕
-		</button>
-		<button
-			class="action-btn pick"
-			onclick={onPick}
-			{disabled}
-			aria-label="Pick meme"
-		>
-			♥
-		</button>
 	</div>
 </div>
 
@@ -240,83 +218,14 @@
 		width: 56px;
 		height: 56px;
 		border-radius: 50%;
-		border: 2px solid rgba(255, 255, 255, 0.2);
-		background: rgba(3, 1, 20, 0.8);
-		backdrop-filter: blur(12px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1.5rem;
-		cursor: pointer;
-		transition: all 200ms ease;
-		color: #f8f5ff;
-	}
-
-	.action-btn:hover {
-		transform: scale(1.05);
-		border-color: rgba(255, 255, 255, 0.4);
-	}
-
-	.action-btn:active {
-		transform: scale(0.95);
-	}
-
-	.action-btn.reject {
-		color: #f87171;
-	}
-
-	.action-btn.reject:hover {
-		background: rgba(248, 113, 113, 0.2);
-		border-color: #f87171;
-	}
-
-	.action-btn.pick {
-		color: #10b981;
-	}
-
-	.action-btn.pick:hover {
-		background: rgba(16, 185, 129, 0.2);
-		border-color: #10b981;
-	}
-
-	.action-btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-		transform: none;
-	}
-
-	/* Hide action buttons on touch devices */
-	@media (hover: none) {
-		.action-buttons {
-			display: none;
-		}
-		
-		.meme-info {
-			padding-right: 1.5rem;
-		}
+	.stat-label {
+		font-size: 0.8rem;
+		color: rgba(248, 245, 255, 0.6);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 
 	@media (max-width: 640px) {
-		.meme-info {
-			padding: 1.5rem 1rem 1rem;
-		}
-
-		.meme-alt-text {
-			font-size: 0.8rem;
-			margin-bottom: 0.75rem;
-		}
-
-		.stat {
-			gap: 0.2rem;
-		}
-
-		.stat-value {
-			font-size: 1rem;
-		}
-
-		.stat-label {
-			font-size: 0.7rem;
-		}
 
 		.action-buttons {
 			bottom: 1rem;
@@ -328,6 +237,10 @@
 			width: 48px;
 			height: 48px;
 			font-size: 1.3rem;
+		}
+	}
+</style>		.stat-label {
+			font-size: 0.7rem;
 		}
 	}
 </style>

@@ -2,9 +2,8 @@
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { PublicAnswer, CreateAnswerDTO } from '$lib/models';
 import type { AnswerVisibility } from '$lib/models/types';
-import { appConfig } from '$lib/config/app.config';
 
-const API_BASE = appConfig.storage.apiBaseUrl || '/api';
+const API_BASE = '/api/qna';
 
 export class APIAnswerRepository implements IAnswerRepository {
 	private async handleResponse<T>(response: Response): Promise<T> {

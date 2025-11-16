@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import SwipeCard from '$lib/components/ui/SwipeCard.svelte';
+	import SwipeCardStack from '$lib/components/ui/SwipeCardStack.svelte';
 	import * as Card from '$lib/components/ui/card';
 
 	type Transmission = {
@@ -10,7 +10,7 @@
 		footer?: string;
 	};
 
-	const transmissions: Transmission[] = [
+	let transmissions = $state<Transmission[]>([
 		{
 			id: '001',
 			title: 'Electric Static Breach',
@@ -49,22 +49,12 @@
 			body:
 				'Swipe right to enter the join console and help seal memes for tomorrow. Swipe left to abort and power down your device.'
 		}
-	];
+	]);
 
-	const swipeThreshold = 110;
 	const joinDestination = '/memeball/main';
+	let showExitNotice = $state(false);
 
-	let activeIndex = $state(0);
-	let showExitNotice = $state(false);	function skipBriefing() {
-		goto(joinDestination);
-	}
-
-	function advanceTransmission() {
-		if (activeIndex < transmissions.length - 1) {
-			activeIndex += 1;
-			return;
-		}
-
+	function skipBriefing() {
 		goto(joinDestination);
 	}
 
@@ -88,23 +78,23 @@
 		}, 150);
 	}
 
-	function handleSwipeLeft(data: any) {
+	function handleSwipeLeft(transmission: Transmission) {
 		attemptShutdown();
 	}
 
-	function handleSwipeRight(data: any) {
-		advanceTransmission();
+	function handleSwipeRight(transmission: Transmission) {
+		// Remove current transmission and continue
+		transmissions = transmissions.slice(1);
+		
+		// If all transmissions are done, go to main memeball
+		if (transmissions.length === 0) {
+			goto(joinDestination);
+		}
 	}
 
-	function cardStyles(position: number) {
-		const offset = position - activeIndex;
-		if (offset === 0) {
-			return 'transform: translate3d(0, 0, 0) scale(1); opacity: 1; z-index: 10;';
-		}
-		const scale = 1 - offset * 0.035;
-		const translateY = offset * 8;
-		const opacity = 1 - offset * 0.12;
-		return `transform: translate3d(0, ${translateY}px, 0) scale(${scale}); opacity: ${opacity}; z-index: ${10 - offset};`;
+	function handleCardsEmpty() {
+		// All transmissions completed
+		goto(joinDestination);
 	}
 </script>
 
@@ -118,55 +108,36 @@
 
 	<div class="content">
 		<section class="card-stack" aria-live="polite">
-			{#each transmissions as transmission, index (transmission.id)}
-				{#if index >= activeIndex}
-					<div 
-						class={`card-container ${index === activeIndex ? 'active' : 'queued'}`}
-						style={cardStyles(index)}
-						aria-hidden={index !== activeIndex}
-					>
-						{#if index === activeIndex}
-							<SwipeCard
-								data={transmission}
-								onSwipeLeft={handleSwipeLeft}
-								onSwipeRight={handleSwipeRight}
-								swipeThreshold={110}
-								className="transmission-card-swipe"
-							>
-								<Card.Header>
-									<div class="transmission-code">#{transmission.id}</div>
-									<Card.Title>{transmission.title}</Card.Title>
-								</Card.Header>
-								<Card.Description class="transmission-body">{transmission.body}</Card.Description>
-								{#if transmission.footer}
-									<Card.Footer class="transmission-footer">
-										<p class="footer-text">{transmission.footer}</p>
-									</Card.Footer>
-								{/if}
-								<div class="swipe-hint">
-									<span class="hint-left">← Abort + Shutdown</span>
-									<span class="hint-right">Accept Briefing →</span>
-								</div>
-							</SwipeCard>
-						{:else}
-							<div class="static-card transmission-card">
-								<Card.Root class="static-card-content">
-									<Card.Header>
-										<div class="transmission-code">#{transmission.id}</div>
-										<Card.Title>{transmission.title}</Card.Title>
-									</Card.Header>
-									<Card.Description class="transmission-body">{transmission.body}</Card.Description>
-									{#if transmission.footer}
-										<Card.Footer class="transmission-footer">
-											<p class="footer-text">{transmission.footer}</p>
-										</Card.Footer>
-									{/if}
-								</Card.Root>
+			{#if transmissions.length > 0}
+				<SwipeCardStack
+					bind:cards={transmissions}
+					onSwipeLeft={handleSwipeLeft}
+					onSwipeRight={handleSwipeRight}
+					onCardsEmpty={handleCardsEmpty}
+					swipeThreshold={100}
+					maxVisibleCards={3}
+					className="transmission-stack"
+				>
+					{#snippet children(transmission: Transmission, index: number)}
+						<div class="transmission-card-content">
+							<Card.Header>
+								<div class="transmission-code">#{transmission.id}</div>
+								<Card.Title>{transmission.title}</Card.Title>
+							</Card.Header>
+							<Card.Description class="transmission-body">{transmission.body}</Card.Description>
+							{#if transmission.footer}
+								<Card.Footer class="transmission-footer">
+									<p class="footer-text">{transmission.footer}</p>
+								</Card.Footer>
+							{/if}
+							<div class="swipe-hint">
+								<span class="hint-left">← Abort + Shutdown</span>
+								<span class="hint-right">Accept Briefing →</span>
 							</div>
-						{/if}
-					</div>
-				{/if}
-			{/each}
+						</div>
+					{/snippet}
+				</SwipeCardStack>
+			{/if}
 		</section>
 
 		{#if showExitNotice}
@@ -232,26 +203,7 @@
 		margin: 0 auto;
 	}
 
-	.card-container {
-		position: absolute;
-		inset: 0;
-		transition: transform 250ms ease, opacity 200ms ease;
-		pointer-events: none;
-	}
-
-	.card-container.active {
-		pointer-events: all;
-	}
-
-	:global(.transmission-card-swipe) {
-		background: rgba(3, 1, 20, 0.82) !important;
-		border: 1px solid rgba(255, 255, 255, 0.08) !important;
-		box-shadow: 0 30px 120px rgba(12, 12, 60, 0.45) !important;
-		backdrop-filter: blur(14px);
-		color: #f8f5ff;
-	}
-
-	.transmission-card {
+	.transmission-card-content {
 		width: 100%;
 		height: 100%;
 		padding: 2rem;
@@ -266,18 +218,11 @@
 		color: #f8f5ff;
 	}
 
-	.static-card {
-		cursor: default;
-		touch-action: auto;
-	}
-
-	:global(.static-card-content) {
+	:global(.transmission-stack .card) {
 		background: rgba(3, 1, 20, 0.82) !important;
 		border: 1px solid rgba(255, 255, 255, 0.08) !important;
 		box-shadow: 0 30px 120px rgba(12, 12, 60, 0.45) !important;
 		backdrop-filter: blur(14px);
-		color: #f8f5ff;
-		height: 100%;
 	}
 
 	.transmission-code {
@@ -324,24 +269,6 @@
 		color: rgba(74, 222, 128, 0.8);
 	}
 
-	.swipe-hint {
-		display: none;
-		justify-content: space-between;
-		margin-top: 2rem;
-		font-size: 0.8rem;
-		color: rgba(248, 245, 255, 0.6);
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-	}
-
-	.hint-left {
-		color: rgba(248, 113, 113, 0.8);
-	}
-
-	.hint-right {
-		color: rgba(74, 222, 128, 0.8);
-	}
-
 	.exit-notice {
 		margin-top: 0.5rem;
 		padding: 0.85rem 1rem;
@@ -356,10 +283,6 @@
 		.content {
 			gap: 1rem;
 			padding: 1rem;
-		}
-
-		.transmission-card {
-			padding: 1.5rem;
 		}
 
 		.card-stack {

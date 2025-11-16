@@ -26,7 +26,7 @@
 	}
 
 	function handleNewQuestion() {
-		goto('/questions/new');
+		goto('/qna/questions/new');
 	}
 
 	async function handlePreviousPage() {

@@ -22,6 +22,7 @@ import {
 	APIQuestionRepository,
 	APIAnswerRepository,
 	APIDMRepository,
+	APIMemeBallRepository,
 	APIRelationRepository
 } from './implementations/api';
 
@@ -124,8 +125,7 @@ export class RepositoryFactory {
 			case 'mock':
 				return new MockMemeBallRepository();
 			case 'api':
-				// TODO: Implement APIMemeBallRepository when needed
-				throw new Error('API MemeBall repository not yet implemented');
+				return new APIMemeBallRepository();
 			default:
 				throw new Error(`Unknown storage type: ${this.storageType}`);
 		}

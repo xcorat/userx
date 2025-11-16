@@ -131,7 +131,7 @@
 				}))
 			});
 
-			goto('/questions');
+			goto('/qna/questions');
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to create question';
 		} finally {
@@ -140,10 +140,8 @@
 	}
 
 	function handleCancel() {
-		goto('/questions');
-	}
-
-	// Image preview handling
+		goto('/qna/questions');
+	}	// Image preview handling
 	$effect(() => {
 		if (imageUrl.trim()) {
 			loadImagePreview();

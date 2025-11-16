@@ -153,6 +153,66 @@ class MemeStore {
 	}
 
 	/**
+	 * Pick a specific meme by ID
+	 */
+	async pickMeme(memeId: string) {
+		if (!authStore.currentUser) return;
+
+		this.isInteracting = true;
+		this.error = null;
+
+		try {
+			const memeService = DIContainer.getMemeService();
+			await memeService.interactWithMeme(
+				authStore.currentUser.id,
+				memeId,
+				MemeInteractionType.PICK
+			);
+
+			// Remove meme from available list
+			this.availableMemes = this.availableMemes.filter(m => m.id !== memeId);
+
+			// Update user stats
+			await this.loadUserStats();
+		} catch (e) {
+			this.error = e instanceof Error ? e.message : 'Failed to pick meme';
+			throw e;
+		} finally {
+			this.isInteracting = false;
+		}
+	}
+
+	/**
+	 * Reject a specific meme by ID
+	 */
+	async rejectMeme(memeId: string) {
+		if (!authStore.currentUser) return;
+
+		this.isInteracting = true;
+		this.error = null;
+
+		try {
+			const memeService = DIContainer.getMemeService();
+			await memeService.interactWithMeme(
+				authStore.currentUser.id,
+				memeId,
+				MemeInteractionType.REJECT
+			);
+
+			// Remove meme from available list
+			this.availableMemes = this.availableMemes.filter(m => m.id !== memeId);
+
+			// Update user stats
+			await this.loadUserStats();
+		} catch (e) {
+			this.error = e instanceof Error ? e.message : 'Failed to reject meme';
+			throw e;
+		} finally {
+			this.isInteracting = false;
+		}
+	}
+
+	/**
 	 * Navigate to next meme without interacting
 	 */
 	goToNextMeme() {

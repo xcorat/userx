@@ -131,7 +131,8 @@
 				timezone: timezone.trim() || undefined
 			});
 			
-			goto('/questions');
+						toast.success('Profile updated successfully!');
+			goto('/');
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Signup failed';
 		} finally {

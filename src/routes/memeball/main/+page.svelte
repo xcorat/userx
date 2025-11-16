@@ -2,16 +2,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import SwipeCard from '$lib/components/ui/SwipeCard.svelte';
-	import MemeCard from '$lib/components/features/memes/MemeCard.svelte';
+	import SwipeCardStack from '$lib/components/ui/SwipeCardStack.svelte';
 	import { memeStore } from '$lib/stores/meme.store.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Plus, RefreshCw } from 'lucide-svelte';
+	import { Plus, RefreshCw, Heart, X } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
+	import type { MemeWithStats } from '$lib/models/meme.model';
 
 	let isInitialized = $state(false);
-	let currentMemeElement = $state<HTMLElement | null>(null);
+	let swipeCardStack = $state<any>(null);
 
 	onMount(async () => {
 		// Ensure user is authenticated
@@ -35,24 +35,32 @@
 	});
 
 	// Handle swipe interactions
-	function handleSwipeLeft() {
-		handleReject();
-	}
-
-	function handleSwipeRight() {
-		handlePick();
-	}
-
-	// Handle pick/reject actions
-	async function handlePick() {
-		if (!memeStore.currentMeme || memeStore.isInteracting) return;
+	async function handleSwipeLeft(meme: any, index: number) {
+		if (memeStore.isInteracting) return;
 
 		try {
-			await memeStore.pickCurrentMeme();
+			await memeStore.rejectMeme(meme.id);
+			toast.info('Meme rejected');
+			
+			// Check if we need to load more memes
+			if (memeStore.availableMemes.length < 5) {
+				loadMoreMemes();
+			}
+		} catch (error) {
+			console.error('Failed to reject meme:', error);
+			toast.error('Failed to reject meme. Please try again.');
+		}
+	}
+
+	async function handleSwipeRight(meme: any, index: number) {
+		if (memeStore.isInteracting) return;
+
+		try {
+			await memeStore.pickMeme(meme.id);
 			toast.success('Meme picked! 💖');
 			
 			// Check if we need to load more memes
-			if (memeStore.availableMemes.length < 3) {
+			if (memeStore.availableMemes.length < 5) {
 				loadMoreMemes();
 			}
 		} catch (error) {
@@ -61,21 +69,13 @@
 		}
 	}
 
-	async function handleReject() {
-		if (!memeStore.currentMeme || memeStore.isInteracting) return;
+	// Programmatic swipe actions
+	function swipeLeft() {
+		swipeCardStack?.swipeLeft();
+	}
 
-		try {
-			await memeStore.rejectCurrentMeme();
-			toast.info('Meme rejected');
-			
-			// Check if we need to load more memes
-			if (memeStore.availableMemes.length < 3) {
-				loadMoreMemes();
-			}
-		} catch (error) {
-			console.error('Failed to reject meme:', error);
-			toast.error('Failed to reject meme. Please try again.');
-		}
+	function swipeRight() {
+		swipeCardStack?.swipeRight();
 	}
 
 	// Load more memes
@@ -101,6 +101,12 @@
 			console.error('Failed to refresh memes:', error);
 			toast.error('Failed to refresh memes.');
 		}
+	}
+
+	// Handle when cards are empty
+	function handleCardsEmpty() {
+		toast.info('No more memes! Loading more...');
+		loadMoreMemes();
 	}
 </script>
 
@@ -147,37 +153,75 @@
 				</Button>
 			</div>
 		</div>
-	{:else if memeStore.currentMeme}
+	{:else if memeStore.availableMemes.length > 0}
 		<!-- Main meme display -->
 		<div class="meme-container">
-			<SwipeCard
-				bind:ref={currentMemeElement}
-				data={memeStore.currentMeme}
+			<SwipeCardStack
+				bind:this={swipeCardStack}
+				bind:cards={memeStore.availableMemes}
 				onSwipeLeft={handleSwipeLeft}
 				onSwipeRight={handleSwipeRight}
+				onCardsEmpty={handleCardsEmpty}
 				swipeThreshold={100}
 				disabled={memeStore.isInteracting}
-				className="meme-swipe-card"
+				maxVisibleCards={3}
+				className="meme-swipe-stack"
 			>
-				<MemeCard
-					meme={memeStore.currentMeme}
-					onPick={handlePick}
-					onReject={handleReject}
-					disabled={memeStore.isInteracting}
-				/>
-			</SwipeCard>
+				{#snippet children(meme: MemeWithStats, index: number)}
+					<div class="meme-card-wrapper">
+						<!-- Main meme image -->
+						<img
+							src={meme.imageUrl}
+							alt={meme.altText || 'Meme image'}
+							class="meme-image"
+						/>
+
+						<!-- Meme info overlay (bottom) -->
+						<div class="meme-info">
+							{#if meme.altText}
+								<div class="meme-alt-text">{meme.altText}</div>
+							{/if}
+							
+							<div class="meme-stats">
+								<div class="stat">
+									<span class="stat-value">{meme.totalPicks}</span>
+									<span class="stat-label">picks</span>
+								</div>
+								<div class="stat">
+									<span class="stat-value">{meme.totalRejects}</span>
+									<span class="stat-label">rejects</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				{/snippet}
+			</SwipeCardStack>
 
 			<!-- Progress indicator -->
 			<div class="progress-indicator">
 				<div class="progress-text">
-					Meme {memeStore.currentMemeIndex + 1} of {memeStore.availableMemes.length}
+					{memeStore.availableMemes.length} {memeStore.availableMemes.length === 1 ? 'meme' : 'memes'} remaining
 				</div>
-				<div class="progress-bar">
-					<div 
-						class="progress-fill" 
-						style={`width: ${((memeStore.currentMemeIndex + 1) / memeStore.availableMemes.length) * 100}%`}
-					></div>
-				</div>
+			</div>
+
+			<!-- Action buttons -->
+			<div class="action-buttons">
+				<button
+					class="action-btn reject-btn"
+					onclick={swipeLeft}
+					disabled={memeStore.isInteracting}
+					aria-label="Reject meme"
+				>
+					<X size={28} />
+				</button>
+				<button
+					class="action-btn pick-btn"
+					onclick={swipeRight}
+					disabled={memeStore.isInteracting}
+					aria-label="Pick meme"
+				>
+					<Heart size={28} />
+				</button>
 			</div>
 
 			<!-- Quick stats -->
@@ -321,55 +365,148 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-		max-width: 450px;
-		max-height: 800px;
+		max-width: 500px;
+		max-height: 700px;
 		margin: 0 auto;
 		padding: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
 	}
 
-	:global(.meme-swipe-card) {
-		width: 100% !important;
-		height: 100% !important;
-		border-radius: 24px !important;
-		background: transparent !important;
-		box-shadow: none !important;
+	:global(.meme-swipe-stack) {
+		flex: 1;
+		min-height: 0;
+	}
+
+	/* Meme card styling */
+	.meme-card-wrapper {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		border-radius: 24px;
+		overflow: hidden;
+		background: #000;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.meme-image {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	.meme-info {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+		padding: 2rem 1.5rem 1.5rem;
+		color: #f8f5ff;
+		pointer-events: none;
+	}
+
+	.meme-alt-text {
+		font-size: 0.9rem;
+		line-height: 1.4;
+		margin-bottom: 1rem;
+		color: rgba(248, 245, 255, 0.9);
+	}
+
+	.meme-stats {
+		display: flex;
+		gap: 1.5rem;
+	}
+
+	.stat {
+		display: flex;
+		align-items: baseline;
+		gap: 0.25rem;
+	}
+
+	.stat-value {
+		font-size: 1.1rem;
+		font-weight: 600;
+		color: #f8f5ff;
+	}
+
+	.stat-label {
+		font-size: 0.8rem;
+		color: rgba(248, 245, 255, 0.6);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 
 	/* Progress indicator */
 	.progress-indicator {
-		position: absolute;
-		top: 1.5rem;
-		left: 50%;
-		transform: translateX(-50%);
 		background: rgba(3, 1, 20, 0.8);
 		backdrop-filter: blur(12px);
-		border-radius: 20px;
+		border-radius: 16px;
 		padding: 0.75rem 1.25rem;
 		border: 1px solid rgba(255, 255, 255, 0.1);
-		z-index: 10;
+		text-align: center;
 	}
 
 	.progress-text {
-		font-size: 0.8rem;
+		font-size: 0.875rem;
 		color: rgba(248, 245, 255, 0.8);
-		text-align: center;
-		margin-bottom: 0.5rem;
 		font-weight: 500;
 	}
 
-	.progress-bar {
-		width: 120px;
-		height: 3px;
-		background: rgba(255, 255, 255, 0.2);
-		border-radius: 2px;
-		overflow: hidden;
+	/* Action buttons */
+	.action-buttons {
+		display: flex;
+		gap: 1.5rem;
+		justify-content: center;
+		align-items: center;
 	}
 
-	.progress-fill {
-		height: 100%;
-		background: linear-gradient(90deg, #10b981, #06d6a0);
-		border-radius: 2px;
-		transition: width 300ms ease;
+	.action-btn {
+		width: 64px;
+		height: 64px;
+		border-radius: 50%;
+		border: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 200ms ease;
+		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+		color: white;
+	}
+	/* User stats */
+	.user-stats {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		display: flex;
+		gap: 0.75rem;
+		z-index: 20;
+	}
+	.action-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.reject-btn {
+		background: linear-gradient(135deg, #ef4444, #dc2626);
+		box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
+	}
+
+	.reject-btn:hover:not(:disabled) {
+		box-shadow: 0 12px 24px rgba(239, 68, 68, 0.4);
+	}
+
+	.pick-btn {
+		background: linear-gradient(135deg, #10b981, #059669);
+		box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+	}
+
+	.pick-btn:hover:not(:disabled) {
+		box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
 	}
 
 	/* User stats */
@@ -453,25 +590,43 @@
 	/* Mobile responsiveness */
 	@media (max-width: 640px) {
 		.meme-container {
-			padding: 0.5rem;
+			padding: 0.75rem;
+			max-height: 650px;
 		}
 
-		.progress-indicator {
-			top: 1rem;
-			padding: 0.5rem 1rem;
+		.meme-alt-text {
+			font-size: 0.8rem;
+			margin-bottom: 0.75rem;
 		}
 
-		.progress-text {
+		.stat {
+			gap: 0.2rem;
+		}
+
+		.stat-value {
+			font-size: 1rem;
+		}
+
+		.stat-label {
 			font-size: 0.7rem;
 		}
 
-		.progress-bar {
-			width: 100px;
+		.progress-text {
+			font-size: 0.75rem;
+		}
+
+		.action-buttons {
+			gap: 1rem;
+		}
+
+		.action-btn {
+			width: 56px;
+			height: 56px;
 		}
 
 		.user-stats {
-			top: 1rem;
-			right: 1rem;
+			top: 0.75rem;
+			right: 0.75rem;
 			gap: 0.5rem;
 		}
 

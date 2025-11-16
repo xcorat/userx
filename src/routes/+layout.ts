@@ -17,10 +17,8 @@ export const load = async ({ url }: { url: URL }) => {
 			throw redirect(307, '/');
 		}
 
-		// Redirect to questions feed if authenticated and trying to access public pages
-		if (isAuthenticated && publicPaths.slice(0, 3).includes(url.pathname)) {
-			throw redirect(307, '/questions');
-		}
+		// No automatic redirect for authenticated users - let them choose the app section
+		// Remove the automatic redirect to /questions
 	}
 
 	return {};

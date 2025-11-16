@@ -1,9 +1,9 @@
 // API Question Repository
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
-import type { PublicQuestion, CreateQuestionDTO, QuestionImage } from '$lib/models';
+import type { PublicQuestion, CreateQuestionDTO } from '$lib/models';
 import { appConfig } from '$lib/config/app.config';
 
-const API_BASE = appConfig.storage.apiBaseUrl || '/api';
+const API_BASE = '/api/qna';
 
 export class APIQuestionRepository implements IQuestionRepository {
 	private async handleResponse<T>(response: Response): Promise<T> {
