@@ -54,10 +54,6 @@
 	const joinDestination = '/memeball/main';
 	let showExitNotice = $state(false);
 
-	function skipBriefing() {
-		goto(joinDestination);
-	}
-
 	function attemptShutdown() {
 		if (typeof window === 'undefined') {
 			goto('/');
@@ -79,6 +75,8 @@
 	}
 
 	function handleSwipeLeft(transmission: Transmission) {
+		// Remove the card
+		transmissions = transmissions.slice(1);
 		attemptShutdown();
 	}
 

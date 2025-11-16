@@ -174,27 +174,19 @@
 		const cardToRemove = currentCard;
 		const indexToRemove = 0;
 		
-		// Wait for animation to complete before removing card
+		// Wait for animation to complete before calling callback
 		setTimeout(() => {
-			// Call the appropriate callback
+			// Call the appropriate callback - let parent handle card removal
 			if (direction === 'right') {
 				onSwipeRight?.(cardToRemove, indexToRemove);
 			} else {
 				onSwipeLeft?.(cardToRemove, indexToRemove);
 			}
 			
-			// Remove the card from the array
-			cards = cards.slice(1);
-			
 			// Reset state
 			removingState = null;
 			dragState = 'idle';
 			dragOffset = { x: 0, y: 0 };
-			
-			// Check if we're out of cards
-			if (cards.length === 0) {
-				onCardsEmpty?.();
-			}
 		}, 300);
 	}
 	
@@ -209,13 +201,6 @@
 		if (disabled || !currentCard || dragState !== 'idle') return;
 		dragOffset = { x: 200, y: 0 };
 		performSwipe('right');
-	}
-	
-	export function reset(newCards: any[]) {
-		cards = newCards;
-		dragState = 'idle';
-		dragOffset = { x: 0, y: 0 };
-		removingState = null;
 	}
 </script>
 
