@@ -4,3 +4,4 @@ export { MockQuestionRepository } from './MockQuestionRepository';
 export { MockAnswerRepository } from './MockAnswerRepository';
 export { MockDMRepository } from './MockDMRepository';
 export { MockMemeBallRepository } from './MockMemeBallRepository';
+export { MockRelationRepository } from './MockRelationRepository';

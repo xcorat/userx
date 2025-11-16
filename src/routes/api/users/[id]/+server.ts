@@ -4,11 +4,19 @@ import type { RequestHandler } from './$types';
 import { ServerRepositoryFactory } from '$lib/server/repositories/server-factory';
 import type { UpdateUserDTO } from '$lib/models';
 
-// GET /api/users/[id] - Get user by ID
+// GET /api/users/[id] - Get user by ID or username
 export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const repo = ServerRepositoryFactory.getUserRepository();
-		const user = await repo.findById(params.id);
+		const { id } = params;
+		
+		// First try to find by ID (UUID format)
+		let user = await repo.findById(id);
+		
+		// If not found and doesn't look like a UUID, try username
+		if (!user && !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+			user = await repo.findByUsername(id);
+		}
 		
 		if (!user) {
 			return json({ error: 'User not found' }, { status: 404 });

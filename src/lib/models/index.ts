@@ -6,3 +6,4 @@ export * from './answer.model';
 export * from './dm.model';
 export * from './aggregate.model';
 export * from './meme.model';
+export * from './relation.model';

@@ -6,12 +6,14 @@ import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestion
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
 import type { IMemeBallRepository } from '$lib/repositories/interfaces/IMemeBallRepository';
+import type { IRelationRepository } from '$lib/repositories/interfaces/IRelationRepository';
 
 import { D1UserRepository } from '$lib/server/repositories/d1/D1UserRepository';
 import { D1QuestionRepository } from '$lib/server/repositories/d1/D1QuestionRepository';
 import { D1AnswerRepository } from '$lib/server/repositories/d1/D1AnswerRepository';
 import { D1DMRepository } from '$lib/server/repositories/d1/D1DMRepository';
 import { D1MemeBallRepository } from '$lib/server/repositories/d1/D1MemeBallRepository';
+import { D1RelationRepository } from '$lib/server/repositories/d1/D1RelationRepository';
 
 /**
  * D1 Database Adapter
@@ -24,6 +26,7 @@ export class D1Adapter {
 	public readonly answerRepo: IAnswerRepository;
 	public readonly dmRepo: IDMRepository;
 	public readonly memeRepo: IMemeBallRepository;
+	public readonly relationRepo: IRelationRepository;
 
 	private constructor(db: D1Database) {
 		this.userRepo = new D1UserRepository(db);
@@ -31,6 +34,7 @@ export class D1Adapter {
 		this.answerRepo = new D1AnswerRepository(db);
 		this.dmRepo = new D1DMRepository(db);
 		this.memeRepo = new D1MemeBallRepository(db);
+		this.relationRepo = new D1RelationRepository(db);
 	}
 
 	/**

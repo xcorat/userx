@@ -6,6 +6,7 @@ import type { IQuestionRepository } from './interfaces/IQuestionRepository';
 import type { IAnswerRepository } from './interfaces/IAnswerRepository';
 import type { IDMRepository } from './interfaces/IDMRepository';
 import type { IMemeBallRepository } from './interfaces/IMemeBallRepository';
+import type { IRelationRepository } from './interfaces/IRelationRepository';
 
 import {
 	MockUserRepository,
@@ -13,13 +14,15 @@ import {
 	MockAnswerRepository,
 	MockDMRepository,
 	MockMemeBallRepository
+	MockRelationRepository
 } from './implementations/mock';
 
 import {
 	APIUserRepository,
 	APIQuestionRepository,
 	APIAnswerRepository,
-	APIDMRepository
+	APIDMRepository,
+	APIRelationRepository
 } from './implementations/api';
 
 import { appConfig } from '$lib/config/app.config';
@@ -115,6 +118,9 @@ export class RepositoryFactory {
 	 * Create MemeBall Repository
 	 */
 	static createMemeBallRepository(): IMemeBallRepository {
+	 * Create Relation Repository
+	 */
+	static createRelationRepository(): IRelationRepository {
 		switch (this.storageType) {
 			case 'sqlite':
 				throw new Error('SQLite repositories must be used server-side only. Use API storage type for client-side access.');
@@ -123,6 +129,9 @@ export class RepositoryFactory {
 			case 'api':
 				// TODO: Implement APIMemeBallRepository when needed
 				throw new Error('API MemeBall repository not yet implemented');
+				return new MockRelationRepository();
+			case 'api':
+				return new APIRelationRepository();
 			default:
 				throw new Error(`Unknown storage type: ${this.storageType}`);
 		}

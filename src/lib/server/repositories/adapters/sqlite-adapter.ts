@@ -10,12 +10,14 @@ import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestion
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
 import type { IMemeBallRepository } from '$lib/repositories/interfaces/IMemeBallRepository';
+import type { IRelationRepository } from '$lib/repositories/interfaces/IRelationRepository';
 
 import { SQLiteUserRepository } from '$lib/server/repositories/sqlite/SQLiteUserRepository';
 import { SQLiteQuestionRepository } from '$lib/server/repositories/sqlite/SQLiteQuestionRepository';
 import { SQLiteAnswerRepository } from '$lib/server/repositories/sqlite/SQLiteAnswerRepository';
 import { SQLiteDMRepository } from '$lib/server/repositories/sqlite/SQLiteDMRepository';
 import { SQLiteMemeBallRepository } from '$lib/server/repositories/sqlite/SQLiteMemeBallRepository';
+import { SQLiteRelationRepository } from '$lib/server/repositories/sqlite/SQLiteRelationRepository';
 
 const DB_PATH = 'qna-app.db';
 let db: Database.Database | null = null;
@@ -159,6 +161,103 @@ function seedDatabase(database: Database.Database) {
 				insertChoice.run(
 					choice.id,
 					question.id,
+	console.log('Seeding database with mock data...');
+	
+	const insertUser = database.prepare(`
+		INSERT INTO users (id, username, name, email, password, avatar_url, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`);
+	
+	const insertQuestion = database.prepare(`
+		INSERT INTO public_questions (id, text, created_by, created_at)
+		VALUES (?, ?, ?, ?)
+	`);
+	
+	const insertChoice = database.prepare(`
+		INSERT INTO question_choices (id, question_id, text, order_index)
+		VALUES (?, ?, ?, ?)
+	`);
+	
+	const insertAnswer = database.prepare(`
+		INSERT INTO public_answers (id, user_id, question_id, choice_id, visibility, created_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`);
+	
+	const insertDMQuestion = database.prepare(`
+		INSERT INTO dm_questions (id, text, from_user_id, to_user_id, created_at)
+		VALUES (?, ?, ?, ?, ?)
+	`);
+	
+	const insertDMChoice = database.prepare(`
+		INSERT INTO dm_question_choices (id, dm_question_id, text, order_index)
+		VALUES (?, ?, ?, ?)
+	`);
+	
+	const insertDMAnswer = database.prepare(`
+		INSERT INTO dm_answers (id, dm_question_id, user_id, choice_id, text_answer, created_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`);
+	
+	// Seed users with exact UUIDs from mock data
+	for (const user of mockUsers) {
+		insertUser.run(
+			user.id, // Use exact UUID from mock data
+			user.username,
+			user.name,
+			user.email,
+			'password', // Default password for all users
+			user.avatarUrl || null,
+			user.createdAt.toISOString(),
+			user.createdAt.toISOString()
+		);
+	}
+	
+	// Seed public questions and choices with exact IDs from mock data
+	for (const question of mockQuestions) {
+		insertQuestion.run(
+			question.id, // Use exact ID from mock data
+			question.text,
+			question.createdBy, // This now matches the deterministic user UUIDs
+			question.createdAt.toISOString()
+		);
+		
+		for (const choice of question.choices) {
+			insertChoice.run(
+				choice.id, // Use exact ID from mock data
+				question.id,
+				choice.text,
+				choice.order
+			);
+		}
+	}
+	
+	// Seed public answers with exact IDs from mock data
+	for (const answer of mockAnswers) {
+		insertAnswer.run(
+			answer.id, // Use exact ID from mock data
+			answer.userId,
+			answer.questionId,
+			answer.choiceId,
+			answer.visibility,
+			answer.createdAt.toISOString()
+		);
+	}
+	
+	// Seed DM questions and choices with exact IDs from mock data
+	for (const dmQuestion of mockDMQuestions) {
+		insertDMQuestion.run(
+			dmQuestion.id, // Use exact ID from mock data
+			dmQuestion.text,
+			dmQuestion.senderId,
+			dmQuestion.recipientId,
+			dmQuestion.createdAt.toISOString()
+		);
+		
+		if (dmQuestion.choices) {
+			for (const choice of dmQuestion.choices) {
+				insertDMChoice.run(
+					choice.id, // Use exact ID from mock data
+					dmQuestion.id,
 					choice.text,
 					choice.order
 				);
@@ -255,15 +354,20 @@ function seedDatabase(database: Database.Database) {
 		console.error('Error seeding database:', error);
 		throw error;
 	}
-}
-
-// Generate UUID v4
-function generateId(): string {
-	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-		const r = (Math.random() * 16) | 0;
-		const v = c === 'x' ? r : (r & 0x3) | 0x8;
-		return v.toString(16);
-	});
+	
+	// Seed DM answers with exact IDs from mock data
+	for (const dmAnswer of mockDMAnswers) {
+		insertDMAnswer.run(
+			dmAnswer.id, // Use exact ID from mock data
+			dmAnswer.dmQuestionId,
+			dmAnswer.userId,
+			dmAnswer.choiceId || null,
+			dmAnswer.textAnswer || null,
+			dmAnswer.createdAt.toISOString()
+		);
+	}
+	
+	console.log(`Seeded ${mockUsers.length} users, ${mockQuestions.length} questions, ${mockAnswers.length} answers`);
 }
 
 /**
@@ -277,16 +381,21 @@ export class SQLiteAdapter {
 	public readonly answerRepo: IAnswerRepository;
 	public readonly dmRepo: IDMRepository;
 	public readonly memeRepo: IMemeBallRepository;
+	public readonly relationRepo: IRelationRepository;
 
 	private constructor() {
 		// Initialize database connection
 		const database = getDatabase();
+		
+		// Use a simple counter-based ID generator for new records
+		const generateId = () => `generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 		
 		this.userRepo = new SQLiteUserRepository(database, generateId);
 		this.questionRepo = new SQLiteQuestionRepository(database, generateId);
 		this.answerRepo = new SQLiteAnswerRepository(database, generateId);
 		this.dmRepo = new SQLiteDMRepository(database, generateId);
 		this.memeRepo = new SQLiteMemeBallRepository(database, generateId);
+		this.relationRepo = new SQLiteRelationRepository(database, generateId);
 	}
 
 	/**

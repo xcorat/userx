@@ -7,6 +7,7 @@ import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestion
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
 import type { IMemeBallRepository } from '$lib/repositories/interfaces/IMemeBallRepository';
+import type { IRelationRepository } from '$lib/repositories/interfaces/IRelationRepository';
 
 // Only static import D1 factory (safe for Cloudflare Workers)
 import { D1RepositoryFactory } from '$lib/server/repositories/d1-factory';
@@ -154,6 +155,13 @@ export class ServerRepositoryFactory {
             return D1RepositoryFactory.getMemeRepository();
         } else if (activeFactory === 'sqlite' && sqliteFactory) {
             return sqliteFactory.getMemeRepository();
+     * Get Relation Repository
+     */
+    static getRelationRepository(): IRelationRepository {
+        if (activeFactory === 'd1') {
+            return D1RepositoryFactory.getRelationRepository();
+        } else if (activeFactory === 'sqlite' && sqliteFactory) {
+            return sqliteFactory.getRelationRepository();
         } else {
             throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
         }

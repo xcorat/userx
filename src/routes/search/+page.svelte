@@ -1,143 +1,231 @@
 <script lang="ts">
-	import { searchStore } from '$lib/stores/search.store.svelte';
-	import { goto } from '$app/navigation';
-	import { Input } from '$lib/components/ui/input';
-	import { Button } from '$lib/components/ui/button';
-	import { Card } from '$lib/components/ui/card';
-	import { onMount } from 'svelte';
+import { onMount } from 'svelte';
+import { authStore } from '$lib/stores/auth.store.svelte';
+import DIContainer from '$lib/config/di-container';
+import type { User, RelationStatus } from '$lib/models';
+import { Button } from '$lib/components/ui/button';
+import { Input } from '$lib/components/ui/input';
+import { Search, UserPlus, UserCheck, UserX, Clock } from 'lucide-svelte';
+import { toast } from 'svelte-sonner';
 
-	let searchInput = $state('');
+let searchQuery = $state('');
+let allUsers = $state<User[]>([]);
+let filteredUsers = $state<User[]>([]);
+let relationStatuses = $state<Map<string, { status: RelationStatus | 'none'; relationId?: string; isInitiator?: boolean }>>(new Map());
+let isLoading = $state(false);
 
-	function handleInputChange(e: Event) {
-		const value = (e.target as HTMLInputElement).value;
-		searchInput = value;
-		searchStore.setQuery(value);
-	}
+onMount(async () => {
+await loadUsers();
+});
 
-	function handleTabChange(tab: 'users' | 'questions') {
-		searchStore.setActiveTab(tab);
-	}
+async function loadUsers() {
+try {
+isLoading = true;
+const userService = DIContainer.getUserService();
+const users = await userService.getAllUsers();
 
-	async function handleSearch() {
-		await searchStore.executeSearch();
-	}
+// Filter out the current logged-in user
+allUsers = users.filter(u => u.id !== authStore.currentUser?.id);
+filteredUsers = allUsers;
 
-	function handleKeyDown(e: KeyboardEvent) {
-		if (e.key === 'Enter') {
-			handleSearch();
-		}
-	}
+// Load relation statuses for all users
+if (authStore.currentUser) {
+await loadRelationStatuses();
+}
+} catch (error) {
+console.error('Failed to load users:', error);
+toast.error('Failed to load users');
+} finally {
+isLoading = false;
+}
+}
 
-	function goToProfile(userId: string) {
-		goto(`/profile/${userId}`);
-	}
+async function loadRelationStatuses() {
+if (!authStore.currentUser) return;
 
-	onMount(() => {
-		// Reset store when component mounts
-		searchStore.reset();
-	});
+try {
+const relationService = DIContainer.getRelationService();
+const newStatuses = new Map<string, { status: RelationStatus | 'none'; relationId?: string; isInitiator?: boolean }>();
+
+for (const user of allUsers) {
+const status = await relationService.getRelationStatus(authStore.currentUser.id, user.id);
+newStatuses.set(user.id, status);
+}
+
+relationStatuses = newStatuses;
+} catch (error) {
+console.error('Failed to load relation statuses:', error);
+}
+}
+
+function handleSearch() {
+if (!searchQuery.trim()) {
+filteredUsers = allUsers;
+return;
+}
+
+const query = searchQuery.toLowerCase();
+filteredUsers = allUsers.filter(user =>
+user.name.toLowerCase().includes(query) ||
+user.username.toLowerCase().includes(query) ||
+user.email.toLowerCase().includes(query)
+);
+}
+
+async function sendFriendRequest(userId: string) {
+if (!authStore.currentUser) {
+toast.error('Please log in to send friend requests');
+return;
+}
+
+try {
+const relationService = DIContainer.getRelationService();
+await relationService.sendRequest(authStore.currentUser.id, userId);
+toast.success('Friend request sent!');
+await loadRelationStatuses();
+} catch (error) {
+console.error('Failed to send friend request:', error);
+toast.error(error instanceof Error ? error.message : 'Failed to send friend request');
+}
+}
+
+async function removeRelation(userId: string) {
+if (!authStore.currentUser) return;
+
+const status = relationStatuses.get(userId);
+if (!status?.relationId) return;
+
+try {
+const relationService = DIContainer.getRelationService();
+await relationService.removeRelation(authStore.currentUser.id, status.relationId);
+toast.success('Removed successfully');
+await loadRelationStatuses();
+} catch (error) {
+console.error('Failed to remove relation:', error);
+toast.error('Failed to remove relation');
+}
+}
+
+function getRelationButtonContent(userId: string) {
+const status = relationStatuses.get(userId);
+
+if (!status || status.status === 'none') {
+return { 
+text: 'Add Friend', 
+icon: UserPlus, 
+variant: 'default' as const,
+action: () => sendFriendRequest(userId)
+};
+}
+
+if (status.status === 'pending') {
+if (status.isInitiator) {
+return {
+text: 'Pending',
+icon: Clock,
+variant: 'outline' as const,
+action: () => removeRelation(userId)
+};
+} else {
+return {
+text: 'Accept/Reject',
+icon: Clock,
+variant: 'secondary' as const,
+action: () => {} // Should navigate to pending requests
+};
+}
+}
+
+if (status.status === 'approved') {
+return {
+text: 'Friends',
+icon: UserCheck,
+variant: 'secondary' as const,
+action: () => removeRelation(userId)
+};
+}
+
+if (status.status === 'rejected') {
+return {
+text: 'Rejected',
+icon: UserX,
+variant: 'ghost' as const,
+action: () => sendFriendRequest(userId)
+};
+}
+
+return {
+text: 'Add Friend',
+icon: UserPlus,
+variant: 'default' as const,
+action: () => sendFriendRequest(userId)
+};
+}
 </script>
 
-<div class="max-w-2xl mx-auto">
-	<div class="mb-8">
-		<h1 class="text-3xl font-bold mb-4">Search</h1>
-		<div class="flex gap-2">
-			<Input
-				type="text"
-				placeholder="Search users by username, email, or name..."
-				bind:value={searchInput}
-				onchange={handleInputChange}
-				oninput={handleInputChange}
-				onkeydown={handleKeyDown}
-				class="flex-1"
-			/>
-			<Button onclick={handleSearch} disabled={searchStore.isLoading || !searchInput.trim()}>
-				{#if searchStore.isLoading}
-					Searching...
-				{:else}
-					Search
-				{/if}
-			</Button>
-		</div>
-	</div>
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<h1 class="text-3xl font-bold">Search Users</h1>
+</div>
 
-	<!-- Tab Navigation -->
-	<div class="flex gap-2 mb-6 border-b">
-		<button
-			onclick={() => handleTabChange('users')}
-			class="px-4 py-2 font-medium transition-colors {searchStore.activeTab === 'users'
-				? 'text-primary border-b-2 border-primary'
-				: 'text-muted-foreground hover:text-foreground'}"
-		>
-			Users
-		</button>
-		<button
-			onclick={() => handleTabChange('questions')}
-			class="px-4 py-2 font-medium transition-colors {searchStore.activeTab === 'questions'
-				? 'text-primary border-b-2 border-primary'
-				: 'text-muted-foreground hover:text-foreground'}"
-		>
-			Questions
-		</button>
-	</div>
+<!-- Search Bar -->
+<div class="flex gap-2">
+<div class="relative flex-1">
+<Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+<Input
+type="text"
+placeholder="Search by name, username, or email..."
+bind:value={searchQuery}
+class="pl-9"
+/>
+</div>
+<Button onclick={handleSearch}>Search</Button>
+</div>
 
-	<!-- Content -->
-	{#if searchStore.activeTab === 'users'}
-		<div class="space-y-4">
-			{#if searchStore.error}
-				<div class="text-center py-8">
-					<p class="text-destructive">{searchStore.error}</p>
-				</div>
-			{:else if searchStore.isLoading}
-				<div class="text-center py-8">
-					<p class="text-muted-foreground">Searching...</p>
-				</div>
-			{:else if searchStore.hasSearched && searchStore.searchResults.length === 0}
-				<div class="text-center py-8">
-					<p class="text-muted-foreground">No users found matching "{searchInput}"</p>
-				</div>
-			{:else if !searchStore.hasSearched}
-				<div class="text-center py-8">
-					<p class="text-muted-foreground">Enter a search term and click Search to find users</p>
-				</div>
-			{:else}
-				{#each searchStore.searchResults as user (user.id)}
-					<Card
-						class="p-4 cursor-pointer hover:bg-accent transition-colors"
-						onclick={() => goToProfile(user.id)}
-					>
-						<div class="flex items-center gap-4">
-							{#if user.avatarUrl}
-								<img
-									src={user.avatarUrl}
-									alt={user.name}
-									class="w-12 h-12 rounded-full object-cover"
-								/>
-							{:else}
-								<div class="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-									<span class="text-sm font-semibold">
-										{user.name.charAt(0).toUpperCase()}
-									</span>
-								</div>
-							{/if}
-							<div class="flex-1">
-								<h3 class="font-semibold">{user.name}</h3>
-								{#if user.username}
-									<p class="text-sm text-muted-foreground">@{user.username}</p>
-								{/if}
-								<p class="text-sm text-muted-foreground">{user.email}</p>
-								{#if user.location}
-									<p class="text-sm text-muted-foreground">{user.location}</p>
-								{/if}
-							</div>
-						</div>
-					</Card>
-				{/each}
-			{/if}
-		</div>
-	{:else if searchStore.activeTab === 'questions'}
-		<div class="text-center py-8">
-			<p class="text-muted-foreground">Question search coming soon...</p>
-		</div>
-	{/if}
+<!-- Results -->
+<div class="space-y-4">
+{#if isLoading}
+<div class="text-center py-8 text-muted-foreground">
+Loading users...
+</div>
+{:else if filteredUsers.length === 0}
+<div class="text-center py-8 text-muted-foreground">
+{searchQuery ? 'No users found matching your search.' : 'No users available.'}
+</div>
+{:else}
+{#each filteredUsers as user (user.id)}
+<div class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition">
+<div class="flex items-center gap-4">
+{#if user.avatarUrl}
+<img src={user.avatarUrl} alt={user.name} class="w-12 h-12 rounded-full" />
+{:else}
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+<span class="text-lg font-semibold text-primary">
+{user.name.charAt(0).toUpperCase()}
+</span>
+</div>
+{/if}
+
+<div>
+<h3 class="font-semibold">{user.name}</h3>
+<p class="text-sm text-muted-foreground">@{user.username}</p>
+</div>
+</div>
+
+{#if authStore.currentUser}
+{@const buttonInfo = getRelationButtonContent(user.id)}
+{@const IconComponent = buttonInfo.icon}
+<Button 
+variant={buttonInfo.variant} 
+size="sm"
+onclick={buttonInfo.action}
+>
+<IconComponent class="w-4 h-4 mr-1" />
+{buttonInfo.text}
+</Button>
+{/if}
+</div>
+{/each}
+{/if}
+</div>
 </div>

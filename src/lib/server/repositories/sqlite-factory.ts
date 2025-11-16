@@ -6,6 +6,7 @@ import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestion
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
 import type { IDMRepository } from '$lib/repositories/interfaces/IDMRepository';
 import type { IMemeBallRepository } from '$lib/repositories/interfaces/IMemeBallRepository';
+import type { IRelationRepository } from '$lib/repositories/interfaces/IRelationRepository';
 
 import { SQLiteAdapter } from '$lib/server/repositories/adapters/sqlite-adapter';
 
@@ -17,6 +18,7 @@ interface DatabaseAdapter {
 	answerRepo: IAnswerRepository;
 	dmRepo: IDMRepository;
 	memeRepo: IMemeBallRepository;
+	relationRepo: IRelationRepository;
 	getType(): RepositoryType;
 }
 
@@ -100,5 +102,14 @@ export class SQLiteRepositoryFactory {
 			throw new Error('SQLiteRepositoryFactory not initialized. Call initialize() first.');
 		}
 		return this.adapter.memeRepo;
+	}
+	 
+	/** Get Relation Repository
+	 */
+	static getRelationRepository(): IRelationRepository {
+		if (!this.adapter) {
+			throw new Error('SQLiteRepositoryFactory not initialized. Call initialize() first.');
+		}
+		return this.adapter.relationRepo;
 	}
 }

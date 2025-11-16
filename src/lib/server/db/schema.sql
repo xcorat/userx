@@ -150,3 +150,20 @@ CREATE INDEX IF NOT EXISTS idx_meme_interactions_user_id ON meme_interactions(us
 CREATE INDEX IF NOT EXISTS idx_meme_interactions_meme_id ON meme_interactions(meme_id);
 CREATE INDEX IF NOT EXISTS idx_meme_interactions_type ON meme_interactions(interaction_type);
 CREATE INDEX IF NOT EXISTS idx_meme_interactions_date ON meme_interactions(interacted_at);
+-- User Relations table (friend connections)
+CREATE TABLE IF NOT EXISTS user_relations (
+  id TEXT PRIMARY KEY,
+  from_user_id TEXT NOT NULL,
+  to_user_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK(status IN ('pending', 'approved', 'rejected')),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CHECK(from_user_id != to_user_id),
+  UNIQUE(from_user_id, to_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_relations_from_user ON user_relations(from_user_id);
+CREATE INDEX IF NOT EXISTS idx_user_relations_to_user ON user_relations(to_user_id);
+CREATE INDEX IF NOT EXISTS idx_user_relations_status ON user_relations(status);
