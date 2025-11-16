@@ -10,6 +10,7 @@
 	}
 
 	interface DbStats {
+		repoType: string;
 		tableCount: number;
 		timestamp: string;
 		tables: TableInfo[];
@@ -59,7 +60,7 @@
 		<div>
 			<h1 class="text-3xl font-bold">Database Test & Debug</h1>
 			<p class="text-sm text-muted-foreground mt-1">
-				View database tables and sample data for debugging
+				View all database tables and sample data for debugging
 			</p>
 		</div>
 		<Button onclick={loadDbStats} disabled={isLoading}>
@@ -86,7 +87,11 @@
 				<Card.Title>Database Overview</Card.Title>
 			</Card.Header>
 			<Card.Content>
-				<div class="grid grid-cols-2 gap-4">
+				<div class="grid grid-cols-3 gap-4">
+					<div>
+						<p class="text-sm text-muted-foreground">Repository Type</p>
+						<p class="text-lg font-medium capitalize">{dbStats.repoType}</p>
+					</div>
 					<div>
 						<p class="text-sm text-muted-foreground">Total Tables</p>
 						<p class="text-2xl font-bold">{dbStats.tableCount}</p>

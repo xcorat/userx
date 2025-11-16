@@ -27,8 +27,10 @@ export class D1Adapter {
 	public readonly dmRepo: IDMRepository;
 	public readonly memeRepo: IMemeBallRepository;
 	public readonly relationRepo: IRelationRepository;
+	private db: D1Database;
 
 	private constructor(db: D1Database) {
+		this.db = db;
 		this.userRepo = new D1UserRepository(db);
 		this.questionRepo = new D1QuestionRepository(db);
 		this.answerRepo = new D1AnswerRepository(db);
@@ -49,5 +51,56 @@ export class D1Adapter {
 	 */
 	getType(): 'd1' {
 		return 'd1';
+	}
+
+	/**
+	 * Get database snapshot - query all tables with 5 most recent rows each
+	 */
+	async getSnapshot(): Promise<{ [tableName: string]: { count: number; data: any[] } }> {
+		try {
+			// Get all table names from information_schema
+			const tablesResult = await this.db
+				.prepare(
+					`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name`
+				)
+				.all();
+
+			const tableNames = tablesResult.results?.map((row: any) => row.name) || [];
+			const result: { [tableName: string]: { count: number; data: any[] } } = {};
+
+			for (const tableName of tableNames) {
+				try {
+					// Get total row count
+					const countResult = await this.db.prepare(`SELECT COUNT(*) as count FROM "${tableName}"`).first();
+					const count = (countResult?.count as number) || 0;
+
+					// Get 5 most recent rows
+					let recentRows: any[] = [];
+					try {
+						const rowsResult = await this.db
+							.prepare(`SELECT * FROM "${tableName}" ORDER BY rowid DESC LIMIT 5`)
+							.all();
+						recentRows = rowsResult.results || [];
+					} catch {
+						// If that fails, just get any 5 rows
+						const rowsResult = await this.db.prepare(`SELECT * FROM "${tableName}" LIMIT 5`).all();
+						recentRows = rowsResult.results || [];
+					}
+
+					result[tableName] = {
+						count,
+						data: recentRows.reverse()
+					};
+				} catch (tableError) {
+					console.error(`Error querying table ${tableName}:`, tableError);
+					result[tableName] = { count: 0, data: [] };
+				}
+			}
+
+			return result;
+		} catch (error) {
+			console.error('[D1Adapter] Snapshot error:', error);
+			throw error;
+		}
 	}
 }

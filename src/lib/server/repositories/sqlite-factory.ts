@@ -113,4 +113,14 @@ export class SQLiteRepositoryFactory {
 		}
 		return this.adapter.relationRepo;
 	}
+
+	/**
+	 * Get database snapshot - all tables with 5 recent rows each
+	 */
+	static async getSnapshot(): Promise<{ [tableName: string]: { count: number; data: any[] } }> {
+		if (!this.adapter) {
+			throw new Error('SQLiteRepositoryFactory not initialized. Call initialize() first.');
+		}
+		return (this.adapter as any).getSnapshot();
+	}
 }

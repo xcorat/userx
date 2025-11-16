@@ -3,37 +3,22 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { ServerRepositoryFactory } from '$lib/server/repositories/server-factory';
 
-// GET /tests - Get repository debug information
+// GET /tests - Get complete database snapshot using debug API
 export const GET: RequestHandler = async () => {
 	try {
-		// Get repository type and basic info
-		const repoType = ServerRepositoryFactory.getType();
+		// Use the debug API to get full snapshot
+		const snapshot = await ServerRepositoryFactory.getDebugSnapshot();
 		
-		// Test all repositories to ensure they're working
-		const userRepo = ServerRepositoryFactory.getUserRepository();
-		const questionRepo = ServerRepositoryFactory.getQuestionRepository();
-		const answerRepo = ServerRepositoryFactory.getAnswerRepository();
-		const dmRepo = ServerRepositoryFactory.getDMRepository();
-		
-		const users = await userRepo.findAll();
-		const questions = await questionRepo.findAll();
-		const answers = await answerRepo.findAll();
-		
-		// Get a sample user ID for DM queries (avoid empty result)
-		const sampleUserId = users.length > 0 ? users[0].id : 'no-users';
-		const dmQuestions = await dmRepo.findAllQuestions(sampleUserId);
-		
-		// Transform data into table format expected by frontend
-		const tables = [
-			{ name: 'users', count: users.length, sampleRows: users.slice(0, 3) },
-			{ name: 'questions', count: questions.length, sampleRows: questions.slice(0, 3) },
-			{ name: 'answers', count: answers.length, sampleRows: answers.slice(0, 3) },
-			{ name: 'dm_questions', count: dmQuestions.length, sampleRows: dmQuestions.slice(0, 3) }
-		];
+		// Transform to frontend format
+		const tables = Object.entries(snapshot.tables).map(([name, tableData]) => ({
+			name,
+			count: tableData.count,
+			sampleRows: tableData.data.slice(0, 10) // Show first 10 rows
+		}));
 
 		return json({
-			repoType,
-			timestamp: new Date().toISOString(),
+			repoType: snapshot.repoType,
+			timestamp: snapshot.timestamp,
 			tableCount: tables.length,
 			tables
 		});

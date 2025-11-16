@@ -174,4 +174,46 @@ export class ServerRepositoryFactory {
             throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
         }
     }
+
+    /**
+     * Debug API: Get database snapshot
+     * Dynamically queries all tables and returns 5 most recent rows from each
+     */
+    static async getDebugSnapshot(): Promise<DebugSnapshot> {
+        if (!activeFactory) {
+            throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
+        }
+
+        try {
+            let tables: { [tableName: string]: { count: number; data: any[] } };
+
+            if (activeFactory === 'd1') {
+                tables = await D1RepositoryFactory.getSnapshot();
+            } else if (activeFactory === 'sqlite' && sqliteFactory) {
+                tables = await sqliteFactory.getSnapshot();
+            } else {
+                throw new Error('ServerRepositoryFactory not initialized. Call initialize() first.');
+            }
+
+            return {
+                repoType: activeFactory,
+                timestamp: new Date().toISOString(),
+                tables
+            };
+        } catch (error) {
+            console.error('[ServerRepositoryFactory] Debug snapshot error:', error);
+            throw error;
+        }
+    }
+}
+
+export interface DebugSnapshot {
+    repoType: string;
+    timestamp: string;
+    tables: {
+        [tableName: string]: {
+            count: number;
+            data: any[];
+        };
+    };
 }

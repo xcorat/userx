@@ -268,6 +268,7 @@ export class SQLiteAdapter {
 	public readonly dmRepo: IDMRepository;
 	public readonly memeRepo: IMemeBallRepository;
 	public readonly relationRepo: IRelationRepository;
+	private database: any;
 
 	private constructor(
 		database: any,
@@ -278,6 +279,7 @@ export class SQLiteAdapter {
 		memeRepo: IMemeBallRepository,
 		relationRepo: IRelationRepository
 	) {
+		this.database = database;
 		this.userRepo = userRepo;
 		this.questionRepo = questionRepo;
 		this.answerRepo = answerRepo;
@@ -320,6 +322,58 @@ export class SQLiteAdapter {
 		if (db) {
 			db.close();
 			db = null;
+		}
+	}
+
+	/**
+	 * Get database snapshot - query all tables with 5 most recent rows each
+	 */
+	async getSnapshot(): Promise<{ [tableName: string]: { count: number; data: any[] } }> {
+		try {
+			// Get all table names from sqlite_master
+			const tableNames = this.database
+				.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+				.all()
+				.map((row: any) => row.name)
+				.sort();
+
+			const result: { [tableName: string]: { count: number; data: any[] } } = {};
+
+			for (const tableName of tableNames) {
+				try {
+					// Get total row count
+					const countResult = this.database
+						.prepare(`SELECT COUNT(*) as count FROM "${tableName}"`)
+						.get() as { count: number };
+
+					// Get 5 most recent rows
+					// Try to order by rowid DESC (most recent), or just limit 5
+					let recentRows: any[] = [];
+					try {
+						recentRows = this.database
+							.prepare(`SELECT * FROM "${tableName}" ORDER BY rowid DESC LIMIT 5`)
+							.all();
+					} catch {
+						// If that fails, just get any 5 rows
+						recentRows = this.database
+							.prepare(`SELECT * FROM "${tableName}" LIMIT 5`)
+							.all();
+					}
+
+					result[tableName] = {
+						count: countResult.count,
+						data: recentRows.reverse() // Reverse to show oldest first in the 5
+					};
+				} catch (tableError) {
+					console.error(`Error querying table ${tableName}:`, tableError);
+					result[tableName] = { count: 0, data: [] };
+				}
+			}
+
+			return result;
+		} catch (error) {
+			console.error('[SQLiteAdapter] Snapshot error:', error);
+			throw error;
 		}
 	}
 }
