@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import DIContainer from '$lib/config/di-container';
 	import type { RelationWithUser } from '$lib/models';
@@ -173,8 +174,14 @@
 					You don't have any friends yet. Use the search page to find people!
 				</div>
 			{:else}
-				{#each friends as friend (friend.id)}
-					<div class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition">
+			{#each friends as friend (friend.id)}
+				<div 
+					class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition cursor-pointer"
+					onclick={() => goto(`/profile/${friend.userId}`)}
+					onkeydown={(e) => e.key === 'Enter' && goto(`/profile/${friend.userId}`)}
+						role="button"
+						tabindex="0"
+					>
 						<div class="flex items-center gap-4">
 							{#if friend.avatarUrl}
 								<img src={friend.avatarUrl} alt={friend.name} class="w-12 h-12 rounded-full" />
@@ -192,7 +199,14 @@
 							</div>
 						</div>
 
-						<Button variant="ghost" size="sm" onclick={() => removeFriend(friend.id)}>
+						<Button 
+							variant="ghost" 
+							size="sm" 
+							onclick={(e) => {
+								e.stopPropagation();
+								removeFriend(friend.id);
+							}}
+						>
 							<UserX class="w-4 h-4 mr-1" />
 							Remove
 						</Button>
@@ -205,8 +219,14 @@
 					No pending friend requests.
 				</div>
 			{:else}
-				{#each receivedRequests as request (request.id)}
-					<div class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition">
+			{#each receivedRequests as request (request.id)}
+				<div 
+					class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition cursor-pointer"
+					onclick={() => goto(`/profile/${request.userId}`)}
+					onkeydown={(e) => e.key === 'Enter' && goto(`/profile/${request.userId}`)}
+						role="button"
+						tabindex="0"
+					>
 						<div class="flex items-center gap-4">
 							{#if request.avatarUrl}
 								<img src={request.avatarUrl} alt={request.name} class="w-12 h-12 rounded-full" />
@@ -225,11 +245,25 @@
 						</div>
 
 						<div class="flex gap-2">
-							<Button variant="default" size="sm" onclick={() => approveRequest(request.id)}>
+							<Button 
+								variant="default" 
+								size="sm" 
+								onclick={(e) => {
+									e.stopPropagation();
+									approveRequest(request.id);
+								}}
+							>
 								<UserCheck class="w-4 h-4 mr-1" />
 								Accept
 							</Button>
-							<Button variant="ghost" size="sm" onclick={() => rejectRequest(request.id)}>
+							<Button 
+								variant="ghost" 
+								size="sm" 
+								onclick={(e) => {
+									e.stopPropagation();
+									rejectRequest(request.id);
+								}}
+							>
 								<UserX class="w-4 h-4 mr-1" />
 								Reject
 							</Button>
@@ -243,8 +277,14 @@
 					No pending sent requests.
 				</div>
 			{:else}
-				{#each sentRequests as request (request.id)}
-					<div class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition">
+			{#each sentRequests as request (request.id)}
+				<div 
+					class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition cursor-pointer"
+					onclick={() => goto(`/profile/${request.userId}`)}
+					onkeydown={(e) => e.key === 'Enter' && goto(`/profile/${request.userId}`)}
+						role="button"
+						tabindex="0"
+					>
 						<div class="flex items-center gap-4">
 							{#if request.avatarUrl}
 								<img src={request.avatarUrl} alt={request.name} class="w-12 h-12 rounded-full" />
@@ -263,7 +303,14 @@
 							</div>
 						</div>
 
-						<Button variant="ghost" size="sm" onclick={() => cancelRequest(request.id)}>
+						<Button 
+							variant="ghost" 
+							size="sm" 
+							onclick={(e) => {
+								e.stopPropagation();
+								cancelRequest(request.id);
+							}}
+						>
 							Cancel
 						</Button>
 					</div>

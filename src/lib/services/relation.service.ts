@@ -73,7 +73,10 @@ export class RelationService {
 			throw new AppError(ErrorCode.VALIDATION_ERROR, 'Request is not pending');
 		}
 
-		return await this.relationRepo.update(relationId, { status: 'approved' as RelationStatus });
+		return await this.relationRepo.update(relationId, { 
+			status: 'approved' as RelationStatus,
+			userId 
+		});
 	}
 
 	/**
@@ -94,7 +97,10 @@ export class RelationService {
 			throw new AppError(ErrorCode.VALIDATION_ERROR, 'Request is not pending');
 		}
 
-		return await this.relationRepo.update(relationId, { status: 'rejected' as RelationStatus });
+		return await this.relationRepo.update(relationId, { 
+			status: 'rejected' as RelationStatus,
+			userId 
+		});
 	}
 
 	/**

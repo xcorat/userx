@@ -431,7 +431,180 @@ The environment detection now clearly separates local development from productio
 
 ---
 
-## Development Commands
+## Phase 6: Friend Relations & Social Features ✅
+**Status**: Completed (November 15, 2025)
+
+### Implemented:
+
+#### 1. **Relation Management System**
+- **Data Model**: UserRelation with status tracking (pending, approved, rejected)
+- **Repository Layer**: Full implementation across all storage types
+  - MockRelationRepository: In-memory storage for testing
+  - SQLiteRelationRepository: Local development database
+  - D1RelationRepository: Cloudflare Workers production
+  - APIRelationRepository: Client-side API calls
+- **Database Schema**: user_relations table with proper indexes
+  - Tracks bidirectional relationships
+  - Status workflow: pending → approved/rejected
+  - Timestamps for audit trail
+
+#### 2. **Business Logic Service**
+- **RelationService**: Complete friend management
+  - `sendRequest()` - Initiate friend request
+  - `approveRequest()` - Accept with authorization checks
+  - `rejectRequest()` - Decline with validation
+  - `removeRelation()` - Unfriend or cancel pending request
+  - `getFriends()` - List approved friends with user details
+  - `getSentRequests()` - Track outgoing pending requests
+  - `getReceivedRequests()` - View incoming requests
+  - `getRelationStatus()` - Check status between two users
+- **Authorization**: Service layer enforces that only participants can modify relations
+- **Validation**: Status checks ensure valid transitions
+
+#### 3. **API Endpoints** (10 total)
+- **CRUD Operations**:
+  - `GET /api/relations` - List all relations (admin)
+  - `POST /api/relations` - Create new relation
+  - `GET /api/relations/[id]` - Fetch single relation
+  - `PUT /api/relations/[id]` - Update relation status (approve/reject)
+  - `DELETE /api/relations/[id]` - Remove relation (unfriend)
+
+- **Query Endpoints**:
+  - `GET /api/relations/user/[userId]` - Get all relations for user
+  - `GET /api/relations/user/[userId]/status/[status]` - Filter by status
+  - `GET /api/relations/between/[fromUserId]/[toUserId]` - Check specific relation
+
+#### 4. **User Interface - Search Page** (`/search`)
+- **Features**:
+  - Non-reactive search (manual button click as specified)
+  - Excludes logged-in user from results
+  - Real-time relation status display
+  - Dynamic action buttons:
+    - "Add Friend" → Send request (initial state)
+    - "Pending" → Cancel request (sent by user)
+    - "Accept/Reject" → Accept/decline (received by user)
+    - "Friends" → Remove friend (approved state)
+    - "Rejected" → Try again (rejected state)
+  - Avatar/initials with user info
+  - Searchable by name, username, or email
+
+#### 5. **User Interface - Friends Page** (`/friends`)
+- **Three Tabs**:
+  1. **Friends** - Approved relationships
+     - Remove friend button
+     - Clickable to view profile
+  2. **Requests** (Received) - Incoming pending requests
+     - Accept button (auto-refresh on click)
+     - Reject button (auto-refresh on click)
+     - Badge showing count
+  3. **Sent** - Outgoing pending requests
+     - Cancel request button
+     - Shows pending status
+     - Badge showing count
+
+- **Features**:
+  - Real-time status updates
+  - Toast notifications for all actions
+  - Empty states with helpful messages
+  - Friend info display (avatar, name, username)
+  - Clickable cards navigate to user profile
+  - Prevents self-friendship (logged-in user excluded from search)
+
+#### 6. **Profile Integration**
+- Friends are clickable from:
+  - Friends list (`/friends` page)
+  - Received requests tab
+  - Sent requests tab
+- Click navigation uses `userId` (not relation ID) for proper routing
+- Profile page accessible via `/profile/{userId}`
+
+#### 7. **Deterministic UUID Generation**
+- **Issue Fixed**: Inconsistent user IDs between mock data and database
+  - Mock data used random/hardcoded UUIDs
+  - Database generated different UUIDs
+  - Friend links broke due to ID mismatch
+- **Solution**: Deterministic UUID function
+  ```typescript
+  function generateDeterministicUUID(input: string, timestamp: string): string
+  // Based on email + creation date
+  // Generates same UUID across all environments
+  ```
+- **Implementation**:
+  - Mock users: `aliceId = generateDeterministicUUID('alice@example.com', '2024-01-15')`
+  - SQLite seeding: Uses same deterministic UUIDs
+  - All related data (questions, answers, DMs) references correct UUIDs
+- **Benefits**:
+  - Consistent IDs in all environments
+  - Reproducible test data
+  - Friend links work correctly
+  - Matches across mock and database
+
+#### 8. **Flexible User Lookup**
+- **API Enhancement**: `/api/users/{id}` accepts both UUID and username
+  - UUID pattern matching for efficient lookup
+  - Falls back to username if not UUID format
+  - Profile navigation works with either identifier
+  - Seamless user discovery
+
+### Key Files Created:
+- `src/lib/models/relation.model.ts` - UserRelation domain model
+- `src/lib/repositories/interfaces/IRelationRepository.ts` - Repository contract
+- `src/lib/repositories/implementations/mock/MockRelationRepository.ts` - Test implementation
+- `src/lib/repositories/implementations/api/APIRelationRepository.ts` - Client-side API
+- `src/lib/server/repositories/sqlite/SQLiteRelationRepository.ts` - Database layer
+- `src/lib/server/repositories/d1/D1RelationRepository.ts` - Cloudflare D1 layer
+- `src/lib/services/relation.service.ts` - Business logic
+- `src/routes/search/+page.svelte` - Search and friend request UI
+- `src/routes/friends/+page.svelte` - Friends management UI
+- `src/routes/api/relations/+server.ts` - CRUD endpoints
+- `src/routes/api/relations/[id]/+server.ts` - Single relation endpoint
+- `src/routes/api/relations/user/[userId]/+server.ts` - User relations endpoint
+- `src/routes/api/relations/user/[userId]/status/[status]/+server.ts` - Filter endpoint
+- `src/routes/api/relations/between/[fromUserId]/[toUserId]/+server.ts` - Relation check
+
+### Key Files Modified:
+- `src/lib/config/di-container.ts` - Added RelationService
+- `src/lib/config/app.config.ts` - Set storage type to 'mock' for consistent UUIDs
+- `src/lib/repositories/implementations/mock/mock-data.ts` - Deterministic UUID generation
+- `src/lib/server/repositories/adapters/sqlite-adapter.ts` - Deterministic UUID seeding
+- `src/routes/+layout.svelte` - Added Search and Friends navigation links
+- `src/routes/profile/[userId]/+page.svelte` - Fixed profile link navigation
+- `src/routes/friends/+page.svelte` - Fixed friend link navigation to use userId not relation ID
+
+### Bug Fixes:
+1. **Profile Link Navigation**: Changed from relation ID to user ID in profile links
+   - Friends page tab: `onClick={() => goto(`/profile/${friend.userId}`)}`
+   - Requests page tab: `onClick={() => goto(`/profile/${request.userId}`)}`
+   - Sent page tab: `onClick={() => goto(`/profile/${request.userId}`)}`
+
+2. **UUID Consistency**: Resolved mismatched user IDs between mock and database
+   - Implemented deterministic UUID generation
+   - Updated all seed data to use consistent UUIDs
+   - Friend links now resolve correctly
+
+3. **Flexible User Lookup**: API endpoint supports both UUID and username
+   - Enables profile navigation via URL slugs
+   - `/profile/alice` or `/profile/{uuid}` both work
+
+### Technical Achievements:
+✅ **Complete Friend System**: Send, accept, reject, remove operations  
+✅ **Authorization**: Only relation participants can modify  
+✅ **Non-Reactive Search**: User-initiated search as specified  
+✅ **Consistent IDs**: Deterministic UUIDs across all environments  
+✅ **Toast Feedback**: User confirmation for all actions  
+✅ **Type-Safe**: Full TypeScript coverage  
+✅ **Multi-Platform**: Works with Mock, SQLite, D1, and API storage  
+✅ **Production Ready**: Proper layered architecture maintained  
+
+### Next Steps (Phase 7 - Planned):
+- [ ] Search filters (online status, interests)
+- [ ] Friend suggestions/discovery
+- [ ] Blocked users system
+- [ ] Notification system for requests
+- [ ] Activity feed
+- [ ] Social stats dashboard
+
+---
 
 ```bash
 # Install dependencies

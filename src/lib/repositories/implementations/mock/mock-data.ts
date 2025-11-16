@@ -2,9 +2,36 @@
 import type { User, PublicQuestion, PublicAnswer, DMQuestion, DMAnswer } from '$lib/models';
 import { AnswerVisibility } from '$lib/models';
 
+// Deterministic UUID generation based on input string + timestamp
+function generateDeterministicUUID(input: string, timestamp: string): string {
+	// Combine input with timestamp for uniqueness
+	const combined = `${input}_${timestamp}`;
+	
+	// Simple hash function for deterministic UUIDs
+	let hash = 0;
+	for (let i = 0; i < combined.length; i++) {
+		const char = combined.charCodeAt(i);
+		hash = ((hash << 5) - hash) + char;
+		hash = hash & hash; // Convert to 32-bit integer
+	}
+	
+	// Convert to positive number and pad
+	const hashStr = Math.abs(hash).toString(16).padStart(8, '0');
+	
+	// Create UUID v4 format with deterministic data
+	return `${hashStr.slice(0,8)}-${hashStr.slice(0,4)}-4${hashStr.slice(1,4)}-8${hashStr.slice(4,7)}-${hashStr}${hashStr.slice(0,4)}`;
+}
+
+// Generate UUIDs for users based on email + creation timestamp
+const aliceId = generateDeterministicUUID('alice@example.com', '2024-01-15');
+const bobId = generateDeterministicUUID('bob@example.com', '2024-01-20');
+const carolId = generateDeterministicUUID('carol@example.com', '2024-02-01');
+const davidId = generateDeterministicUUID('david@example.com', '2024-02-10');
+const emmaId = generateDeterministicUUID('emma@example.com', '2024-02-15');
+
 export const mockUsers: User[] = [
 	{
-		id: 'user_1',
+		id: aliceId,
 		username: 'alicejohnson',
 		name: 'Alice Johnson',
 		email: 'alice@example.com',
@@ -12,7 +39,7 @@ export const mockUsers: User[] = [
 		createdAt: new Date('2024-01-15')
 	},
 	{
-		id: 'user_2',
+		id: bobId,
 		username: 'bobsmith',
 		name: 'Bob Smith',
 		email: 'bob@example.com',
@@ -20,7 +47,7 @@ export const mockUsers: User[] = [
 		createdAt: new Date('2024-01-20')
 	},
 	{
-		id: 'user_3',
+		id: carolId,
 		username: 'caroldavis',
 		name: 'Carol Davis',
 		email: 'carol@example.com',
@@ -28,7 +55,7 @@ export const mockUsers: User[] = [
 		createdAt: new Date('2024-02-01')
 	},
 	{
-		id: 'user_4',
+		id: davidId,
 		username: 'davidwilson',
 		name: 'David Wilson',
 		email: 'david@example.com',
@@ -36,7 +63,7 @@ export const mockUsers: User[] = [
 		createdAt: new Date('2024-02-10')
 	},
 	{
-		id: 'user_5',
+		id: emmaId,
 		username: 'emmabrown',
 		name: 'Emma Brown',
 		email: 'emma@example.com',
@@ -56,7 +83,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q1_c4', text: 'Creative projects', order: 3 }
 		],
 		imageHashId: 'img_weekend',
-		createdBy: 'user_1',
+		createdBy: aliceId,
 		createdAt: new Date('2024-03-01')
 	},
 	{
@@ -68,7 +95,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q2_c3', text: 'Both equally', order: 2 },
 			{ id: 'q2_c4', text: 'Neither', order: 3 }
 		],
-		createdBy: 'user_2',
+		createdBy: bobId,
 		createdAt: new Date('2024-03-05')
 	},
 	{
@@ -79,7 +106,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q3_c2', text: 'Late night', order: 1 },
 			{ id: 'q3_c3', text: 'Flexible hours', order: 2 }
 		],
-		createdBy: 'user_1',
+		createdBy: aliceId,
 		createdAt: new Date('2024-03-08')
 	},
 	{
@@ -92,7 +119,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q4_c4', text: 'Electronic', order: 3 },
 			{ id: 'q4_c5', text: 'Jazz/Blues', order: 4 }
 		],
-		createdBy: 'user_3',
+		createdBy: carolId,
 		createdAt: new Date('2024-03-10')
 	},
 	{
@@ -104,7 +131,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q5_c3', text: 'City exploration', order: 2 }
 		],
 		imageHashId: 'img_nature',
-		createdBy: 'user_2',
+		createdBy: bobId,
 		createdAt: new Date('2024-03-12')
 	},
 	{
@@ -116,7 +143,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q6_c3', text: 'Talk to friends', order: 2 },
 			{ id: 'q6_c4', text: 'Work through it', order: 3 }
 		],
-		createdBy: 'user_4',
+		createdBy: davidId,
 		createdAt: new Date('2024-03-14')
 	},
 	{
@@ -128,7 +155,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q7_c3', text: 'Hands-on practice', order: 2 },
 			{ id: 'q7_c4', text: 'Discussion', order: 3 }
 		],
-		createdBy: 'user_5',
+		createdBy: emmaId,
 		createdAt: new Date('2024-03-16')
 	},
 	{
@@ -141,7 +168,7 @@ export const mockQuestions: PublicQuestion[] = [
 			{ id: 'q8_c4', text: 'Neither', order: 3 }
 		],
 		imageHashId: 'img_pets',
-		createdBy: 'user_1',
+		createdBy: aliceId,
 		createdAt: new Date('2024-03-18')
 	}
 ];
@@ -149,7 +176,7 @@ export const mockQuestions: PublicQuestion[] = [
 export const mockAnswers: PublicAnswer[] = [
 	{
 		id: 'ans_1',
-		userId: 'user_1',
+		userId: aliceId,
 		questionId: 'q_2',
 		choiceId: 'q2_c1',
 		visibility: AnswerVisibility.PUBLIC,
@@ -157,7 +184,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_2',
-		userId: 'user_2',
+		userId: bobId,
 		questionId: 'q_1',
 		choiceId: 'q1_c3',
 		visibility: AnswerVisibility.PUBLIC,
@@ -165,7 +192,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_3',
-		userId: 'user_3',
+		userId: carolId,
 		questionId: 'q_1',
 		choiceId: 'q1_c1',
 		visibility: AnswerVisibility.PRIVATE,
@@ -173,7 +200,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_4',
-		userId: 'user_4',
+		userId: davidId,
 		questionId: 'q_1',
 		choiceId: 'q1_c2',
 		visibility: AnswerVisibility.PUBLIC,
@@ -181,7 +208,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_5',
-		userId: 'user_5',
+		userId: emmaId,
 		questionId: 'q_1',
 		choiceId: 'q1_c3',
 		visibility: AnswerVisibility.PUBLIC,
@@ -189,7 +216,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_6',
-		userId: 'user_2',
+		userId: bobId,
 		questionId: 'q_2',
 		choiceId: 'q2_c2',
 		visibility: AnswerVisibility.PUBLIC,
@@ -197,7 +224,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_7',
-		userId: 'user_3',
+		userId: carolId,
 		questionId: 'q_2',
 		choiceId: 'q2_c1',
 		visibility: AnswerVisibility.PUBLIC,
@@ -205,7 +232,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_8',
-		userId: 'user_1',
+		userId: aliceId,
 		questionId: 'q_3',
 		choiceId: 'q3_c3',
 		visibility: AnswerVisibility.PRIVATE,
@@ -213,7 +240,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_9',
-		userId: 'user_4',
+		userId: davidId,
 		questionId: 'q_2',
 		choiceId: 'q2_c3',
 		visibility: AnswerVisibility.PUBLIC,
@@ -221,7 +248,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_10',
-		userId: 'user_5',
+		userId: emmaId,
 		questionId: 'q_3',
 		choiceId: 'q3_c1',
 		visibility: AnswerVisibility.PUBLIC,
@@ -229,7 +256,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_11',
-		userId: 'user_1',
+		userId: aliceId,
 		questionId: 'q_5',
 		choiceId: 'q5_c2',
 		visibility: AnswerVisibility.PUBLIC,
@@ -237,7 +264,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_12',
-		userId: 'user_2',
+		userId: bobId,
 		questionId: 'q_5',
 		choiceId: 'q5_c1',
 		visibility: AnswerVisibility.PUBLIC,
@@ -245,7 +272,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_13',
-		userId: 'user_3',
+		userId: carolId,
 		questionId: 'q_5',
 		choiceId: 'q5_c3',
 		visibility: AnswerVisibility.PRIVATE,
@@ -253,7 +280,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_14',
-		userId: 'user_4',
+		userId: davidId,
 		questionId: 'q_8',
 		choiceId: 'q8_c1',
 		visibility: AnswerVisibility.PUBLIC,
@@ -261,7 +288,7 @@ export const mockAnswers: PublicAnswer[] = [
 	},
 	{
 		id: 'ans_15',
-		userId: 'user_5',
+		userId: emmaId,
 		questionId: 'q_8',
 		choiceId: 'q8_c3',
 		visibility: AnswerVisibility.PUBLIC,
@@ -272,8 +299,8 @@ export const mockAnswers: PublicAnswer[] = [
 export const mockDMQuestions: DMQuestion[] = [
 	{
 		id: 'dmq_1',
-		senderId: 'user_1',
-		recipientId: 'user_2',
+		senderId: aliceId,
+		recipientId: bobId,
 		text: 'What do you think about the new project?',
 		choices: [
 			{ id: 'dmq1_c1', text: 'Excited!', order: 0 },
@@ -284,8 +311,8 @@ export const mockDMQuestions: DMQuestion[] = [
 	},
 	{
 		id: 'dmq_2',
-		senderId: 'user_2',
-		recipientId: 'user_1',
+		senderId: bobId,
+		recipientId: aliceId,
 		text: 'Want to grab lunch this week?',
 		choices: [
 			{ id: 'dmq2_c1', text: 'Yes, sounds great!', order: 0 },
@@ -296,8 +323,8 @@ export const mockDMQuestions: DMQuestion[] = [
 	},
 	{
 		id: 'dmq_3',
-		senderId: 'user_3',
-		recipientId: 'user_4',
+		senderId: carolId,
+		recipientId: aliceId,
 		text: 'How are you feeling today?',
 		createdAt: new Date('2024-03-12')
 	}
@@ -307,15 +334,18 @@ export const mockDMAnswers: DMAnswer[] = [
 	{
 		id: 'dmans_1',
 		dmQuestionId: 'dmq_1',
-		userId: 'user_2',
+		userId: bobId,
 		choiceId: 'dmq1_c2',
 		createdAt: new Date('2024-03-11')
 	},
 	{
 		id: 'dmans_2',
 		dmQuestionId: 'dmq_3',
-		userId: 'user_4',
+		userId: davidId,
 		textAnswer: "I'm doing great, thanks for asking!",
 		createdAt: new Date('2024-03-12')
 	}
 ];
+
+// Export the UUID generation function for use in other parts of the app
+export { generateDeterministicUUID };

@@ -92,10 +92,10 @@ function seedDatabase(database: Database.Database) {
 		VALUES (?, ?, ?, ?, ?, ?)
 	`);
 	
-	// Seed users
+	// Seed users with exact UUIDs from mock data
 	for (const user of mockUsers) {
 		insertUser.run(
-			user.id,
+			user.id, // Use exact UUID from mock data
 			user.username,
 			user.name,
 			user.email,
@@ -106,18 +106,18 @@ function seedDatabase(database: Database.Database) {
 		);
 	}
 	
-	// Seed public questions and choices
+	// Seed public questions and choices with exact IDs from mock data
 	for (const question of mockQuestions) {
 		insertQuestion.run(
-			question.id,
+			question.id, // Use exact ID from mock data
 			question.text,
-			question.createdBy,
+			question.createdBy, // This now matches the deterministic user UUIDs
 			question.createdAt.toISOString()
 		);
 		
 		for (const choice of question.choices) {
 			insertChoice.run(
-				choice.id,
+				choice.id, // Use exact ID from mock data
 				question.id,
 				choice.text,
 				choice.order
@@ -125,10 +125,10 @@ function seedDatabase(database: Database.Database) {
 		}
 	}
 	
-	// Seed public answers
+	// Seed public answers with exact IDs from mock data
 	for (const answer of mockAnswers) {
 		insertAnswer.run(
-			answer.id,
+			answer.id, // Use exact ID from mock data
 			answer.userId,
 			answer.questionId,
 			answer.choiceId,
@@ -137,10 +137,10 @@ function seedDatabase(database: Database.Database) {
 		);
 	}
 	
-	// Seed DM questions and choices
+	// Seed DM questions and choices with exact IDs from mock data
 	for (const dmQuestion of mockDMQuestions) {
 		insertDMQuestion.run(
-			dmQuestion.id,
+			dmQuestion.id, // Use exact ID from mock data
 			dmQuestion.text,
 			dmQuestion.senderId,
 			dmQuestion.recipientId,
@@ -150,7 +150,7 @@ function seedDatabase(database: Database.Database) {
 		if (dmQuestion.choices) {
 			for (const choice of dmQuestion.choices) {
 				insertDMChoice.run(
-					choice.id,
+					choice.id, // Use exact ID from mock data
 					dmQuestion.id,
 					choice.text,
 					choice.order
@@ -159,10 +159,10 @@ function seedDatabase(database: Database.Database) {
 		}
 	}
 	
-	// Seed DM answers
+	// Seed DM answers with exact IDs from mock data
 	for (const dmAnswer of mockDMAnswers) {
 		insertDMAnswer.run(
-			dmAnswer.id,
+			dmAnswer.id, // Use exact ID from mock data
 			dmAnswer.dmQuestionId,
 			dmAnswer.userId,
 			dmAnswer.choiceId || null,
@@ -172,15 +172,6 @@ function seedDatabase(database: Database.Database) {
 	}
 	
 	console.log(`Seeded ${mockUsers.length} users, ${mockQuestions.length} questions, ${mockAnswers.length} answers`);
-}
-
-// Generate UUID v4
-function generateId(): string {
-	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-		const r = (Math.random() * 16) | 0;
-		const v = c === 'x' ? r : (r & 0x3) | 0x8;
-		return v.toString(16);
-	});
 }
 
 /**
@@ -198,6 +189,9 @@ export class SQLiteAdapter {
 	private constructor() {
 		// Initialize database connection
 		const database = getDatabase();
+		
+		// Use a simple counter-based ID generator for new records
+		const generateId = () => `generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 		
 		this.userRepo = new SQLiteUserRepository(database, generateId);
 		this.questionRepo = new SQLiteQuestionRepository(database, generateId);

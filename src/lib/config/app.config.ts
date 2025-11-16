@@ -31,7 +31,7 @@ export const appConfig = {
 	},
 
 	storage: {
-		type: 'api' as 'mock' | 'sqlite' | 'd1' | 'api',
+		type: 'mock' as 'mock' | 'sqlite' | 'd1' | 'api',
 		localStorageKey: 'qna_app_state',
 		// Database configuration
 		// - SQLite: Local development (better-sqlite3)

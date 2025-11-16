@@ -23,6 +23,37 @@ export const GET: RequestHandler = async ({ params }) => {
 	}
 };
 
+// PUT /api/relations/[id] - Update relation (approve/reject)
+export const PUT: RequestHandler = async ({ params, request }) => {
+	try {
+		const updateData = await request.json();
+		
+		if (!updateData.userId) {
+			return json({ error: 'userId is required' }, { status: 400 });
+		}
+
+		const relationRepo = ServerRepositoryFactory.getRelationRepository();
+		const userRepo = ServerRepositoryFactory.getUserRepository();
+		const { RelationService } = await import('$lib/services/relation.service');
+		const service = new RelationService(relationRepo, userRepo);
+		
+		// Update the relation in the repository
+		const updatedRelation = await relationRepo.update(params.id, updateData);
+		
+		if (!updatedRelation) {
+			return json({ error: 'Relation not found' }, { status: 404 });
+		}
+		
+		return json(updatedRelation);
+	} catch (error) {
+		console.error('PUT /api/relations/[id] error:', error);
+		return json(
+			{ error: error instanceof Error ? error.message : 'Failed to update relation' },
+			{ status: 400 }
+		);
+	}
+};
+
 // DELETE /api/relations/[id] - Remove relation
 export const DELETE: RequestHandler = async ({ params, url }) => {
 	try {
