@@ -4,7 +4,7 @@
 import Database from 'better-sqlite3';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { mockUsers, mockQuestions, mockAnswers, mockDMQuestions, mockDMAnswers } from '$lib/repositories/implementations/mock/mock-data';
+import { mockUsers, mockQuestions, mockAnswers, mockDMQuestions, mockDMAnswers, mockMemes, mockMemeInteractions } from '$lib/repositories/implementations/mock/mock-data';
 import type { IUserRepository } from '$lib/repositories/interfaces/IUserRepository';
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
@@ -317,35 +317,30 @@ function seedDatabase(database: Database.Database) {
 		}
 		console.log(`✓ DM answers seeded`);
 		
-		// Seed memes
-		console.log('Seeding 5 memes...');
-		const memes = [
-			{ id: 'meme_1', hash: 'hash_distracted_bf', url: 'https://i.imgflip.com/1ur9b0.jpg', alt: 'Distracted Boyfriend meme', user: 'user_1', time: '2024-11-13T10:00:00.000Z' },
-			{ id: 'meme_2', hash: 'hash_drake_pointing', url: 'https://i.imgflip.com/30b1gx.jpg', alt: 'Drake pointing meme', user: 'user_2', time: '2024-11-13T11:30:00.000Z' },
-			{ id: 'meme_3', hash: 'hash_woman_yelling_cat', url: 'https://i.imgflip.com/345v97.jpg', alt: 'Woman yelling at confused cat meme', user: 'user_3', time: '2024-11-13T14:15:00.000Z' },
-			{ id: 'meme_4', hash: 'hash_this_is_fine', url: 'https://i.imgflip.com/1wz2x6.jpg', alt: 'This is fine dog sitting in burning room', user: 'user_4', time: '2024-11-13T16:45:00.000Z' },
-			{ id: 'meme_5', hash: 'hash_expanding_brain', url: 'https://i.imgflip.com/1jwhww.jpg', alt: 'Expanding brain meme template', user: 'user_5', time: '2024-11-14T08:20:00.000Z' }
-		];
-		
-		for (const meme of memes) {
-			insertMeme.run(meme.id, meme.hash, meme.url, meme.alt, meme.user, meme.time);
+		// Seed memes using mock data
+		console.log(`Seeding ${mockMemes.length} memes...`);
+		for (const meme of mockMemes) {
+			insertMeme.run(
+				meme.id,
+				meme.contentHash,
+				meme.imageUrl,
+				meme.altText || null,
+				meme.submittedBy,
+				meme.submittedAt.toISOString()
+			);
 		}
 		console.log(`✓ Memes seeded`);
 		
-		// Seed meme interactions
-		console.log('Seeding 7 meme interactions...');
-		const interactions = [
-			{ id: 'interaction_1', user: 'user_1', meme: 'meme_2', type: 'pick', time: '2024-11-13T12:00:00.000Z' },
-			{ id: 'interaction_2', user: 'user_1', meme: 'meme_3', type: 'reject', time: '2024-11-13T15:00:00.000Z' },
-			{ id: 'interaction_3', user: 'user_2', meme: 'meme_1', type: 'pick', time: '2024-11-13T11:00:00.000Z' },
-			{ id: 'interaction_4', user: 'user_2', meme: 'meme_4', type: 'pick', time: '2024-11-13T17:00:00.000Z' },
-			{ id: 'interaction_5', user: 'user_3', meme: 'meme_1', type: 'pick', time: '2024-11-13T11:30:00.000Z' },
-			{ id: 'interaction_6', user: 'user_4', meme: 'meme_2', type: 'reject', time: '2024-11-13T13:00:00.000Z' },
-			{ id: 'interaction_7', user: 'user_5', meme: 'meme_1', type: 'pick', time: '2024-11-13T12:30:00.000Z' }
-		];
-		
-		for (const inter of interactions) {
-			insertMemeInteraction.run(inter.id, inter.user, inter.meme, inter.type, inter.time);
+		// Seed meme interactions using mock data
+		console.log(`Seeding ${mockMemeInteractions.length} meme interactions...`);
+		for (const interaction of mockMemeInteractions) {
+			insertMemeInteraction.run(
+				interaction.id,
+				interaction.userId,
+				interaction.memeId,
+				interaction.interactionType,
+				interaction.interactedAt.toISOString()
+			);
 		}
 		console.log(`✓ Meme interactions seeded`);
 		
@@ -354,20 +349,6 @@ function seedDatabase(database: Database.Database) {
 		console.error('Error seeding database:', error);
 		throw error;
 	}
-	
-	// Seed DM answers with exact IDs from mock data
-	for (const dmAnswer of mockDMAnswers) {
-		insertDMAnswer.run(
-			dmAnswer.id, // Use exact ID from mock data
-			dmAnswer.dmQuestionId,
-			dmAnswer.userId,
-			dmAnswer.choiceId || null,
-			dmAnswer.textAnswer || null,
-			dmAnswer.createdAt.toISOString()
-		);
-	}
-	
-	console.log(`Seeded ${mockUsers.length} users, ${mockQuestions.length} questions, ${mockAnswers.length} answers`);
 }
 
 /**

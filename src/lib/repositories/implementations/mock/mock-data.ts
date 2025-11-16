@@ -354,7 +354,7 @@ export const mockMemes: Meme[] = [
 		contentHash: 'hash_distracted_bf',
 		imageUrl: 'https://i.imgflip.com/1ur9b0.jpg',
 		altText: 'Distracted Boyfriend meme - man looking at another woman while his girlfriend looks disapproving',
-		submittedBy: 'user_1',
+		submittedBy: aliceId,
 		submittedAt: new Date('2024-11-13T10:00:00Z'),
 		width: 680,
 		height: 450,
@@ -365,7 +365,7 @@ export const mockMemes: Meme[] = [
 		contentHash: 'hash_drake_pointing',
 		imageUrl: 'https://i.imgflip.com/30b1gx.jpg',
 		altText: 'Drake pointing meme - Drake rejecting something, then pointing approvingly at something else',
-		submittedBy: 'user_2',
+		submittedBy: bobId,
 		submittedAt: new Date('2024-11-13T11:30:00Z'),
 		width: 500,
 		height: 600,
@@ -376,7 +376,7 @@ export const mockMemes: Meme[] = [
 		contentHash: 'hash_woman_yelling_cat',
 		imageUrl: 'https://i.imgflip.com/345v97.jpg',
 		altText: 'Woman yelling at confused cat meme',
-		submittedBy: 'user_3',
+		submittedBy: carolId,
 		submittedAt: new Date('2024-11-13T14:15:00Z'),
 		width: 680,
 		height: 438,
@@ -387,7 +387,7 @@ export const mockMemes: Meme[] = [
 		contentHash: 'hash_this_is_fine',
 		imageUrl: 'https://i.imgflip.com/1wz2x6.jpg',
 		altText: 'This is fine dog sitting in burning room',
-		submittedBy: 'user_4',
+		submittedBy: davidId,
 		submittedAt: new Date('2024-11-13T16:45:00Z'),
 		width: 580,
 		height: 282,
@@ -398,7 +398,7 @@ export const mockMemes: Meme[] = [
 		contentHash: 'hash_expanding_brain',
 		imageUrl: 'https://i.imgflip.com/1jwhww.jpg',
 		altText: 'Expanding brain meme template',
-		submittedBy: 'user_5',
+		submittedBy: emmaId,
 		submittedAt: new Date('2024-11-14T08:20:00Z'),
 		width: 857,
 		height: 1202,
@@ -409,49 +409,49 @@ export const mockMemes: Meme[] = [
 export const mockMemeInteractions: MemeInteraction[] = [
 	{
 		id: 'interaction_1',
-		userId: 'user_1',
+		userId: aliceId,
 		memeId: 'meme_2',
 		interactionType: MemeInteractionType.PICK,
 		interactedAt: new Date('2024-11-13T12:00:00Z')
 	},
 	{
 		id: 'interaction_2',
-		userId: 'user_1',
+		userId: aliceId,
 		memeId: 'meme_3',
 		interactionType: MemeInteractionType.REJECT,
 		interactedAt: new Date('2024-11-13T15:00:00Z')
 	},
 	{
 		id: 'interaction_3',
-		userId: 'user_2',
+		userId: bobId,
 		memeId: 'meme_1',
 		interactionType: MemeInteractionType.PICK,
 		interactedAt: new Date('2024-11-13T11:00:00Z')
 	},
 	{
 		id: 'interaction_4',
-		userId: 'user_2',
+		userId: bobId,
 		memeId: 'meme_4',
 		interactionType: MemeInteractionType.PICK,
 		interactedAt: new Date('2024-11-13T17:00:00Z')
 	},
 	{
 		id: 'interaction_5',
-		userId: 'user_3',
+		userId: carolId,
 		memeId: 'meme_1',
 		interactionType: MemeInteractionType.PICK,
 		interactedAt: new Date('2024-11-13T11:30:00Z')
 	},
 	{
 		id: 'interaction_6',
-		userId: 'user_4',
+		userId: davidId,
 		memeId: 'meme_2',
 		interactionType: MemeInteractionType.REJECT,
 		interactedAt: new Date('2024-11-13T13:00:00Z')
 	},
 	{
 		id: 'interaction_7',
-		userId: 'user_5',
+		userId: emmaId,
 		memeId: 'meme_1',
 		interactionType: MemeInteractionType.PICK,
 		interactedAt: new Date('2024-11-13T12:30:00Z')

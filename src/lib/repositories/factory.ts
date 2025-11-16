@@ -13,7 +13,7 @@ import {
 	MockQuestionRepository,
 	MockAnswerRepository,
 	MockDMRepository,
-	MockMemeBallRepository
+	MockMemeBallRepository,
 	MockRelationRepository
 } from './implementations/mock';
 
@@ -118,9 +118,6 @@ export class RepositoryFactory {
 	 * Create MemeBall Repository
 	 */
 	static createMemeBallRepository(): IMemeBallRepository {
-	 * Create Relation Repository
-	 */
-	static createRelationRepository(): IRelationRepository {
 		switch (this.storageType) {
 			case 'sqlite':
 				throw new Error('SQLite repositories must be used server-side only. Use API storage type for client-side access.');
@@ -129,6 +126,19 @@ export class RepositoryFactory {
 			case 'api':
 				// TODO: Implement APIMemeBallRepository when needed
 				throw new Error('API MemeBall repository not yet implemented');
+			default:
+				throw new Error(`Unknown storage type: ${this.storageType}`);
+		}
+	}
+
+	/**
+	 * Create Relation Repository
+	 */
+	static createRelationRepository(): IRelationRepository {
+		switch (this.storageType) {
+			case 'sqlite':
+				throw new Error('SQLite repositories must be used server-side only. Use API storage type for client-side access.');
+			case 'mock':
 				return new MockRelationRepository();
 			case 'api':
 				return new APIRelationRepository();

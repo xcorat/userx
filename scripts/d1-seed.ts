@@ -103,7 +103,7 @@ const generateSeedSQL = (): string => {
 		);
 	}
 
-	return statements.join('\n');
+	return statements.map(stmt => stmt.trim()).filter(stmt => stmt.length > 0).join('\n');
 };
 
 // Main execution
