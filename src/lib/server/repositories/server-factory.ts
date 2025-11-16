@@ -58,15 +58,17 @@ export class ServerRepositoryFactory {
             // CRITICAL: Use opaque import path (string concatenation)
             // Bundler cannot statically resolve this, so SQLite won't be bundled for Cloudflare
             try {
-                const modulePath = './sqlite-factory' + ''; // opaque path - bundler can't resolve
-                sqliteFactory = (await import(/* @vite-ignore */ modulePath)).SQLiteRepositoryFactory;
-                sqliteFactory.initialize();
+                // Use direct import in development - no need for opaque paths in Node.js
+                const { SQLiteRepositoryFactory } = await import('./sqlite-factory');
+                sqliteFactory = SQLiteRepositoryFactory;
+                await sqliteFactory.initialize();
                 activeFactory = 'sqlite';
                 console.log('[ServerRepositoryFactory] Initialized with SQLite database');
             } catch (error) {
+                console.error('[ServerRepositoryFactory] SQLite initialization failed:', error);
                 throw new Error(
-                    'Failed to initialize SQLite: not in Node.js environment. ' +
-                    'Are you trying to run in Cloudflare Workers? Ensure DB is bound in wrangler.jsonc'
+                    `Failed to initialize SQLite: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
+                    'Are you in a Node.js environment? If in Cloudflare Workers, ensure DB is bound in wrangler.jsonc'
                 );
             }
         }

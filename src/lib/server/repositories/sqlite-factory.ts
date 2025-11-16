@@ -32,8 +32,8 @@ export class SQLiteRepositoryFactory {
 	/**
 	 * Initialize with SQLite database
 	 */
-	static initialize(): void {
-		this.adapter = SQLiteAdapter.create();
+	static async initialize(): Promise<void> {
+		this.adapter = await SQLiteAdapter.create();
 		console.log('[SQLiteRepositoryFactory] Initialized with SQLite database');
 	}
 

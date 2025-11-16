@@ -1,7 +1,6 @@
 // SQLite Database Adapter
 // Encapsulates all SQLite repositories for local development
 
-import Database from 'better-sqlite3';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { mockUsers, mockQuestions, mockAnswers, mockDMQuestions, mockDMAnswers, mockMemes, mockMemeInteractions } from '$lib/repositories/implementations/mock/mock-data';
@@ -20,15 +19,18 @@ import { SQLiteMemeBallRepository } from '$lib/server/repositories/sqlite/SQLite
 import { SQLiteRelationRepository } from '$lib/server/repositories/sqlite/SQLiteRelationRepository';
 
 const DB_PATH = 'qna-app.db';
-let db: Database.Database | null = null;
+let db: any | null = null;
 
 /**
  * Get SQLite database instance (internal to adapter)
  */
-function getDatabase(): Database.Database {
+async function getDatabase(): Promise<any> {
 	if (!db) {
 		try {
 			console.log(`[SQLite] Initializing database at: ${DB_PATH}`);
+			
+			// Dynamic import to avoid bundling issues with Vite SSR
+			const Database = (await import('better-sqlite3')).default;
 			db = new Database(DB_PATH);
 			console.log('[SQLite] Database connection established');
 			
@@ -36,7 +38,7 @@ function getDatabase(): Database.Database {
 			db.pragma('foreign_keys = ON');
 			console.log('[SQLite] Pragmas configured (WAL mode, foreign keys enabled)');
 			
-			initializeDatabase(db);
+			await initializeDatabase(db);
 		} catch (error) {
 			console.error('[SQLite] Fatal error initializing database:', error);
 			db = null;
@@ -46,7 +48,7 @@ function getDatabase(): Database.Database {
 	return db;
 }
 
-function initializeDatabase(database: Database.Database) {
+async function initializeDatabase(database: any): Promise<void> {
 	try {
 		// Check if database is already initialized
 		const tableCheck = database.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
@@ -82,7 +84,7 @@ function initializeDatabase(database: Database.Database) {
 	}
 }
 
-function seedDatabase(database: Database.Database) {
+function seedDatabase(database: any): void {
 	try {
 		console.log('Seeding database with mock data...');
 		
@@ -130,7 +132,7 @@ function seedDatabase(database: Database.Database) {
 			INSERT INTO meme_interactions (id, user_id, meme_id, interaction_type, interacted_at)
 			VALUES (?, ?, ?, ?, ?)
 		`);
-		
+
 		// Seed users
 		console.log(`Seeding ${mockUsers.length} users...`);
 		for (const user of mockUsers) {
@@ -161,103 +163,6 @@ function seedDatabase(database: Database.Database) {
 				insertChoice.run(
 					choice.id,
 					question.id,
-	console.log('Seeding database with mock data...');
-	
-	const insertUser = database.prepare(`
-		INSERT INTO users (id, username, name, email, password, avatar_url, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`);
-	
-	const insertQuestion = database.prepare(`
-		INSERT INTO public_questions (id, text, created_by, created_at)
-		VALUES (?, ?, ?, ?)
-	`);
-	
-	const insertChoice = database.prepare(`
-		INSERT INTO question_choices (id, question_id, text, order_index)
-		VALUES (?, ?, ?, ?)
-	`);
-	
-	const insertAnswer = database.prepare(`
-		INSERT INTO public_answers (id, user_id, question_id, choice_id, visibility, created_at)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`);
-	
-	const insertDMQuestion = database.prepare(`
-		INSERT INTO dm_questions (id, text, from_user_id, to_user_id, created_at)
-		VALUES (?, ?, ?, ?, ?)
-	`);
-	
-	const insertDMChoice = database.prepare(`
-		INSERT INTO dm_question_choices (id, dm_question_id, text, order_index)
-		VALUES (?, ?, ?, ?)
-	`);
-	
-	const insertDMAnswer = database.prepare(`
-		INSERT INTO dm_answers (id, dm_question_id, user_id, choice_id, text_answer, created_at)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`);
-	
-	// Seed users with exact UUIDs from mock data
-	for (const user of mockUsers) {
-		insertUser.run(
-			user.id, // Use exact UUID from mock data
-			user.username,
-			user.name,
-			user.email,
-			'password', // Default password for all users
-			user.avatarUrl || null,
-			user.createdAt.toISOString(),
-			user.createdAt.toISOString()
-		);
-	}
-	
-	// Seed public questions and choices with exact IDs from mock data
-	for (const question of mockQuestions) {
-		insertQuestion.run(
-			question.id, // Use exact ID from mock data
-			question.text,
-			question.createdBy, // This now matches the deterministic user UUIDs
-			question.createdAt.toISOString()
-		);
-		
-		for (const choice of question.choices) {
-			insertChoice.run(
-				choice.id, // Use exact ID from mock data
-				question.id,
-				choice.text,
-				choice.order
-			);
-		}
-	}
-	
-	// Seed public answers with exact IDs from mock data
-	for (const answer of mockAnswers) {
-		insertAnswer.run(
-			answer.id, // Use exact ID from mock data
-			answer.userId,
-			answer.questionId,
-			answer.choiceId,
-			answer.visibility,
-			answer.createdAt.toISOString()
-		);
-	}
-	
-	// Seed DM questions and choices with exact IDs from mock data
-	for (const dmQuestion of mockDMQuestions) {
-		insertDMQuestion.run(
-			dmQuestion.id, // Use exact ID from mock data
-			dmQuestion.text,
-			dmQuestion.senderId,
-			dmQuestion.recipientId,
-			dmQuestion.createdAt.toISOString()
-		);
-		
-		if (dmQuestion.choices) {
-			for (const choice of dmQuestion.choices) {
-				insertDMChoice.run(
-					choice.id, // Use exact ID from mock data
-					dmQuestion.id,
 					choice.text,
 					choice.order
 				);
@@ -317,7 +222,7 @@ function seedDatabase(database: Database.Database) {
 		}
 		console.log(`✓ DM answers seeded`);
 		
-		// Seed memes using mock data
+		// Seed memes
 		console.log(`Seeding ${mockMemes.length} memes...`);
 		for (const meme of mockMemes) {
 			insertMeme.run(
@@ -331,7 +236,7 @@ function seedDatabase(database: Database.Database) {
 		}
 		console.log(`✓ Memes seeded`);
 		
-		// Seed meme interactions using mock data
+		// Seed meme interactions
 		console.log(`Seeding ${mockMemeInteractions.length} meme interactions...`);
 		for (const interaction of mockMemeInteractions) {
 			insertMemeInteraction.run(
@@ -364,26 +269,41 @@ export class SQLiteAdapter {
 	public readonly memeRepo: IMemeBallRepository;
 	public readonly relationRepo: IRelationRepository;
 
-	private constructor() {
-		// Initialize database connection
-		const database = getDatabase();
-		
-		// Use a simple counter-based ID generator for new records
-		const generateId = () => `generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-		
-		this.userRepo = new SQLiteUserRepository(database, generateId);
-		this.questionRepo = new SQLiteQuestionRepository(database, generateId);
-		this.answerRepo = new SQLiteAnswerRepository(database, generateId);
-		this.dmRepo = new SQLiteDMRepository(database, generateId);
-		this.memeRepo = new SQLiteMemeBallRepository(database, generateId);
-		this.relationRepo = new SQLiteRelationRepository(database, generateId);
+	private constructor(
+		database: any,
+		userRepo: IUserRepository,
+		questionRepo: IQuestionRepository,
+		answerRepo: IAnswerRepository,
+		dmRepo: IDMRepository,
+		memeRepo: IMemeBallRepository,
+		relationRepo: IRelationRepository
+	) {
+		this.userRepo = userRepo;
+		this.questionRepo = questionRepo;
+		this.answerRepo = answerRepo;
+		this.dmRepo = dmRepo;
+		this.memeRepo = memeRepo;
+		this.relationRepo = relationRepo;
 	}
 
 	/**
 	 * Create new SQLite adapter instance
 	 */
-	static create(): SQLiteAdapter {
-		return new SQLiteAdapter();
+	static async create(): Promise<SQLiteAdapter> {
+		// Initialize database connection
+		const database = await getDatabase();
+		
+		// Use a simple counter-based ID generator for new records
+		const generateId = () => `generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+		
+		const userRepo = new SQLiteUserRepository(database, generateId);
+		const questionRepo = new SQLiteQuestionRepository(database, generateId);
+		const answerRepo = new SQLiteAnswerRepository(database, generateId);
+		const dmRepo = new SQLiteDMRepository(database, generateId);
+		const memeRepo = new SQLiteMemeBallRepository(database, generateId);
+		const relationRepo = new SQLiteRelationRepository(database, generateId);
+
+		return new SQLiteAdapter(database, userRepo, questionRepo, answerRepo, dmRepo, memeRepo, relationRepo);
 	}
 
 	/**
