@@ -34,14 +34,14 @@
 						<Search class="h-5 w-5" />
 						<span>Search</span>
 					</a>
-					<a href="/friends" class="hover:text-primary flex items-center gap-2" title="Friends">
-						<Users class="h-5 w-5" />
-						<span>Friends</span>
-					</a>
-					<a href="/dm" class="hover:text-primary flex items-center gap-2" title="Messages">
-						<MessageCircle class="h-5 w-5" />
-						<span>DMs</span>
-					</a>
+				<a href={authStore.currentUser?.username ? `/${authStore.currentUser.username}/friends` : '/friends'} class="hover:text-primary flex items-center gap-2" title="Friends">
+					<Users class="h-5 w-5" />
+					<span>Friends</span>
+				</a>
+				<a href={authStore.currentUser?.username ? `/${authStore.currentUser.username}/dm` : '/dm'} class="hover:text-primary flex items-center gap-2" title="Messages">
+					<MessageCircle class="h-5 w-5" />
+					<span>DMs</span>
+				</a>
 					<a href="/" class="hover:text-primary flex items-center gap-2" title="Back to Main">
 						<ArrowLeft class="h-5 w-5" />
 						<span>Back to Main</span>
@@ -68,17 +68,17 @@
 									<span>Search</span>
 								</a>
 							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<a href="/friends" class="flex items-center gap-2 w-full">
-									<Users class="h-4 w-4" />
-									<span>Friends</span>
-								</a>
+						<DropdownMenuItem>
+							<a href={authStore.currentUser?.username ? `/${authStore.currentUser.username}/friends` : '/friends'} class="flex items-center gap-2 w-full">
+								<Users class="h-4 w-4" />
+								<span>Friends</span>
+							</a>
 							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<a href="/dm" class="flex items-center gap-2 w-full">
-									<MessageCircle class="h-4 w-4" />
-									<span>DMs</span>
-								</a>
+						<DropdownMenuItem>
+							<a href={authStore.currentUser?.username ? `/${authStore.currentUser.username}/dm` : '/dm'} class="flex items-center gap-2 w-full">
+								<MessageCircle class="h-4 w-4" />
+								<span>DMs</span>
+							</a>
 							</DropdownMenuItem>
 							<DropdownMenuItem>
 								<a href="/" class="flex items-center gap-2 w-full">

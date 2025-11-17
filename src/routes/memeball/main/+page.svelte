@@ -250,9 +250,8 @@
 
 <style>
 	.meme-viewer {
-		position: relative;
-		width: 100vw;
-		height: 100vh;
+		position: absolute;
+		inset: 0;
 		overflow: hidden;
 		display: flex;
 		align-items: center;
@@ -365,13 +364,13 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-		max-width: 500px;
-		max-height: 700px;
-		margin: 0 auto;
-		padding: 1rem;
+		max-width: none;
+		max-height: none;
+		margin: 0;
+		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: 0;
 	}
 
 	:global(.meme-swipe-stack) {
@@ -384,7 +383,7 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-		border-radius: 24px;
+		border-radius: 0;
 		overflow: hidden;
 		background: #000;
 		display: flex;
@@ -442,12 +441,17 @@
 
 	/* Progress indicator */
 	.progress-indicator {
+		position: absolute;
+		bottom: 5rem;
+		left: 50%;
+		transform: translateX(-50%);
 		background: rgba(3, 1, 20, 0.8);
 		backdrop-filter: blur(12px);
 		border-radius: 16px;
 		padding: 0.75rem 1.25rem;
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		text-align: center;
+		z-index: 10;
 	}
 
 	.progress-text {
@@ -458,10 +462,15 @@
 
 	/* Action buttons */
 	.action-buttons {
+		position: absolute;
+		bottom: 1.5rem;
+		left: 50%;
+		transform: translateX(-50%);
 		display: flex;
 		gap: 1.5rem;
 		justify-content: center;
 		align-items: center;
+		z-index: 20;
 	}
 
 	.action-btn {
@@ -477,15 +486,17 @@
 		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 		color: white;
 	}
+
 	/* User stats */
 	.user-stats {
 		position: absolute;
-		top: 1rem;
-		right: 1rem;
+		top: 1.5rem;
+		right: 1.5rem;
 		display: flex;
-		gap: 0.75rem;
-		z-index: 20;
+		gap: 1rem;
+		z-index: 10;
 	}
+
 	.action-btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
@@ -507,16 +518,6 @@
 
 	.pick-btn:hover:not(:disabled) {
 		box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
-	}
-
-	/* User stats */
-	.user-stats {
-		position: absolute;
-		top: 1.5rem;
-		right: 1.5rem;
-		display: flex;
-		gap: 1rem;
-		z-index: 10;
 	}
 
 	.stat-item {

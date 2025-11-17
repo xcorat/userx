@@ -37,7 +37,7 @@
 			<!-- App Selection Cards -->
 			<div class="grid gap-8 md:grid-cols-2 max-w-2xl mx-auto">
 				<Card.Root class="cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary">
-					<div onclick={goToQnA} class="p-8 space-y-6">
+					<div onclick={goToQnA} onkeydown={(e) => e.key === 'Enter' && goToQnA()} role="button" tabindex="0" class="p-8 space-y-6">
 						<div class="flex justify-center">
 							<HelpCircle class="h-16 w-16 text-orange-500" />
 						</div>
@@ -56,7 +56,7 @@
 				</Card.Root>
 
 				<Card.Root class="cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary">
-					<div onclick={goToMemeball} class="p-8 space-y-6">
+					<div onclick={goToMemeball} onkeydown={(e) => e.key === 'Enter' && goToMemeball()} role="button" tabindex="0" class="p-8 space-y-6">
 						<div class="flex justify-center">
 							<Flame class="h-16 w-16 text-purple-500" />
 						</div>

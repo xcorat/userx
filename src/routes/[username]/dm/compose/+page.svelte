@@ -100,7 +100,7 @@
 
 			await dmStore.sendQuestion(data);
 			toast.success('DM question sent!');
-			goto('/dm');
+			goto(`/${authStore.currentUser?.username}/dm`);
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Failed to send DM');
 		} finally {
@@ -109,7 +109,7 @@
 	}
 
 	function handleCancel() {
-		goto('/dm');
+		goto(`/${authStore.currentUser?.username}/dm`);
 	}
 </script>
 

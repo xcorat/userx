@@ -321,7 +321,7 @@
 	.card {
 		position: absolute;
 		inset: 0;
-		border-radius: 24px;
+		border-radius: 0;
 		background: white;
 		box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 		user-select: none;

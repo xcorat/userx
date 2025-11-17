@@ -1,34 +1,54 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import DIContainer from '$lib/config/di-container';
 	import type { UserProfile, AnswerWithQuestion } from '$lib/models';
-	import { AnswerVisibility } from '$lib/models/types';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { Eye, EyeOff } from 'lucide-svelte';
+	import { MessageSquare, Eye } from 'lucide-svelte';
 
 	let profile = $state<UserProfile | null>(null);
 	let answers = $state<AnswerWithQuestion[]>([]);
-	let allAnswers = $state<AnswerWithQuestion[]>([]);
 	let isLoading = $state(true);
-	let showPrivateAnswers = $state(true);
-	let updatingVisibility = $state<Record<string, boolean>>({});
+	let username = $state('');
 
 	onMount(() => {
+		const routeUsername = $page.params.username;
+		if (!routeUsername) {
+			goto('/');
+			return;
+		}
+		username = routeUsername;
+		
+		// Redirect to profile subpage if viewing own profile
+		if (authStore.currentUser && authStore.currentUser.username === username) {
+			goto(`/${username}/profile`);
+			return;
+		}
+		
 		loadProfile();
 	});
 
 	async function loadProfile() {
-		if (!authStore.currentUser) return;
-
+		if (!username) return;
+		
 		isLoading = true;
 		try {
+			const userService = DIContainer.getUserService();
+			const user = await userService.getUserByUsername(username);
+			
+			if (!user) {
+				goto('/');
+				return;
+			}
+			
 			const profileService = DIContainer.getProfileService();
-			profile = await profileService.getUserProfile(authStore.currentUser.id);
-			allAnswers = await profileService.getProfileAnswers(authStore.currentUser.id, true);
-			answers = allAnswers;
+			profile = await profileService.getUserProfile(user.id);
+			// Only load public answers for other users
+			answers = await profileService.getProfileAnswers(user.id, false);
 		} catch (err) {
 			console.error('Failed to load profile:', err);
 		} finally {
@@ -36,60 +56,28 @@
 		}
 	}
 
-	async function toggleAnswerVisibility(answerId: string, currentVisibility: AnswerVisibility) {
-		updatingVisibility[answerId] = true;
-		
-		try {
-			const answerService = DIContainer.getAnswerService();
-			const newVisibility = currentVisibility === AnswerVisibility.PUBLIC 
-				? AnswerVisibility.PRIVATE 
-				: AnswerVisibility.PUBLIC;
-			await answerService.updateAnswerVisibility(answerId, newVisibility);
-			
-			// Update both arrays
-			allAnswers = allAnswers.map(a => 
-				a.id === answerId ? { ...a, visibility: newVisibility } : a
-			);
-			answers = answers.map(a => 
-				a.id === answerId ? { ...a, visibility: newVisibility } : a
-			);
-			
-			// Update profile stats
-			if (profile) {
-				if (newVisibility === 'public') {
-					profile.publicAnswerCount++;
-					profile.privateAnswerCount--;
-				} else {
-					profile.publicAnswerCount--;
-					profile.privateAnswerCount++;
-				}
-			}
-		} catch (err) {
-			console.error('Failed to update visibility:', err);
-		} finally {
-			updatingVisibility[answerId] = false;
-		}
-	}
-
-	$effect(() => {
-		if (!showPrivateAnswers) {
-			// Filter out private answers for display
-			answers = allAnswers.filter(a => a.visibility === AnswerVisibility.PUBLIC);
-		} else {
-			// Show all answers
-			answers = allAnswers;
-		}
-	});
-
 	function getInitials(name: string): string {
 		return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+	}
+
+	function sendDMQuestion() {
+		if (!profile) return;
+		goto(`/${authStore.currentUser?.username}/dm/compose?recipientId=${profile.id}`);
 	}
 </script>
 
 <div class="max-w-4xl mx-auto space-y-6">
 	<Card>
 		<CardHeader>
-			<CardTitle>Profile</CardTitle>
+			<div class="flex items-center justify-between">
+				<CardTitle>@{username}'s Profile</CardTitle>
+				{#if authStore.currentUser && profile && authStore.currentUser.id !== profile.id}
+					<Button onclick={sendDMQuestion}>
+						<MessageSquare class="w-4 h-4 mr-1" />
+						Send DM Question
+					</Button>
+				{/if}
+			</div>
 		</CardHeader>
 		<CardContent class="space-y-4">
 			{#if isLoading}
@@ -115,7 +103,6 @@
 						{#if profile.username}
 							<p class="text-muted-foreground">@{profile.username}</p>
 						{/if}
-						<p class="text-sm text-muted-foreground">{profile.email}</p>
 						{#if profile.location}
 							<p class="text-sm text-muted-foreground mt-1">📍 {profile.location}</p>
 						{/if}
@@ -127,7 +114,7 @@
 
 				<div class="pt-4 border-t">
 					<h3 class="text-lg font-semibold mb-3">Stats</h3>
-					<div class="grid grid-cols-3 gap-4 text-center">
+					<div class="grid grid-cols-2 gap-4 text-center">
 						<div>
 							<div class="text-2xl font-bold">{profile.questionsAnswered}</div>
 							<div class="text-sm text-muted-foreground">Questions Answered</div>
@@ -136,12 +123,10 @@
 							<div class="text-2xl font-bold text-green-600">{profile.publicAnswerCount}</div>
 							<div class="text-sm text-muted-foreground">Public Answers</div>
 						</div>
-						<div>
-							<div class="text-2xl font-bold text-blue-600">{profile.privateAnswerCount}</div>
-							<div class="text-sm text-muted-foreground">Private Answers</div>
-						</div>
 					</div>
 				</div>
+			{:else}
+				<p class="text-center text-destructive">User not found</p>
 			{/if}
 		</CardContent>
 	</Card>
@@ -149,16 +134,7 @@
 	{#if !isLoading && answers.length > 0}
 		<Card>
 			<CardHeader>
-				<div class="flex items-center justify-between">
-					<CardTitle>My Answers</CardTitle>
-					<Button
-						variant="outline"
-						size="sm"
-						onclick={() => showPrivateAnswers = !showPrivateAnswers}
-					>
-						{showPrivateAnswers ? 'Hide Private' : 'Show All'}
-					</Button>
-				</div>
+				<CardTitle>Public Answers</CardTitle>
 			</CardHeader>
 			<CardContent class="space-y-4">
 				{#each answers as answer (answer.id)}
@@ -170,40 +146,26 @@
 									<Badge variant="outline" class="bg-primary/10">
 										{answer.choiceText}
 									</Badge>
-								<Badge variant={answer.visibility === AnswerVisibility.PUBLIC ? 'default' : 'secondary'}>
-									{#if answer.visibility === AnswerVisibility.PUBLIC}
+									<Badge variant="default">
 										<span class="flex items-center gap-1">
 											<Eye class="w-3 h-3" /> Public
 										</span>
-									{:else}
-										<span class="flex items-center gap-1">
-											<EyeOff class="w-3 h-3" /> Private
-										</span>
-									{/if}
-								</Badge>
+									</Badge>
 								</div>
 								<p class="text-xs text-muted-foreground">
 									Answered on {new Date(answer.createdAt).toLocaleDateString()}
 								</p>
 							</div>
-						<Button
-							variant="ghost"
-							size="sm"
-							onclick={() => toggleAnswerVisibility(answer.id, answer.visibility)}
-							disabled={updatingVisibility[answer.id]}
-						>
-							{updatingVisibility[answer.id] ? '...' : (answer.visibility === AnswerVisibility.PUBLIC ? 'Make Private' : 'Make Public')}
-							</Button>
 						</div>
 					</div>
 				{/each}
 			</CardContent>
 		</Card>
-	{:else if !isLoading}
+	{:else if !isLoading && answers.length === 0}
 		<Card>
 			<CardContent class="py-8">
 				<p class="text-center text-muted-foreground">
-					No answers yet. Start answering questions to build your profile!
+					No public answers yet
 				</p>
 			</CardContent>
 		</Card>

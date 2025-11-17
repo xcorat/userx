@@ -18,13 +18,15 @@
 	}
 	
 	function goToProfile() {
-		if (authStore.currentUser) {
-			goto(`/profile/${authStore.currentUser.id}`);
+		if (authStore.currentUser?.username) {
+			goto(`/${authStore.currentUser.username}`);
 		}
 	}
 	
 	function goToMyProfile() {
-		goto('/profile');
+		if (authStore.currentUser?.username) {
+			goto(`/${authStore.currentUser.username}/profile`);
+		}
 	}
 
 	function goToMain() {
@@ -32,11 +34,15 @@
 	}
 
 	function goToFriends() {
-		goto('/friends');
+		if (authStore.currentUser?.username) {
+			goto(`/${authStore.currentUser.username}/friends`);
+		}
 	}
 
 	function goToDMs() {
-		goto('/dm');
+		if (authStore.currentUser?.username) {
+			goto(`/${authStore.currentUser.username}/dm`);
+		}
 	}
 	
 	// Get user initials from name

@@ -177,8 +177,11 @@
 			{#each friends as friend (friend.id)}
 				<div 
 					class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition cursor-pointer"
-					onclick={() => goto(`/profile/${friend.userId}`)}
-					onkeydown={(e) => e.key === 'Enter' && goto(`/profile/${friend.userId}`)}
+					onclick={() => {
+						// Navigate to user's profile via username
+						goto(`/${friend.username}`);
+					}}
+					onkeydown={(e) => e.key === 'Enter' && goto(`/${friend.username}`)}
 						role="button"
 						tabindex="0"
 					>
@@ -222,9 +225,9 @@
 			{#each receivedRequests as request (request.id)}
 				<div 
 					class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition cursor-pointer"
-					onclick={() => goto(`/profile/${request.userId}`)}
-					onkeydown={(e) => e.key === 'Enter' && goto(`/profile/${request.userId}`)}
-						role="button"
+					onclick={() => goto(`/${request.username}`)}
+					onkeydown={(e) => e.key === 'Enter' && goto(`/${request.username}`)}
+					role="button"
 						tabindex="0"
 					>
 						<div class="flex items-center gap-4">
@@ -280,9 +283,9 @@
 			{#each sentRequests as request (request.id)}
 				<div 
 					class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition cursor-pointer"
-					onclick={() => goto(`/profile/${request.userId}`)}
-					onkeydown={(e) => e.key === 'Enter' && goto(`/profile/${request.userId}`)}
-						role="button"
+					onclick={() => goto(`/${request.username}`)}
+					onkeydown={(e) => e.key === 'Enter' && goto(`/${request.username}`)}
+					role="button"
 						tabindex="0"
 					>
 						<div class="flex items-center gap-4">

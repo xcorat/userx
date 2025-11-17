@@ -155,14 +155,14 @@
 	}
 
 	.memeball-shell {
-		min-height: 100vh;
+		height: 100vh;
 		background: radial-gradient(circle at top, rgba(88, 28, 135, 0.35), transparent 55%),
 			linear-gradient(135deg, #040014 0%, #05011f 50%, #080a29 100%);
 		color: #f8f5ff;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 2rem 1rem 3rem;
+		padding: 0;
 		overflow: hidden;
 	}
 
@@ -189,19 +189,23 @@
 
 	.content {
 		position: relative;
-		width: min(600px, 100%);
+		width: 100%;
+		height: 100%;
 		z-index: 1;
 		display: flex;
 		flex-direction: column;
+		align-items: center;
+		justify-content: center;
 		gap: 1.5rem;
+		padding: 0;
 	}
 
 	.card-stack {
 		position: relative;
-		height: 400px;
+		height: 100%;
 		width: 100%;
-		max-width: 500px;
-		margin: 0 auto;
+		max-width: none;
+		margin: 0;
 	}
 
 	.transmission-card-content {
@@ -283,11 +287,11 @@
 	@media (max-width: 640px) {
 		.content {
 			gap: 1rem;
-			padding: 1rem;
+			padding: 0;
 		}
 
 		.card-stack {
-			height: 420px;
+			height: 100%;
 		}
 	}
 </style>
