@@ -172,72 +172,35 @@
 						<!-- Main meme image -->
 						<img
 							src={meme.imageUrl}
-							alt={meme.altText || 'Meme image'}
+							alt="Meme image"
 							class="meme-image"
 						/>
-
-						<!-- Meme info overlay (bottom) -->
-						<div class="meme-info">
-							{#if meme.altText}
-								<div class="meme-alt-text">{meme.altText}</div>
-							{/if}
-							
-							<div class="meme-stats">
-								<div class="stat">
-									<span class="stat-value">{meme.totalPicks}</span>
-									<span class="stat-label">picks</span>
-								</div>
-								<div class="stat">
-									<span class="stat-value">{meme.totalRejects}</span>
-									<span class="stat-label">rejects</span>
-								</div>
-							</div>
-						</div>
 					</div>
 				{/snippet}
 			</SwipeCardStack>
-
-			<!-- Progress indicator -->
-			<div class="progress-indicator">
-				<div class="progress-text">
-					{memeStore.availableMemes.length} {memeStore.availableMemes.length === 1 ? 'meme' : 'memes'} remaining
-				</div>
-			</div>
-
-			<!-- Action buttons -->
-			<div class="action-buttons">
-				<button
-					class="action-btn reject-btn"
-					onclick={swipeLeft}
-					disabled={memeStore.isInteracting}
-					aria-label="Reject meme"
-				>
-					<X size={28} />
-				</button>
-				<button
-					class="action-btn pick-btn"
-					onclick={swipeRight}
-					disabled={memeStore.isInteracting}
-					aria-label="Pick meme"
-				>
-					<Heart size={28} />
-				</button>
-			</div>
-
-			<!-- Quick stats -->
-			{#if memeStore.userStats}
-				<div class="user-stats">
-					<div class="stat-item">
-						<span class="stat-number">{memeStore.userStats.totalPicks}</span>
-						<span class="stat-label">Picks Today</span>
-					</div>
-					<div class="stat-item">
-						<span class="stat-number">{memeStore.tokensRemaining}</span>
-						<span class="stat-label">Tokens Left</span>
-					</div>
-				</div>
-			{/if}
 		</div>
+	{/if}
+
+	<!-- Bottom Action Bar -->
+	{#if isInitialized && !memeStore.error && memeStore.availableMemes.length > 0}
+		<footer class="action-bar">
+			<button
+				class="action-btn reject-btn"
+				onclick={swipeLeft}
+				disabled={memeStore.isInteracting}
+				aria-label="Reject meme"
+			>
+				<X size={28} />
+			</button>
+			<button
+				class="action-btn pick-btn"
+				onclick={swipeRight}
+				disabled={memeStore.isInteracting}
+				aria-label="Pick meme"
+			>
+				<Heart size={28} />
+			</button>
+		</footer>
 	{/if}
 
 	<!-- Floating Action Button -->
@@ -397,80 +360,19 @@
 		object-fit: contain;
 	}
 
-	.meme-info {
-		position: absolute;
+	/* Bottom Action Bar */
+	.action-bar {
+		position: fixed;
 		bottom: 0;
 		left: 0;
 		right: 0;
-		background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-		padding: 2rem 1.5rem 1.5rem;
-		color: #f8f5ff;
-		pointer-events: none;
-	}
-
-	.meme-alt-text {
-		font-size: 0.9rem;
-		line-height: 1.4;
-		margin-bottom: 1rem;
-		color: rgba(248, 245, 255, 0.9);
-	}
-
-	.meme-stats {
+		z-index: 40;
+		background: transparent;
+		padding: 1rem 1.5rem;
 		display: flex;
-		gap: 1.5rem;
-	}
-
-	.stat {
-		display: flex;
-		align-items: baseline;
-		gap: 0.25rem;
-	}
-
-	.stat-value {
-		font-size: 1.1rem;
-		font-weight: 600;
-		color: #f8f5ff;
-	}
-
-	.stat-label {
-		font-size: 0.8rem;
-		color: rgba(248, 245, 255, 0.6);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	/* Progress indicator */
-	.progress-indicator {
-		position: absolute;
-		bottom: 5rem;
-		left: 50%;
-		transform: translateX(-50%);
-		background: rgba(3, 1, 20, 0.8);
-		backdrop-filter: blur(12px);
-		border-radius: 16px;
-		padding: 0.75rem 1.25rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		text-align: center;
-		z-index: 10;
-	}
-
-	.progress-text {
-		font-size: 0.875rem;
-		color: rgba(248, 245, 255, 0.8);
-		font-weight: 500;
-	}
-
-	/* Action buttons */
-	.action-buttons {
-		position: absolute;
-		bottom: 1.5rem;
-		left: 50%;
-		transform: translateX(-50%);
-		display: flex;
-		gap: 1.5rem;
-		justify-content: center;
 		align-items: center;
-		z-index: 20;
+		justify-content: center;
+		gap: 1.5rem;
 	}
 
 	.action-btn {
@@ -485,16 +387,6 @@
 		transition: all 200ms ease;
 		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 		color: white;
-	}
-
-	/* User stats */
-	.user-stats {
-		position: absolute;
-		top: 1.5rem;
-		right: 1.5rem;
-		display: flex;
-		gap: 1rem;
-		z-index: 10;
 	}
 
 	.action-btn:disabled {
@@ -520,35 +412,10 @@
 		box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
 	}
 
-	.stat-item {
-		background: rgba(3, 1, 20, 0.8);
-		backdrop-filter: blur(12px);
-		border-radius: 12px;
-		padding: 0.5rem 0.75rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		text-align: center;
-		min-width: 60px;
-	}
-
-	.stat-number {
-		display: block;
-		font-size: 1rem;
-		font-weight: 600;
-		color: #f8f5ff;
-	}
-
-	.stat-label {
-		display: block;
-		font-size: 0.7rem;
-		color: rgba(248, 245, 255, 0.6);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
 	/* Floating Action Button */
 	.fab {
 		position: fixed;
-		bottom: 2rem;
+		bottom: 5.5rem;
 		right: 2rem;
 		width: 56px;
 		height: 56px;
@@ -590,33 +457,8 @@
 
 	/* Mobile responsiveness */
 	@media (max-width: 640px) {
-		.meme-container {
-			padding: 0.75rem;
-			max-height: 650px;
-		}
-
-		.meme-alt-text {
-			font-size: 0.8rem;
-			margin-bottom: 0.75rem;
-		}
-
-		.stat {
-			gap: 0.2rem;
-		}
-
-		.stat-value {
-			font-size: 1rem;
-		}
-
-		.stat-label {
-			font-size: 0.7rem;
-		}
-
-		.progress-text {
-			font-size: 0.75rem;
-		}
-
-		.action-buttons {
+		.action-bar {
+			padding: 0.75rem 1rem;
 			gap: 1rem;
 		}
 
@@ -625,27 +467,8 @@
 			height: 56px;
 		}
 
-		.user-stats {
-			top: 0.75rem;
-			right: 0.75rem;
-			gap: 0.5rem;
-		}
-
-		.stat-item {
-			padding: 0.4rem 0.6rem;
-			min-width: 50px;
-		}
-
-		.stat-number {
-			font-size: 0.9rem;
-		}
-
-		.stat-label {
-			font-size: 0.6rem;
-		}
-
 		.fab {
-			bottom: 1.5rem;
+			bottom: 5rem;
 			right: 1.5rem;
 			width: 48px;
 			height: 48px;

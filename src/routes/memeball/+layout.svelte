@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import UserMenu from '$lib/components/features/user-menu.svelte';
+	import MemeBallHeader from '$lib/components/layout/MemeBallHeader.svelte';
 	
 	let { children } = $props();
 
@@ -21,15 +21,13 @@
 
 <!-- Full screen dark space theme -->
 <div class="memeball-layout">
-	<!-- Shared user menu in top right (hidden on bootstrap) -->
+	<!-- Header with transparent background and navigation -->
 	{#if authStore.isAuthenticated && !isBootstrap}
-		<div class="memeball-overlay">
-			<UserMenu />
-		</div>
+		<MemeBallHeader />
 	{/if}
 
 	<!-- Main content area -->
-	<main class="memeball-content">
+	<main class="memeball-content" class:with-header={!isBootstrap}>
 		{@render children?.()}
 	</main>
 </div>
@@ -52,15 +50,6 @@
 		overflow: hidden;
 	}
 
-	.memeball-overlay {
-		position: fixed;
-		top: 1.5rem;
-		right: 1.5rem;
-		z-index: 50;
-		pointer-events: auto;
-		background: transparent;
-	}
-
 	.memeball-content {
 		position: absolute;
 		top: 0;
@@ -70,10 +59,9 @@
 		z-index: 1;
 	}
 
-	@media (max-width: 640px) {
-		.memeball-overlay {
-			top: 1rem;
-			right: 1rem;
-		}
+
+	.memeball-content.with-header {
+		/** no change for now.*/
+		top: 0rem;
 	}
 </style>
