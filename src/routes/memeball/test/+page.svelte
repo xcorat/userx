@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import * as Card from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
+	import { goto } from '$app/navigation';
 
 	interface TableInfo {
 		name: string;
@@ -63,9 +64,12 @@
 			<h1 class="text-3xl font-bold">Memeball Database Test</h1>
 			<p class="text-sm text-muted-foreground mt-1">View memeball tables and sample data</p>
 		</div>
-		<Button onclick={loadDbStats} disabled={isLoading}>
+		<div class="flex items-center gap-2">
+			<Button onclick={() => goto('/memeball/test/main-layout')}>Open main-layout</Button>
+			<Button onclick={loadDbStats} disabled={isLoading}>
 			{isLoading ? 'Refreshing...' : 'Refresh'}
 		</Button>
+		</div>
 	</div>
 
 	{#if isLoading && !dbStats}
