@@ -9,8 +9,8 @@ export class UserService {
 		return await this.userRepo.findAll();
 	}
 
-	async getUserById(id: string): Promise<User | null> {
-		return await this.userRepo.findById(id);
+	async getUserById(publicKey: string): Promise<User | null> {
+		return await this.userRepo.findById(publicKey);
 	}
 
 	async getUserByEmail(email: string): Promise<User | null> {
