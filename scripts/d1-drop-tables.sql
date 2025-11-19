@@ -11,4 +11,5 @@ DROP TABLE IF EXISTS question_choices;
 DROP TABLE IF EXISTS question_images;
 DROP TABLE IF EXISTS public_questions;
 DROP TABLE IF EXISTS user_relations;
+DROP TABLE IF EXISTS user_keypairs;
 DROP TABLE IF EXISTS users;

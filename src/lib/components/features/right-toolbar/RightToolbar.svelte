@@ -152,7 +152,8 @@
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    /* semi-transparent gradient background (alpha 0.2) to match visual spec */
+    /* semi-transparent gradient background using token colors (fallback to rgba) */
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent), color-mix(in srgb, var(--primary-foreground) 18%, transparent));
     background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,214,160,0.2));
     z-index: 110;
   }
@@ -162,7 +163,8 @@
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    /* Semi-transparent background with 0.2 opacity as requested */
+    /* Semi-transparent background using current foreground token */
+    background: color-mix(in srgb, var(--foreground) 6%, transparent);
     background: rgba(255, 255, 255, 0.2);
     z-index: 110;
   }
@@ -178,14 +180,14 @@
   }
 
   /* Color variants */
-  .rt-btn[data-color="primary"] { background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(6,214,160,0.18)); box-shadow: 0 6px 16px rgba(16,185,129,0.24); }
-  .rt-btn[data-color="danger"] { background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(220,38,38,0.18)); box-shadow: 0 6px 16px rgba(239,68,68,0.24); }
-  .rt-btn[data-color="neutral"] { background: rgba(255,255,255,0.06); box-shadow: 0 6px 16px rgba(0,0,0,0.42); }
-  .rt-btn[data-color="accent"] { background: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(124,58,237,0.18)); box-shadow: 0 6px 16px rgba(139,92,246,0.24); }
+  .rt-btn[data-color="primary"] { background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent), color-mix(in srgb, var(--primary-foreground) 18%, transparent)); box-shadow: 0 6px 16px color-mix(in srgb, var(--primary) 24%, transparent); background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(6,214,160,0.18)); box-shadow: 0 6px 16px rgba(16,185,129,0.24); }
+  .rt-btn[data-color="danger"] { background: linear-gradient(135deg, color-mix(in srgb, var(--destructive) 18%, transparent), color-mix(in srgb, var(--destructive) 12%, transparent)); box-shadow: 0 6px 16px color-mix(in srgb, var(--destructive) 24%, transparent); background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(220,38,38,0.18)); box-shadow: 0 6px 16px rgba(239,68,68,0.24); }
+  .rt-btn[data-color="neutral"] { background: color-mix(in srgb, var(--foreground) 6%, transparent); box-shadow: 0 6px 16px color-mix(in srgb, var(--foreground) 22%, transparent); background: rgba(255,255,255,0.06); box-shadow: 0 6px 16px rgba(0,0,0,0.42); }
+  .rt-btn[data-color="accent"] { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent), color-mix(in srgb, var(--accent-foreground) 18%, transparent)); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 24%, transparent); background: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(124,58,237,0.18)); box-shadow: 0 6px 16px rgba(139,92,246,0.24); }
   .rt-btn[data-color="primary"], .rt-btn[data-color="accent"], .rt-btn[data-color="danger"] { color: white; }
 
   /* Hover color-specific shadows */
-  .rt-btn:hover[data-color="primary"] { box-shadow: 0 10px 28px rgba(16,185,129,0.28); }
-  .rt-btn:hover[data-color="danger"] { box-shadow: 0 10px 28px rgba(239,68,68,0.28); }
-  .rt-btn:hover[data-color="accent"] { box-shadow: 0 10px 28px rgba(139,92,246,0.28); }
+  .rt-btn:hover[data-color="primary"] { box-shadow: 0 10px 28px color-mix(in srgb, var(--primary) 28%, transparent); }
+  .rt-btn:hover[data-color="danger"] { box-shadow: 0 10px 28px color-mix(in srgb, var(--destructive) 28%, transparent); }
+  .rt-btn:hover[data-color="accent"] { box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 28%, transparent); }
 </style>

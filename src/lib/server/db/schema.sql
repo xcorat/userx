@@ -3,11 +3,10 @@
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,
+  public_key TEXT PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
   avatar_url TEXT,
   birthdate TEXT,
   location TEXT,
@@ -19,6 +18,14 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
+-- User Keypairs table
+CREATE TABLE IF NOT EXISTS user_keypairs (
+  public_key TEXT PRIMARY KEY,
+  encrypted_private_key TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (public_key) REFERENCES users(public_key) ON DELETE CASCADE
+);
+
 -- Public Questions table
 CREATE TABLE IF NOT EXISTS public_questions (
   id TEXT PRIMARY KEY,
@@ -26,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public_questions (
   image_hash_id TEXT,                 -- Reference to image (nullable for backward compatibility)
   created_by TEXT NOT NULL,
   created_at TEXT NOT NULL,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(public_key) ON DELETE CASCADE,
   FOREIGN KEY (image_hash_id) REFERENCES question_images(id) ON DELETE SET NULL
 );
 
@@ -59,7 +66,7 @@ CREATE TABLE IF NOT EXISTS public_answers (
   choice_id TEXT NOT NULL,
   visibility TEXT NOT NULL CHECK(visibility IN ('public', 'private')),
   created_at TEXT NOT NULL,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(public_key) ON DELETE CASCADE,
   FOREIGN KEY (question_id) REFERENCES public_questions(id) ON DELETE CASCADE,
   FOREIGN KEY (choice_id) REFERENCES question_choices(id) ON DELETE CASCADE,
   UNIQUE(user_id, question_id)
@@ -76,8 +83,8 @@ CREATE TABLE IF NOT EXISTS dm_questions (
   from_user_id TEXT NOT NULL,
   to_user_id TEXT NOT NULL,
   created_at TEXT NOT NULL,
-  FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (to_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (from_user_id) REFERENCES users(public_key) ON DELETE CASCADE,
+  FOREIGN KEY (to_user_id) REFERENCES users(public_key) ON DELETE CASCADE,
   CHECK(from_user_id != to_user_id)
 );
 
@@ -104,7 +111,7 @@ CREATE TABLE IF NOT EXISTS dm_answers (
   text_answer TEXT,
   created_at TEXT NOT NULL,
   FOREIGN KEY (dm_question_id) REFERENCES dm_questions(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(public_key) ON DELETE CASCADE,
   FOREIGN KEY (choice_id) REFERENCES dm_question_choices(id) ON DELETE SET NULL,
   UNIQUE(dm_question_id, user_id),
   CHECK((choice_id IS NOT NULL AND text_answer IS NULL) OR (choice_id IS NULL AND text_answer IS NOT NULL))
@@ -127,7 +134,7 @@ CREATE TABLE IF NOT EXISTS memes (
   height INTEGER,
   is_animated BOOLEAN DEFAULT FALSE,  -- For GIFs/animated content
   frame_count INTEGER,               -- For animated memes
-  FOREIGN KEY (submitted_by) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (submitted_by) REFERENCES users(public_key) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_memes_submitted_by ON memes(submitted_by);
@@ -141,7 +148,7 @@ CREATE TABLE IF NOT EXISTS meme_interactions (
   meme_id TEXT NOT NULL,
   interaction_type TEXT NOT NULL CHECK(interaction_type IN ('pick', 'reject')),
   interacted_at TEXT NOT NULL,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(public_key) ON DELETE CASCADE,
   FOREIGN KEY (meme_id) REFERENCES memes(id) ON DELETE CASCADE,
   UNIQUE(user_id, meme_id)  -- User can only interact once with each meme
 );
@@ -158,8 +165,8 @@ CREATE TABLE IF NOT EXISTS user_relations (
   status TEXT NOT NULL CHECK(status IN ('pending', 'approved', 'rejected')),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
-  FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (to_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (from_user_id) REFERENCES users(public_key) ON DELETE CASCADE,
+  FOREIGN KEY (to_user_id) REFERENCES users(public_key) ON DELETE CASCADE,
   CHECK(from_user_id != to_user_id),
   UNIQUE(from_user_id, to_user_id)
 );

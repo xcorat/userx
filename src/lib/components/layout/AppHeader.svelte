@@ -30,6 +30,7 @@
 	/* App header defaults - transparent by prop */
 	.app-header {
 		background: var(--bg);
+		color: var(--foreground);
 	}
 	
 	/* Keep styling simple; hover state controlled with utility classes */
