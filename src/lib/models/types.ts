@@ -28,3 +28,11 @@ export type QuestionImage = {
 	imageUrl: string;      // For now: external URL to the image
 	uploadedAt: Date;      // When the image was stored
 };
+
+// App menu item used by the header app menu
+export type AppMenuItem = {
+	id: string;
+	label: string;
+	path: string;
+	Icon?: any; // Icon component (e.g. lucide-svelte icons); use any to avoid typing mismatch with Svelte icon types
+};

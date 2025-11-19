@@ -40,7 +40,6 @@
 
 <div class="space-y-6">
 	<div class="flex items-center justify-between">
-		<h1 class="text-3xl font-bold">Questions</h1>
 
 		<div class="flex items-center gap-4">
 			<Button variant="default" size="sm" onclick={handleNewQuestion}>

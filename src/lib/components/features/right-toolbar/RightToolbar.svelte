@@ -105,12 +105,12 @@
   /* Container sits at right edge below header */
   .right-toolbar {
     position: fixed;
-    right: 1rem;
-    top: var(--memeball-header-offset, 56px);
+    right: 3rem;
+    top: var(--memeball-header-offset, 78px);
     z-index: 100; /* ensure top-most over meme */
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1.25rem;
     pointer-events: none; /* invisible background - only child elements are clickable */
     align-items: flex-end;
   }

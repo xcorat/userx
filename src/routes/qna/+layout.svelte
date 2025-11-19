@@ -2,8 +2,9 @@
 	import '../../app.css';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import UserMenu from '$lib/components/features/user-menu.svelte';
+	import AppMenu from '$lib/components/features/app-menu.svelte';
 	import { Toaster } from 'svelte-sonner';
-	import { MessageCircle, Users, Search, HelpCircle, Menu, Command } from 'lucide-svelte';
+	import { MessageCircle, Users, Search, HelpCircle, Menu } from 'lucide-svelte';
 	import {
 		DropdownMenu,
 		DropdownMenuContent,
@@ -20,10 +21,11 @@
 		<header class="border-b">
 			<div class="container mx-auto px-4 py-4 flex items-center justify-between">
 				<h1 class="text-2xl font-bold flex items-center gap-2">
-					<a href="/" aria-label="App Selection" class="mr-2 hover:bg-transparent">
-						<Command class="h-5 w-5" />
-					</a>
-					<HelpCircle class="h-6 w-6 text-orange-500" />
+					<div class="mr-2">
+						<AppMenu showApps={false}>
+							<HelpCircle slot="trigger" class="h-5 w-5 text-orange-500" />
+						</AppMenu>
+					</div>
 					<a href="/qna/questions" class="hidden sm:inline">Orph</a>
 				</h1>
 				
