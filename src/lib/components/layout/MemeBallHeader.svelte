@@ -1,18 +1,7 @@
 <script lang="ts">
-	import UserMenu from '$lib/components/features/user-menu.svelte';
+	import AppHeader from '$lib/components/layout/AppHeader.svelte';
 </script>
 
-<header class="memeball-header">
-	<UserMenu />
-</header>
+<AppHeader transparent={true} absolute={true} />
 
-<style>
-	.memeball-header {
-		position: fixed;
-		top: 0;
-		right: 0;
-		z-index: 40;
-		background: transparent;
-		padding: 1rem 1.5rem;
-	}
-</style>
+<!-- Styles moved into AppHeader component -->

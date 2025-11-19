@@ -3,7 +3,7 @@
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import UserMenu from '$lib/components/features/user-menu.svelte';
 	import { Toaster } from 'svelte-sonner';
-	import { MessageCircle, Users, Search, Settings, HelpCircle, Flame, Menu, ArrowLeft } from 'lucide-svelte';
+	import { MessageCircle, Users, Search, HelpCircle, Menu, Command } from 'lucide-svelte';
 	import {
 		DropdownMenu,
 		DropdownMenuContent,
@@ -20,8 +20,11 @@
 		<header class="border-b">
 			<div class="container mx-auto px-4 py-4 flex items-center justify-between">
 				<h1 class="text-2xl font-bold flex items-center gap-2">
+					<a href="/" aria-label="App Selection" class="mr-2 hover:bg-transparent">
+						<Command class="h-5 w-5" />
+					</a>
 					<HelpCircle class="h-6 w-6 text-orange-500" />
-					<a href="/qna/questions" class="hidden sm:inline">QnA App</a>
+					<a href="/qna/questions" class="hidden sm:inline">Orph</a>
 				</h1>
 				
 				<!-- Desktop Navigation -->
@@ -42,10 +45,7 @@
 					<MessageCircle class="h-5 w-5" />
 					<span>DMs</span>
 				</a>
-					<a href="/" class="hover:text-primary flex items-center gap-2" title="Back to Main">
-						<ArrowLeft class="h-5 w-5" />
-						<span>Back to Main</span>
-					</a>
+                    
 					<UserMenu />
 				</nav>
 				
@@ -80,12 +80,7 @@
 								<span>DMs</span>
 							</a>
 							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<a href="/" class="flex items-center gap-2 w-full">
-									<ArrowLeft class="h-4 w-4" />
-									<span>Back to Main</span>
-								</a>
-							</DropdownMenuItem>
+                            
 						</DropdownMenuContent>
 					</DropdownMenu>
 					<UserMenu />

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import AppHeader from '$lib/components/layout/AppHeader.svelte';
 	import * as Card from '$lib/components/ui/card';
 	import { HelpCircle, Flame } from 'lucide-svelte';
 
@@ -23,6 +24,7 @@
 </script>
 
 {#if authStore.isAuthenticated}
+	<AppHeader />
 	<!-- App Selection for Authenticated Users -->
 	<div class="flex min-h-[80vh] items-center justify-center">
 		<div class="w-full max-w-4xl space-y-8 text-center">
@@ -42,7 +44,7 @@
 							<HelpCircle class="h-16 w-16 text-orange-500" />
 						</div>
 						<Card.Header class="p-0">
-							<Card.Title class="text-2xl">QnA App</Card.Title>
+							<Card.Title class="text-2xl">Orphos</Card.Title>
 						</Card.Header>
 						<Card.Content class="p-0">
 							<p class="text-muted-foreground">

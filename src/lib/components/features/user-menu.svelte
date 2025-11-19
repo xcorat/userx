@@ -10,7 +10,7 @@
 		DropdownMenuSeparator,
 		DropdownMenuTrigger
 	} from '$lib/components/ui/dropdown-menu';
-	import { User, LogOut, MessageCircle, Users, Home } from 'lucide-svelte';
+	import { User, LogOut, MessageCircle, Users } from 'lucide-svelte';
 	
 	function handleLogout() {
 		authStore.logout();
@@ -29,9 +29,7 @@
 		}
 	}
 
-	function goToMain() {
-		goto('/');
-	}
+    
 
 	function goToFriends() {
 		if (authStore.currentUser?.username) {
@@ -77,11 +75,6 @@
 			</DropdownMenuLabel>
 			
 			<DropdownMenuSeparator />
-			
-			<DropdownMenuItem onclick={goToMain}>
-				<Home class="mr-2 h-4 w-4" />
-				<span>Main Menu</span>
-			</DropdownMenuItem>
 			
 			<DropdownMenuItem onclick={goToMyProfile}>
 				<User class="mr-2 h-4 w-4" />
