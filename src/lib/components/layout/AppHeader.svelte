@@ -8,11 +8,20 @@
 </script>
 
 <header class={`app-header ${transparent ? 'bg-transparent' : ''} ${absolute ? 'absolute top-0 left-0 right-0 z-50' : ''} ${transparent ? '' : 'border-b'}`}>
-	<div class={containerClass + ' flex items-center justify-between'}>
-		<a href="/" aria-label="App Selection" class="hover:bg-transparent">
-			<Command class="h-6 w-6" />
-		</a>
-		<UserMenu />
+	<div class={containerClass + ' flex items-center'}>
+		<div class="flex items-center mr-4">
+			<a href="/" aria-label="App Selection" class="hover:bg-transparent">
+				<Command class="h-6 w-6" />
+			</a>
+		</div>
+
+		<div class="flex-1 flex items-center justify-center">
+			<slot name="center" />
+		</div>
+
+		<div class="flex items-center ml-4">
+			<UserMenu />
+		</div>
 	</div>
 </header>
 

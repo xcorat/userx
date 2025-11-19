@@ -7,6 +7,7 @@
     import { authStore } from '$lib/stores/auth.store.svelte';
     import { Button } from '$lib/components/ui/button';
     import { Plus, RefreshCw, Heart, X } from 'lucide-svelte';
+    import RightToolbar from '$lib/components/features/right-toolbar/RightToolbar.svelte';
     import { toast } from 'svelte-sonner';
     import type { MemeWithStats } from '$lib/models/meme.model';
 
@@ -91,8 +92,19 @@
         </footer>
     {/if}
 
-    <!-- Floating Action Button -->
+    <!-- Right Toolbar (auto toggles between FAB stack and vertical toolbar) -->
     {#if isInitialized && !memeStore.error}
+        <RightToolbar
+            items={[
+                { id: 'new', icon: Plus, handler: () => console.log('Add meme'), ariaLabel: 'Submit new meme', title: 'Submit new meme' },
+                { id: 'refresh', icon: RefreshCw, handler: () => console.log('Refresh memes'), ariaLabel: 'Refresh memes', title: 'Refresh memes' },
+                { id: 'pick', icon: Heart, handler: () => console.log('Pick meme'), ariaLabel: 'Pick meme', title: 'Pick meme' },
+                { id: 'reject', icon: X, handler: () => console.log('Reject meme'), ariaLabel: 'Reject meme', title: 'Reject meme' }
+            ]}
+            variant="auto"
+        />
+
+        <!-- Floating Action Button (mobile fallback) -->
         <button class="fab" aria-label="Submit new meme">
             <Plus size={20} />
         </button>
@@ -367,5 +379,10 @@
             flex-direction: column;
             align-items: center;
         }
+    }
+
+    /* Hide legacy FAB on larger screens */
+    @media (min-width: 640px) {
+        .fab { display: none; }
     }
 </style>

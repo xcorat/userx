@@ -16,6 +16,23 @@
 		if (!authStore.isAuthenticated) {
 			goto('/login');
 		}
+		// Set CSS variable for header offset so components (RightToolbar) can align below header
+		function setHeaderOffset() {
+			try {
+				const header = document.querySelector('.app-header') as HTMLElement | null;
+				const defaultOffset = 56;
+				const height = header ? header.offsetHeight : defaultOffset;
+				document.documentElement.style.setProperty('--memeball-header-offset', `${height}px`);
+			} catch (e) { /* ignore in SSR */ }
+		}
+
+		setHeaderOffset();
+		window.addEventListener('resize', setHeaderOffset);
+		// Cleanup not necessary, this runs on client only - but let's add anyway
+		// Remove on unmount
+		return () => {
+			try { window.removeEventListener('resize', setHeaderOffset); } catch (e) { /* ignore */ }
+		};
 	});
 </script>
 

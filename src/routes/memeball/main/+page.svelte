@@ -7,6 +7,7 @@
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Plus, RefreshCw, Heart, X } from 'lucide-svelte';
+	import RightToolbar from '$lib/components/features/right-toolbar/RightToolbar.svelte';
 	import { toast } from 'svelte-sonner';
 	import type { MemeWithStats } from '$lib/models/meme.model';
 
@@ -203,8 +204,17 @@
 		</footer>
 	{/if}
 
-	<!-- Floating Action Button -->
+	<!-- Right Toolbar (auto toggles between FAB stack and vertical toolbar) -->
 	{#if isInitialized && !memeStore.error}
+		<RightToolbar
+			items={[
+				{ id: 'new', icon: Plus, handler: goToAddMeme, ariaLabel: 'Submit new meme', title: 'Submit new meme' },
+				{ id: 'refresh', icon: RefreshCw, handler: refreshMemes, ariaLabel: 'Refresh memes', title: 'Refresh memes' },
+			]}
+			variant="auto"
+		/>
+
+		<!-- Floating Action Button (mobile fallback) -->
 		<button class="fab" onclick={goToAddMeme} aria-label="Submit new meme">
 			<Plus size={20} />
 		</button>
@@ -477,6 +487,13 @@
 		.empty-actions {
 			flex-direction: column;
 			align-items: center;
+		}
+	}
+
+	/* Hide the old FAB on larger screens because the RightToolbar will show */
+	@media (min-width: 640px) {
+		.fab {
+			display: none;
 		}
 	}
 </style>
