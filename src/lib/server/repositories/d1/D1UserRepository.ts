@@ -6,13 +6,9 @@ import { AppError, ErrorCode } from '$lib/utils/error-handling';
 export class D1UserRepository implements IUserRepository {
 	constructor(private db: D1Database) {}
 
-	private generateId(): string {
-		return crypto.randomUUID();
-	}
-
 	async findAll(): Promise<User[]> {
 		const { results } = await this.db.prepare(`
-			SELECT id, username, name, email, avatar_url as avatarUrl, 
+			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl, 
 			       birthdate, location, timezone, created_at as createdAt
 			FROM users
 			ORDER BY created_at DESC
@@ -24,13 +20,13 @@ export class D1UserRepository implements IUserRepository {
 		}));
 	}
 
-	async findById(id: string): Promise<User | null> {
+	async findById(publicKey: string): Promise<User | null> {
 		const row = await this.db.prepare(`
-			SELECT id, username, name, email, avatar_url as avatarUrl,
+			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
 			       birthdate, location, timezone, created_at as createdAt
 			FROM users
-			WHERE id = ?
-		`).bind(id).first();
+			WHERE public_key = ?
+		`).bind(publicKey).first();
 		
 		if (!row) return null;
 		
@@ -42,7 +38,7 @@ export class D1UserRepository implements IUserRepository {
 
 	async findByEmail(email: string): Promise<User | null> {
 		const row = await this.db.prepare(`
-			SELECT id, username, name, email, avatar_url as avatarUrl,
+			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
 			       birthdate, location, timezone, created_at as createdAt
 			FROM users
 			WHERE email = ?
@@ -58,7 +54,7 @@ export class D1UserRepository implements IUserRepository {
 
 	async findByUsername(username: string): Promise<User | null> {
 		const row = await this.db.prepare(`
-			SELECT id, username, name, email, avatar_url as avatarUrl,
+			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
 			       birthdate, location, timezone, created_at as createdAt
 			FROM users
 			WHERE username = ?
@@ -78,7 +74,7 @@ export class D1UserRepository implements IUserRepository {
 		}
 
 		const { results } = await this.db.prepare(`
-			SELECT id, username, name, email, avatar_url as avatarUrl,
+			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
 			       birthdate, location, timezone, created_at as createdAt
 			FROM users
 			WHERE username LIKE ? OR email LIKE ? OR name LIKE ?
@@ -106,19 +102,18 @@ export class D1UserRepository implements IUserRepository {
 			}
 		}
 
-		const id = this.generateId();
 		const now = new Date().toISOString();
-		const username = data.username || `user_${id.substring(0, 8)}`;
+		const username = data.username || `user_${data.publicKey.substring(0, 8)}`;
 
+		// Insert into users table
 		await this.db.prepare(`
-			INSERT INTO users (id, username, name, email, password, avatar_url, birthdate, location, timezone, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO users (public_key, username, name, email, avatar_url, birthdate, location, timezone, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`).bind(
-			id,
+			data.publicKey,
 			username,
 			data.name,
 			data.email,
-			data.password,
 			data.avatarUrl || null,
 			data.birthdate || null,
 			data.location || null,
@@ -127,7 +122,13 @@ export class D1UserRepository implements IUserRepository {
 			now
 		).run();
 
-		const user = await this.findById(id);
+		// Insert into user_keypairs table
+		await this.db.prepare(`
+			INSERT INTO user_keypairs (public_key, encrypted_private_key, created_at)
+			VALUES (?, ?, ?)
+		`).bind(data.publicKey, data.encryptedPrivateKey, now).run();
+
+		const user = await this.findById(data.publicKey);
 		if (!user) {
 			throw new AppError(ErrorCode.SERVER_ERROR, 'Failed to create user');
 		}
@@ -135,8 +136,8 @@ export class D1UserRepository implements IUserRepository {
 		return user;
 	}
 
-	async update(id: string, data: UpdateUserDTO): Promise<User> {
-		const existing = await this.findById(id);
+	async update(publicKey: string, data: UpdateUserDTO): Promise<User> {
+		const existing = await this.findById(publicKey);
 		if (!existing) {
 			throw new AppError(ErrorCode.NOT_FOUND, 'User not found');
 		}
@@ -144,7 +145,7 @@ export class D1UserRepository implements IUserRepository {
 		// Check username uniqueness if updating username
 		if (data.username && data.username !== existing.username) {
 			const existingUsername = await this.findByUsername(data.username);
-			if (existingUsername && existingUsername.id !== id) {
+			if (existingUsername && existingUsername.publicKey !== publicKey) {
 				throw new AppError(ErrorCode.DUPLICATE_ERROR, 'Username already exists');
 			}
 		}
@@ -180,18 +181,18 @@ export class D1UserRepository implements IUserRepository {
 		if (updates.length > 0) {
 			updates.push('updated_at = ?');
 			values.push(new Date().toISOString());
-			values.push(id);
+			values.push(publicKey);
 
 			const stmt = this.db.prepare(`
 				UPDATE users
 				SET ${updates.join(', ')}
-				WHERE id = ?
+				WHERE public_key = ?
 			`);
 
 			await stmt.bind(...values).run();
 		}
 
-		const user = await this.findById(id);
+		const user = await this.findById(publicKey);
 		if (!user) {
 			throw new AppError(ErrorCode.SERVER_ERROR, 'Failed to update user');
 		}
@@ -199,11 +200,21 @@ export class D1UserRepository implements IUserRepository {
 		return user;
 	}
 
-	async delete(id: string): Promise<void> {
-		const result = await this.db.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
+	async delete(publicKey: string): Promise<void> {
+		const result = await this.db.prepare('DELETE FROM users WHERE public_key = ?').bind(publicKey).run();
 
 		if (!result.success || result.meta.changes === 0) {
 			throw new AppError(ErrorCode.NOT_FOUND, 'User not found');
 		}
+	}
+
+	async getEncryptedPrivateKey(publicKey: string): Promise<string | null> {
+		const row = await this.db.prepare(`
+			SELECT encrypted_private_key as encryptedPrivateKey
+			FROM user_keypairs
+			WHERE public_key = ?
+		`).bind(publicKey).first();
+		
+		return row ? (row as any).encryptedPrivateKey : null;
 	}
 }

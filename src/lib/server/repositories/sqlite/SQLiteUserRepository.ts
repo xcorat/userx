@@ -6,16 +6,14 @@ import type Database from 'better-sqlite3';
 
 export class SQLiteUserRepository implements IUserRepository {
 	private db: Database.Database;
-	private generateId: () => string;
 
-	constructor(database: Database.Database, generateIdFn: () => string) {
+	constructor(database: Database.Database) {
 		this.db = database;
-		this.generateId = generateIdFn;
 	}
 
 	async findAll(): Promise<User[]> {
 		const stmt = this.db.prepare(`
-			SELECT id, username, name, email, avatar_url as avatarUrl, 
+			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl, 
 			       birthdate, location, timezone, created_at as createdAt
 			FROM users
 			ORDER BY created_at DESC
@@ -28,15 +26,15 @@ export class SQLiteUserRepository implements IUserRepository {
 		}));
 	}
 
-	async findById(id: string): Promise<User | null> {
+	async findById(publicKey: string): Promise<User | null> {
 		const stmt = this.db.prepare(`
-			SELECT id, username, name, email, avatar_url as avatarUrl,
+			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
 			       birthdate, location, timezone, created_at as createdAt
 			FROM users
-			WHERE id = ?
+			WHERE public_key = ?
 		`);
 		
-		const row = stmt.get(id) as any;
+		const row = stmt.get(publicKey) as any;
 		if (!row) return null;
 		
 		return {
@@ -47,7 +45,7 @@ export class SQLiteUserRepository implements IUserRepository {
 
 	async findByEmail(email: string): Promise<User | null> {
 		const stmt = this.db.prepare(`
-			SELECT id, username, name, email, avatar_url as avatarUrl,
+			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
 			       birthdate, location, timezone, created_at as createdAt
 			FROM users
 			WHERE email = ?
@@ -64,7 +62,7 @@ export class SQLiteUserRepository implements IUserRepository {
 
 	async findByUsername(username: string): Promise<User | null> {
 		const stmt = this.db.prepare(`
-			SELECT id, username, name, email, avatar_url as avatarUrl,
+			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
 			       birthdate, location, timezone, created_at as createdAt
 			FROM users
 			WHERE username = ?
@@ -85,7 +83,7 @@ export class SQLiteUserRepository implements IUserRepository {
 		}
 
 		const stmt = this.db.prepare(`
-			SELECT id, username, name, email, avatar_url as avatarUrl,
+			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
 			       birthdate, location, timezone, created_at as createdAt
 			FROM users
 			WHERE username LIKE ? OR email LIKE ? OR name LIKE ?
@@ -116,20 +114,20 @@ export class SQLiteUserRepository implements IUserRepository {
 			}
 		}
 
-		const id = this.generateId();
 		const now = new Date().toISOString();
+		const username = data.username || `user_${data.publicKey.substring(0, 8)}`;
 
-		const stmt = this.db.prepare(`
-			INSERT INTO users (id, username, name, email, password, avatar_url, birthdate, location, timezone, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		// Insert into users table
+		const userStmt = this.db.prepare(`
+			INSERT INTO users (public_key, username, name, email, avatar_url, birthdate, location, timezone, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`);
 
-		stmt.run(
-			id,
-			data.username || `user_${id.substring(0, 8)}`,
+		userStmt.run(
+			data.publicKey,
+			username,
 			data.name,
 			data.email,
-			data.password,
 			data.avatarUrl || null,
 			data.birthdate || null,
 			data.location || null,
@@ -138,7 +136,15 @@ export class SQLiteUserRepository implements IUserRepository {
 			now
 		);
 
-		const user = await this.findById(id);
+		// Insert into user_keypairs table
+		const keypairStmt = this.db.prepare(`
+			INSERT INTO user_keypairs (public_key, encrypted_private_key, created_at)
+			VALUES (?, ?, ?)
+		`);
+
+		keypairStmt.run(data.publicKey, data.encryptedPrivateKey, now);
+
+		const user = await this.findById(data.publicKey);
 		if (!user) {
 			throw new AppError(ErrorCode.SERVER_ERROR, 'Failed to create user');
 		}
@@ -146,8 +152,8 @@ export class SQLiteUserRepository implements IUserRepository {
 		return user;
 	}
 
-	async update(id: string, data: UpdateUserDTO): Promise<User> {
-		const existing = await this.findById(id);
+	async update(publicKey: string, data: UpdateUserDTO): Promise<User> {
+		const existing = await this.findById(publicKey);
 		if (!existing) {
 			throw new AppError(ErrorCode.NOT_FOUND, 'User not found');
 		}
@@ -155,7 +161,7 @@ export class SQLiteUserRepository implements IUserRepository {
 		// Check username uniqueness if updating username
 		if (data.username && data.username !== existing.username) {
 			const existingUsername = await this.findByUsername(data.username);
-			if (existingUsername && existingUsername.id !== id) {
+			if (existingUsername && existingUsername.publicKey !== publicKey) {
 				throw new AppError(ErrorCode.DUPLICATE_ERROR, 'Username already exists');
 			}
 		}
@@ -191,18 +197,18 @@ export class SQLiteUserRepository implements IUserRepository {
 		if (updates.length > 0) {
 			updates.push('updated_at = ?');
 			values.push(new Date().toISOString());
-			values.push(id);
+			values.push(publicKey);
 
 			const stmt = this.db.prepare(`
 				UPDATE users
 				SET ${updates.join(', ')}
-				WHERE id = ?
+				WHERE public_key = ?
 			`);
 
 			stmt.run(...values);
 		}
 
-		const user = await this.findById(id);
+		const user = await this.findById(publicKey);
 		if (!user) {
 			throw new AppError(ErrorCode.SERVER_ERROR, 'Failed to update user');
 		}
@@ -210,12 +216,23 @@ export class SQLiteUserRepository implements IUserRepository {
 		return user;
 	}
 
-	async delete(id: string): Promise<void> {
-		const stmt = this.db.prepare('DELETE FROM users WHERE id = ?');
-		const result = stmt.run(id);
+	async delete(publicKey: string): Promise<void> {
+		const stmt = this.db.prepare('DELETE FROM users WHERE public_key = ?');
+		const result = stmt.run(publicKey);
 
 		if (result.changes === 0) {
 			throw new AppError(ErrorCode.NOT_FOUND, 'User not found');
 		}
+	}
+
+	async getEncryptedPrivateKey(publicKey: string): Promise<string | null> {
+		const stmt = this.db.prepare(`
+			SELECT encrypted_private_key as encryptedPrivateKey
+			FROM user_keypairs
+			WHERE public_key = ?
+		`);
+		
+		const row = stmt.get(publicKey) as any;
+		return row ? row.encryptedPrivateKey : null;
 	}
 }

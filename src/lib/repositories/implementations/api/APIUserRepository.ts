@@ -29,8 +29,8 @@ export class APIUserRepository implements IUserRepository {
 		return users.map(u => this.parseUser(u));
 	}
 
-	async findById(id: string): Promise<User | null> {
-		const response = await fetch(`${API_BASE}/users/${id}`);
+	async findById(publicKey: string): Promise<User | null> {
+		const response = await fetch(`${API_BASE}/users/${encodeURIComponent(publicKey)}`);
 		if (response.status === 404) return null;
 		const user = await this.handleResponse<any>(response);
 		return this.parseUser(user);
@@ -68,8 +68,8 @@ export class APIUserRepository implements IUserRepository {
 		return this.parseUser(user);
 	}
 
-	async update(id: string, data: UpdateUserDTO): Promise<User> {
-		const response = await fetch(`${API_BASE}/users/${id}`, {
+	async update(publicKey: string, data: UpdateUserDTO): Promise<User> {
+		const response = await fetch(`${API_BASE}/users/${encodeURIComponent(publicKey)}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(data)
@@ -78,10 +78,17 @@ export class APIUserRepository implements IUserRepository {
 		return this.parseUser(user);
 	}
 
-	async delete(id: string): Promise<void> {
-		const response = await fetch(`${API_BASE}/users/${id}`, {
+	async delete(publicKey: string): Promise<void> {
+		const response = await fetch(`${API_BASE}/users/${encodeURIComponent(publicKey)}`, {
 			method: 'DELETE'
 		});
 		await this.handleResponse(response);
+	}
+
+	async getEncryptedPrivateKey(publicKey: string): Promise<string | null> {
+		const response = await fetch(`${API_BASE}/users/${encodeURIComponent(publicKey)}/keypair`);
+		if (response.status === 404) return null;
+		const result = await this.handleResponse<{ encryptedPrivateKey: string }>(response);
+		return result.encryptedPrivateKey;
 	}
 }

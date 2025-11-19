@@ -6,13 +6,14 @@ import { AppError, ErrorCode } from '$lib/utils/error-handling';
 
 export class MockUserRepository implements IUserRepository {
 	private users: User[] = [...mockUsers];
+	private keypairs: Map<string, string> = new Map(); // publicKey -> encryptedPrivateKey
 
 	async findAll(): Promise<User[]> {
 		return this.users;
 	}
 
-	async findById(id: string): Promise<User | null> {
-		return this.users.find((u) => u.id === id) || null;
+	async findById(publicKey: string): Promise<User | null> {
+		return this.users.find((u) => u.publicKey === publicKey) || null;
 	}
 
 	async findByEmail(email: string): Promise<User | null> {
@@ -49,8 +50,8 @@ export class MockUserRepository implements IUserRepository {
 		}
 
 		const user: User = {
-			id: `user_${Date.now()}`,
-			username: data.username || `user_${Date.now()}`,
+			publicKey: data.publicKey,
+			username: data.username || `user_${data.publicKey.substring(0, 8)}`,
 			name: data.name,
 			email: data.email,
 			avatarUrl: data.avatarUrl,
@@ -59,12 +60,16 @@ export class MockUserRepository implements IUserRepository {
 			timezone: data.timezone,
 			createdAt: new Date()
 		};
+		
+		// Store encrypted private key
+		this.keypairs.set(data.publicKey, data.encryptedPrivateKey);
+		
 		this.users.push(user);
 		return user;
 	}
 
-	async update(id: string, data: UpdateUserDTO): Promise<User> {
-		const index = this.users.findIndex((u) => u.id === id);
+	async update(publicKey: string, data: UpdateUserDTO): Promise<User> {
+		const index = this.users.findIndex((u) => u.publicKey === publicKey);
 		if (index === -1) {
 			throw new AppError(ErrorCode.NOT_FOUND, 'User not found');
 		}
@@ -73,7 +78,12 @@ export class MockUserRepository implements IUserRepository {
 		return this.users[index];
 	}
 
-	async delete(id: string): Promise<void> {
-		this.users = this.users.filter((u) => u.id !== id);
+	async delete(publicKey: string): Promise<void> {
+		this.users = this.users.filter((u) => u.publicKey !== publicKey);
+		this.keypairs.delete(publicKey);
+	}
+
+	async getEncryptedPrivateKey(publicKey: string): Promise<string | null> {
+		return this.keypairs.get(publicKey) || null;
 	}
 }

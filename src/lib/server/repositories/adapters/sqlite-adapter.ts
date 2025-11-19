@@ -295,10 +295,10 @@ export class SQLiteAdapter {
 		// Initialize database connection
 		const database = await getDatabase();
 		
-		// Use a simple counter-based ID generator for new records
+		// Use a simple counter-based ID generator for new records (not needed for user repo anymore)
 		const generateId = () => `generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 		
-		const userRepo = new SQLiteUserRepository(database, generateId);
+		const userRepo = new SQLiteUserRepository(database);
 		const questionRepo = new SQLiteQuestionRepository(database, generateId);
 		const answerRepo = new SQLiteAnswerRepository(database, generateId);
 		const dmRepo = new SQLiteDMRepository(database, generateId);
