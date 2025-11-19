@@ -33,6 +33,39 @@
 			console.error('Failed to initialize meme store:', error);
 			toast.error('Failed to load memes. Please try again.');
 		}
+
+		// Set CSS variable for bottom offset so RightToolbar can align above the bottom action bar
+		function setBottomOffset() {
+			try {
+				const actionBar = document.querySelector('.action-bar') as HTMLElement | null;
+				const defaultOffset = 88; // approximate fallback
+				const height = actionBar ? actionBar.offsetHeight : defaultOffset;
+				// Add a small gap so the right toolbar doesn't sit directly on top of the action bar
+				document.documentElement.style.setProperty('--memeball-bottom-offset', `${height + 16}px`);
+				// Keep right offset aligned with the FAB default if the layout needs it
+				document.documentElement.style.setProperty('--memeball-right-offset', `2rem`);
+			} catch (e) {
+				/* ignore in SSR */
+			}
+		}
+
+	});
+
+	// Separate onMount to set CSS variables for non-async cleanup handler
+	onMount(() => {
+		function setBottomOffset() {
+			try {
+				const actionBar = document.querySelector('.action-bar') as HTMLElement | null;
+				const defaultOffset = 88; // approximate fallback
+				const height = actionBar ? actionBar.offsetHeight : defaultOffset;
+				document.documentElement.style.setProperty('--memeball-bottom-offset', `${height + 16}px`);
+				document.documentElement.style.setProperty('--memeball-right-offset', `2rem`);
+			} catch (e) { /* ignore in SSR */ }
+		}
+
+		setBottomOffset();
+		window.addEventListener('resize', setBottomOffset);
+		return () => { try { window.removeEventListener('resize', setBottomOffset); } catch (e) { /* ignore */ } };
 	});
 
 	// Handle swipe interactions
@@ -208,16 +241,11 @@
 	{#if isInitialized && !memeStore.error}
 		<RightToolbar
 			items={[
-				{ id: 'new', icon: Plus, handler: goToAddMeme, ariaLabel: 'Submit new meme', title: 'Submit new meme' },
-				{ id: 'refresh', icon: RefreshCw, handler: refreshMemes, ariaLabel: 'Refresh memes', title: 'Refresh memes' },
+				{ id: 'new', icon: Plus, handler: goToAddMeme, ariaLabel: 'Submit new meme', title: 'Submit new meme', color: 'primary' },
+				{ id: 'refresh', icon: RefreshCw, handler: refreshMemes, ariaLabel: 'Refresh memes', title: 'Refresh memes', color: 'neutral' },
 			]}
 			variant="auto"
 		/>
-
-		<!-- Floating Action Button (mobile fallback) -->
-		<button class="fab" onclick={goToAddMeme} aria-label="Submit new meme">
-			<Plus size={20} />
-		</button>
 	{/if}
 </div>
 

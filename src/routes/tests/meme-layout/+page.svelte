@@ -96,10 +96,10 @@
     {#if isInitialized && !memeStore.error}
         <RightToolbar
             items={[
-                { id: 'new', icon: Plus, handler: () => console.log('Add meme'), ariaLabel: 'Submit new meme', title: 'Submit new meme' },
-                { id: 'refresh', icon: RefreshCw, handler: () => console.log('Refresh memes'), ariaLabel: 'Refresh memes', title: 'Refresh memes' },
-                { id: 'pick', icon: Heart, handler: () => console.log('Pick meme'), ariaLabel: 'Pick meme', title: 'Pick meme' },
-                { id: 'reject', icon: X, handler: () => console.log('Reject meme'), ariaLabel: 'Reject meme', title: 'Reject meme' }
+                { id: 'new', icon: Plus, handler: () => console.log('Add meme'), ariaLabel: 'Submit new meme', title: 'Submit new meme', color: 'primary' },
+                { id: 'refresh', icon: RefreshCw, handler: () => console.log('Refresh memes'), ariaLabel: 'Refresh memes', title: 'Refresh memes', color: 'neutral' },
+                { id: 'pick', icon: Heart, handler: () => console.log('Pick meme'), ariaLabel: 'Pick meme', title: 'Pick meme', color: 'primary' },
+                { id: 'reject', icon: X, handler: () => console.log('Reject meme'), ariaLabel: 'Reject meme', title: 'Reject meme', color: 'danger' }
             ]}
             variant="auto"
         />

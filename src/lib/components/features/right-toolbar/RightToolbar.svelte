@@ -10,6 +10,7 @@
     ariaLabel?: string;
     title?: string;
     className?: string;
+    color?: string;
   };
 
   export let items: ToolbarItem[] = [];
@@ -17,6 +18,12 @@
 
   let isFab = false;
   let mql: MediaQueryList | null = null;
+  const defaultColorMap = {
+    new: 'primary',
+    refresh: 'neutral',
+    pick: 'primary',
+    reject: 'danger'
+  } as Record<string, string>;
 
   function evaluateVariant() {
     if (variant === 'fab') return (isFab = true);
@@ -73,12 +80,13 @@
     {#each items as item}
       <button
         class="rt-btn fab-variant {item.className}"
+        data-color={item.color || defaultColorMap[item.id] || 'neutral'}
         on:click={() => handleClick(item)}
         aria-label={item.ariaLabel}
         title={item.title}
       >
         {#if item.icon}
-          <svelte:component this={item.icon} size={18} />
+          <svelte:component this={item.icon} size={28} />
         {/if}
       </button>
     {/each}
@@ -87,12 +95,13 @@
     {#each items as item}
       <button
         class="rt-btn toolbar-variant {item.className}"
+        data-color={item.color || defaultColorMap[item.id] || 'neutral'}
         on:click={() => handleClick(item)}
         aria-label={item.ariaLabel}
         title={item.title}
       >
         {#if item.icon}
-          <svelte:component this={item.icon} size={16} />
+          <svelte:component this={item.icon} size={28} />
         {/if}
       </button>
     {/each}
@@ -104,9 +113,10 @@
 <style>
   /* Container sits at right edge below header */
   .right-toolbar {
-    position: fixed;
-    right: 3rem;
-    top: var(--memeball-header-offset, 78px);
+    /* Float inside the parent container (e.g. .meme-viewer) */
+    position: absolute;
+    right: var(--memeball-right-offset, 2rem);
+    bottom: var(--memeball-bottom-offset, 5.5rem);
     z-index: 100; /* ensure top-most over meme */
     display: flex;
     flex-direction: column;
@@ -139,19 +149,21 @@
 
   /* FAB style */
   .fab-variant {
-    width: 48px;
-    height: 48px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #10b981, #06d6a0);
+    /* semi-transparent gradient background (alpha 0.2) to match visual spec */
+    background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,214,160,0.2));
     z-index: 110;
   }
 
   /* Toolbar style */
   .toolbar-variant {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    /* Semi-transparent background with 0.2 opacity as requested */
+    background: rgba(255, 255, 255, 0.2);
     z-index: 110;
   }
 
@@ -161,5 +173,19 @@
   /* Show toolbar on medium/desktop screens (≥640px) by default; otherwise auto toggles it */
   @media (max-width: 639px) {
     .right-toolbar { align-items: flex-end; }
+    /* For small screens keep a slightly smaller variant to avoid obstructing content */
+    .fab-variant, .toolbar-variant { width: 56px; height: 56px; }
   }
+
+  /* Color variants */
+  .rt-btn[data-color="primary"] { background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(6,214,160,0.18)); box-shadow: 0 6px 16px rgba(16,185,129,0.24); }
+  .rt-btn[data-color="danger"] { background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(220,38,38,0.18)); box-shadow: 0 6px 16px rgba(239,68,68,0.24); }
+  .rt-btn[data-color="neutral"] { background: rgba(255,255,255,0.06); box-shadow: 0 6px 16px rgba(0,0,0,0.42); }
+  .rt-btn[data-color="accent"] { background: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(124,58,237,0.18)); box-shadow: 0 6px 16px rgba(139,92,246,0.24); }
+  .rt-btn[data-color="primary"], .rt-btn[data-color="accent"], .rt-btn[data-color="danger"] { color: white; }
+
+  /* Hover color-specific shadows */
+  .rt-btn:hover[data-color="primary"] { box-shadow: 0 10px 28px rgba(16,185,129,0.28); }
+  .rt-btn:hover[data-color="danger"] { box-shadow: 0 10px 28px rgba(239,68,68,0.28); }
+  .rt-btn:hover[data-color="accent"] { box-shadow: 0 10px 28px rgba(139,92,246,0.28); }
 </style>
