@@ -17,10 +17,10 @@
 			<!-- Center slot: icon-only on small screens, icon+text on md+ via responsive styles -->
 			<div slot="center" class="flex items-center gap-2">
 				<ButtonGroup class="inline-flex items-center gap-1" role="group">
-					<Button href="/qna/search" variant="ghost" size="sm" class="rounded-none !px-2 md:!px-4" aria-label="Search">
+					<!-- <Button href="/qna/search" variant="ghost" size="sm" class="rounded-none !px-2 md:!px-4" aria-label="Search">
 						<Search class="h-4 w-4" />
 						<span class="hidden md:inline ml-2">Search</span>
-					</Button>
+					</Button> -->
 					<Button href={authStore.currentUser?.username ? `/${authStore.currentUser.username}/friends` : '/friends'} variant="ghost" size="sm" class="rounded-none !px-2 md:!px-4" aria-label="Friends">
 						<Users class="h-4 w-4" />
 						<span class="hidden md:inline ml-2">Friends</span>
