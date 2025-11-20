@@ -22,6 +22,7 @@ See `docs/PROGRESS_REPORT.md` for implementation details and progress.
   - Signup with name, email, password
   - Session persistence in localStorage
   - Route guards for protected pages
+  - NOTE: New Ed25519 public/private key authentication is available: the user's public key is used as their ID, and private keys are encrypted client-side with a password (PBKDF2 + AES-GCM); the login flow uses a challenge-response signature verification. Use `/tests/credentials` for generating and testing keys (seeded users exist with password `password`).
 
 - **Questions Feed**
   - Display all public questions
