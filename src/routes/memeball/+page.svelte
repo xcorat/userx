@@ -150,10 +150,6 @@
 </div>
 
 <style>
-	:global(body) {
-		background-color: #030014;
-	}
-
 	.memeball-shell {
 		height: 100vh;
 		background: radial-gradient(circle at top, rgba(88, 28, 135, 0.35), transparent 55%),
