@@ -9,7 +9,7 @@ export const load = async ({ url }: { url: URL }) => {
 		const stored = localStorage.getItem(appConfig.auth.sessionStorageKey);
 		const isAuthenticated = !!stored;
 
-		const publicPaths = ['/', '/login', '/signup', '/onboard', '/tests'];
+		const publicPaths = ['/', '/login', '/signup', '/onboard', '/tests', '/about'];
 		const isPublicPath = publicPaths.includes(url.pathname);
 
 		// Redirect to landing if not authenticated and trying to access protected route
