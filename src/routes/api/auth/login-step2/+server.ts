@@ -7,7 +7,11 @@ import { AuthService } from '$lib/services/auth.service';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const { publicKey, challenge, signature } = await request.json();
+		const { publicKey, challenge, signature } = await request.json() as { 
+			publicKey: string; 
+			challenge: string; 
+			signature: string;
+		};
 
 		if (!publicKey || !challenge || !signature) {
 			return json(

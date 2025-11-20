@@ -7,7 +7,7 @@ import { AuthService } from '$lib/services/auth.service';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const { username } = await request.json();
+		const { username } = await request.json() as { username: string };
 
 		if (!username) {
 			return json({ error: 'Username is required' }, { status: 400 });
