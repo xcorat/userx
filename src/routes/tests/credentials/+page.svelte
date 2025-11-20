@@ -18,6 +18,8 @@
 	let generatedPublicKey = $state('');
 	let generatedEncryptedKey = $state('');
 	let decryptedPrivateKey = $state('');
+	let isPrivateKeyEditable = $state(false);
+	let validationResult = $state<boolean | null>(null);
 	let testChallenge = $state('test-challenge-' + Date.now());
 	let signature = $state('');
 	let verificationResult = $state<boolean | null>(null);
@@ -135,6 +137,33 @@
 		if (!decryptedPrivateKey.trim() || !testChallenge.trim()) {
 			error = 'Decrypted private key and challenge are required';
 			return;
+		}
+
+		async function handleValidatePrivateKey() {
+			error = '';
+			validationResult = null;
+
+			if (!decryptedPrivateKey.trim() || !publicKey.trim()) {
+				error = 'Decrypted private key and public key are required for validation';
+				return;
+			}
+
+			try {
+				// Sign a short challenge and verify with the provided public key
+				const challenge = testChallenge || ('validate-' + Date.now());
+				const sig = await signChallenge(challenge, decryptedPrivateKey);
+				const isValid = await verifySignature(challenge, sig, publicKey);
+				validationResult = isValid;
+				if (isValid) {
+					toast.success('Private key validated against public key');
+				} else {
+					toast.error('Private key validation failed');
+				}
+			} catch (err) {
+				error = err instanceof Error ? err.message : 'Failed to validate private key';
+				validationResult = false;
+				toast.error('Validation failed');
+			}
 		}
 
 		try {
@@ -386,19 +415,46 @@
 					</Button>
 					
 					{#if decryptedPrivateKey}
-						<div class="space-y-2">
-							<Label>Decrypted Private Key</Label>
-							<Textarea 
-								readonly 
-								value={decryptedPrivateKey} 
-								rows={3} 
-								class="font-mono text-xs bg-green-50 dark:bg-green-950"
-							/>
-							<p class="text-xs text-muted-foreground">
-								✓ Successfully decrypted! Private key is now available for signing.
-							</p>
-						</div>
-					{/if}
+							<div class="space-y-2">
+								<div class="flex items-center justify-between">
+									<Label>Decrypted Private Key</Label>
+									<div class="flex items-center gap-2">
+										<button class="text-sm text-slate-500" on:click={() => isPrivateKeyEditable = !isPrivateKeyEditable}>
+											{isPrivateKeyEditable ? 'Lock' : 'Edit'}
+										</button>
+										<button class="text-sm text-slate-500" on:click={() => { decryptedPrivateKey = ''; validationResult = null; }}>
+											Clear
+										</button>
+									</div>
+								</div>
+								<Textarea 
+									bind:value={decryptedPrivateKey}
+									rows={3} 
+									class="font-mono text-xs bg-green-50 dark:bg-green-950"
+									readonly={!isPrivateKeyEditable}
+								/>
+								<p class="text-xs text-muted-foreground">
+									✓ Successfully decrypted! Private key is now available for signing.
+								</p>
+
+								<div class="flex gap-2">
+									<Button onclick={handleValidatePrivateKey} variant="outline" size="sm">
+										Validate Private Key
+									</Button>
+									<Button onclick={() => { testChallenge = 'validate-' + Date.now(); } } size="sm" variant="ghost">
+										New Challenge
+									</Button>
+								</div>
+
+								{#if validationResult !== null}
+									<div class={`mt-2 p-2 rounded-md ${validationResult ? 'bg-green-100' : 'bg-red-100'}`}>
+										<p class={`text-sm font-semibold ${validationResult ? 'text-green-800' : 'text-red-800'}`}>
+											{validationResult ? '✓ Private key VALID for provided public key' : '✗ Private key INVALID for provided public key'}
+										</p>
+									</div>
+								{/if}
+							</div>
+						{/if}
 				</CardContent>
 			</Card>
 
