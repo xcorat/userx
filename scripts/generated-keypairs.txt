@@ -1,0 +1,81 @@
+Generating Ed25519 keypairs for test users...
+
+Test password: "password"
+
+Generating keypair for Alice Johnson (alicejohnson)...
+(node:26399) ExperimentalWarning: The Ed25519 Web Crypto API algorithm is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+  Public Key:  MCowBQYDK2VwAyEAo1JWLV32u8pMM9WVqPEgDUVz...
+  Encrypted:   +g0GC4s8riyOCQpHde1yHPkcBoM3ZQQ3dQw6to7V...
+
+Generating keypair for Bob Smith (bobsmith)...
+  Public Key:  MCowBQYDK2VwAyEAbRcpufoPRdM/0jV92BAnf5DX...
+  Encrypted:   /NNHG8seCEpl5pMWGmuH2fsc0/zB9w7/7gmNF9r3...
+
+Generating keypair for Carol Davis (caroldavis)...
+  Public Key:  MCowBQYDK2VwAyEAG7iuGQoEyuHkwFYMuL5XSNvm...
+  Encrypted:   4RFWtI9obYXxVUQ6/yFVtyl2gjLQPd+X3tVvzx0t...
+
+Generating keypair for David Wilson (davidwilson)...
+  Public Key:  MCowBQYDK2VwAyEA6YMts8mLVQl9C7jpvhoJxgkO...
+  Encrypted:   FX54Yc0rR6wnqS5QzlwOQgav7g/Gx6IKipoPSgRm...
+
+Generating keypair for Emma Brown (emmabrown)...
+  Public Key:  MCowBQYDK2VwAyEA78FPjIq8Z2tzyH8sqhWckDEs...
+  Encrypted:   Yp/nu3h/q667MD2ubPaLQNhcBoXSN7H4K5360VRJ...
+
+
+=== TypeScript/JavaScript Format ===
+
+export const testKeypairs = [
+  {
+    username: 'alicejohnson',
+    name: 'Alice Johnson',
+    email: 'alice@example.com',
+    publicKey: 'MCowBQYDK2VwAyEAo1JWLV32u8pMM9WVqPEgDUVzUxCLuGPhlaWOhUBBw4Q=',
+    encryptedPrivateKey: '+g0GC4s8riyOCQpHde1yHPkcBoM3ZQQ3dQw6to7V39fqKxiefwnnvNmDSsjnQJCamazoKzGPpHXM4j7kFHEp+s1jGyB7uusYZX1xF0S9AEiQ7tQwPDrwJWMm0d6NTsaj1yLlV0iFgd39jSfG'
+  },
+  {
+    username: 'bobsmith',
+    name: 'Bob Smith',
+    email: 'bob@example.com',
+    publicKey: 'MCowBQYDK2VwAyEAbRcpufoPRdM/0jV92BAnf5DXYJR1PG6z9dp4SJxC9Jo=',
+    encryptedPrivateKey: '/NNHG8seCEpl5pMWGmuH2fsc0/zB9w7/7gmNF9r3Ms1njQKGVmsLssETtH/Q0ZK9+ttZzpUwA/u9uLJqisQ0HPVwnBPBnn+fpZkpbPuLiLLwVoquN5V+Q2nUhof+folVPj8ojLBsQm2aJa4S'
+  },
+  {
+    username: 'caroldavis',
+    name: 'Carol Davis',
+    email: 'carol@example.com',
+    publicKey: 'MCowBQYDK2VwAyEAG7iuGQoEyuHkwFYMuL5XSNvmig1OVOV5nYj5i7NLORo=',
+    encryptedPrivateKey: '4RFWtI9obYXxVUQ6/yFVtyl2gjLQPd+X3tVvzx0tKeerbf6zknB9Fo87U/S9FsCyk16GBeAD1pN/eXVqnfPBeJK3tG0rN6T/IY1WBWPsBSxG0p2gGG1JAn668emPRbyBb8SFk422gHiTbVz6'
+  },
+  {
+    username: 'davidwilson',
+    name: 'David Wilson',
+    email: 'david@example.com',
+    publicKey: 'MCowBQYDK2VwAyEA6YMts8mLVQl9C7jpvhoJxgkOwRBW2dEmkEQdVXuz3mc=',
+    encryptedPrivateKey: 'FX54Yc0rR6wnqS5QzlwOQgav7g/Gx6IKipoPSgRmufkfMSLMG7JrFwcngvkqHujjtH+nJJYVdThWlem/RZOyRdue0afkmky+MuJkotSjiOWeJPyM/0fiJFwBvhbPQNT/nIoPJvnpbDaL+ghs'
+  },
+  {
+    username: 'emmabrown',
+    name: 'Emma Brown',
+    email: 'emma@example.com',
+    publicKey: 'MCowBQYDK2VwAyEA78FPjIq8Z2tzyH8sqhWckDEsPrhkVhWJY8A/5BsmxU0=',
+    encryptedPrivateKey: 'Yp/nu3h/q667MD2ubPaLQNhcBoXSN7H4K5360VRJRqqKGILNX/QRoW3nkvgdrG/H89Y87YGMqmaSjnTydKCCodifplC262kpdnUJTE0cwFfwh8hbip3/uZQRzBqcI0+TpHE6/fdDv4SoA28w'
+  },
+];
+
+
+=== SQL INSERT Statements ===
+
+-- User keypairs
+-- Alice Johnson
+INSERT INTO user_keypairs (public_key, encrypted_private_key, created_at) VALUES ('MCowBQYDK2VwAyEAo1JWLV32u8pMM9WVqPEgDUVzUxCLuGPhlaWOhUBBw4Q=', '+g0GC4s8riyOCQpHde1yHPkcBoM3ZQQ3dQw6to7V39fqKxiefwnnvNmDSsjnQJCamazoKzGPpHXM4j7kFHEp+s1jGyB7uusYZX1xF0S9AEiQ7tQwPDrwJWMm0d6NTsaj1yLlV0iFgd39jSfG', datetime('now'));
+-- Bob Smith
+INSERT INTO user_keypairs (public_key, encrypted_private_key, created_at) VALUES ('MCowBQYDK2VwAyEAbRcpufoPRdM/0jV92BAnf5DXYJR1PG6z9dp4SJxC9Jo=', '/NNHG8seCEpl5pMWGmuH2fsc0/zB9w7/7gmNF9r3Ms1njQKGVmsLssETtH/Q0ZK9+ttZzpUwA/u9uLJqisQ0HPVwnBPBnn+fpZkpbPuLiLLwVoquN5V+Q2nUhof+folVPj8ojLBsQm2aJa4S', datetime('now'));
+-- Carol Davis
+INSERT INTO user_keypairs (public_key, encrypted_private_key, created_at) VALUES ('MCowBQYDK2VwAyEAG7iuGQoEyuHkwFYMuL5XSNvmig1OVOV5nYj5i7NLORo=', '4RFWtI9obYXxVUQ6/yFVtyl2gjLQPd+X3tVvzx0tKeerbf6zknB9Fo87U/S9FsCyk16GBeAD1pN/eXVqnfPBeJK3tG0rN6T/IY1WBWPsBSxG0p2gGG1JAn668emPRbyBb8SFk422gHiTbVz6', datetime('now'));
+-- David Wilson
+INSERT INTO user_keypairs (public_key, encrypted_private_key, created_at) VALUES ('MCowBQYDK2VwAyEA6YMts8mLVQl9C7jpvhoJxgkOwRBW2dEmkEQdVXuz3mc=', 'FX54Yc0rR6wnqS5QzlwOQgav7g/Gx6IKipoPSgRmufkfMSLMG7JrFwcngvkqHujjtH+nJJYVdThWlem/RZOyRdue0afkmky+MuJkotSjiOWeJPyM/0fiJFwBvhbPQNT/nIoPJvnpbDaL+ghs', datetime('now'));
+-- Emma Brown
+INSERT INTO user_keypairs (public_key, encrypted_private_key, created_at) VALUES ('MCowBQYDK2VwAyEA78FPjIq8Z2tzyH8sqhWckDEsPrhkVhWJY8A/5BsmxU0=', 'Yp/nu3h/q667MD2ubPaLQNhcBoXSN7H4K5360VRJRqqKGILNX/QRoW3nkvgdrG/H89Y87YGMqmaSjnTydKCCodifplC262kpdnUJTE0cwFfwh8hbip3/uZQRzBqcI0+TpHE6/fdDv4SoA28w', datetime('now'));

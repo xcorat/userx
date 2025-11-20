@@ -1,12 +1,22 @@
 // Mock User Repository
 import type { IUserRepository } from '../../interfaces/IUserRepository';
 import type { User, CreateUserDTO, UpdateUserDTO } from '$lib/models';
-import { mockUsers } from './mock-data';
+import { mockUsers, testKeypairs } from './mock-data';
 import { AppError, ErrorCode } from '$lib/utils/error-handling';
 
 export class MockUserRepository implements IUserRepository {
 	private users: User[] = [...mockUsers];
 	private keypairs: Map<string, string> = new Map(); // publicKey -> encryptedPrivateKey
+	
+	constructor() {
+		// Initialize with test keypairs from mock-data
+		mockUsers.forEach((user, index) => {
+			const keypairValues = Object.values(testKeypairs);
+			if (index < keypairValues.length) {
+				this.keypairs.set(user.publicKey, keypairValues[index]);
+			}
+		});
+	}
 
 	async findAll(): Promise<User[]> {
 		return this.users;
