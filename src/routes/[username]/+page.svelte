@@ -46,9 +46,9 @@
 			}
 			
 			const profileService = DIContainer.getProfileService();
-			profile = await profileService.getUserProfile(user.id);
+			profile = await profileService.getUserProfile(user.publicKey);
 			// Only load public answers for other users
-			answers = await profileService.getProfileAnswers(user.id, false);
+			answers = await profileService.getProfileAnswers(user.publicKey, false);
 		} catch (err) {
 			console.error('Failed to load profile:', err);
 		} finally {
@@ -62,7 +62,7 @@
 
 	function sendDMQuestion() {
 		if (!profile) return;
-		goto(`/${authStore.currentUser?.username}/dm/compose?recipientId=${profile.id}`);
+		goto(`/${authStore.currentUser?.username}/dm/compose?recipientId=${profile.publicKey}`);
 	}
 </script>
 
@@ -71,7 +71,7 @@
 		<CardHeader>
 			<div class="flex items-center justify-between">
 				<CardTitle>@{username}'s Profile</CardTitle>
-				{#if authStore.currentUser && profile && authStore.currentUser.id !== profile.id}
+				{#if authStore.currentUser && profile && authStore.currentUser.publicKey !== profile.publicKey}
 					<Button onclick={sendDMQuestion}>
 						<MessageSquare class="w-4 h-4 mr-1" />
 						Send DM Question

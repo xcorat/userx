@@ -7,7 +7,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
 
-	let email = $state('');
+	let username = $state('');
 	let password = $state('');
 	let error = $state('');
 
@@ -16,7 +16,7 @@
 		error = '';
 
 		try {
-			await authStore.login(email, password);
+			await authStore.login(username, password);
 			goto('/');
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Login failed';
@@ -28,19 +28,23 @@
 	<Card class="w-full max-w-md">
 		<CardHeader>
 			<CardTitle>Login</CardTitle>
-			<CardDescription>Enter your credentials to access your account</CardDescription>
+			<CardDescription>Enter your username and password to access your account</CardDescription>
 		</CardHeader>
 		<CardContent>
 			<form onsubmit={handleLogin} class="space-y-4">
 				<div class="space-y-2">
-					<Label for="email">Email</Label>
+					<Label for="username">Username</Label>
 					<Input
-						id="email"
-						type="email"
-						bind:value={email}
-						placeholder="you@example.com"
+						id="username"
+						type="text"
+						bind:value={username}
+						placeholder="alicejohnson"
+						autocomplete="username"
 						required
 					/>
+					<p class="text-xs text-muted-foreground">
+						Test users: alicejohnson, bobsmith, caroldavis, davidwilson, emmabrown
+					</p>
 				</div>
 
 				<div class="space-y-2">
@@ -53,6 +57,9 @@
 						autocomplete="current-password"
 						required
 					/>
+					<p class="text-xs text-muted-foreground">
+						Test password: password
+					</p>
 				</div>
 
 				{#if error}

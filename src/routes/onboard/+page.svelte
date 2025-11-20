@@ -122,9 +122,16 @@
 		error = '';
 
 		try {
+			// Password is required for encrypting the private key
+			if (!password?.trim()) {
+				error = 'Password is required to secure your cryptographic keys';
+				isSubmitting = false;
+				return;
+			}
+
 			await authStore.signup({
 				email: email.trim(),
-				password: password || 'defaultpassword', // POC: password not enforced
+				password: password.trim(),
 				name: name.trim() || email.split('@')[0],
 				username: username.trim() || undefined,
 				birthdate: birthdate || undefined,
@@ -132,7 +139,7 @@
 				timezone: timezone.trim() || undefined
 			});
 			
-						toast.success('Profile updated successfully!');
+			toast.success('Account created successfully! Your cryptographic keys have been generated.');
 			goto('/');
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Signup failed';
@@ -173,7 +180,7 @@
 					{/if}
 				</div>
 				<div class="space-y-2">
-					<Label for="password">Password (optional for demo)</Label>
+					<Label for="password">Password *</Label>
 					<Input
 						id="password"
 						type="password"
@@ -181,9 +188,16 @@
 						bind:value={password}
 						disabled={isSubmitting}
 						autocomplete="new-password"
+						required
 					/>
 					<p class="text-xs text-muted-foreground">
-						In this demo, password is optional and not validated
+						Used to encrypt your cryptographic keys. Choose a strong password!
+					</p>
+				</div>
+				<div class="rounded-md bg-muted p-3 text-sm">
+					<p class="font-medium mb-1">🔐 Secure Identity System</p>
+					<p class="text-muted-foreground">
+						We'll generate Ed25519 cryptographic keys for you. Your password encrypts your private key - keep it safe!
 					</p>
 				</div>
 			{/if}

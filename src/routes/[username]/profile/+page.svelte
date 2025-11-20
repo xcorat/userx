@@ -34,8 +34,8 @@
 		isLoading = true;
 		try {
 			const profileService = DIContainer.getProfileService();
-			profile = await profileService.getUserProfile(authStore.currentUser.id);
-			allAnswers = await profileService.getProfileAnswers(authStore.currentUser.id, true);
+			profile = await profileService.getUserProfile(authStore.currentUser.publicKey);
+			allAnswers = await profileService.getProfileAnswers(authStore.currentUser.publicKey, true);
 			answers = allAnswers;
 		} catch (err) {
 			console.error('Failed to load profile:', err);
