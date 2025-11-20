@@ -3,11 +3,15 @@ import { browser } from '$app/environment';
 import type { User } from '$lib/models';
 import DIContainer from '$lib/config/di-container';
 import { appConfig } from '$lib/config/app.config';
+import { generateEd25519KeyPair, signChallenge } from '$lib/utils/keypair';
+import { encryptPrivateKey, decryptPrivateKey } from '$lib/utils/encryption';
 
 class AuthStore {
 	currentUser = $state<User | null>(null);
 	isLoading = $state(false);
 	error = $state<string | null>(null);
+	private encryptedPrivateKey: string | null = null;
+	private password: string | null = null; // Stored in memory only
 
 	constructor() {
 		if (browser) {
@@ -38,17 +42,68 @@ class AuthStore {
 
 	private clearSession() {
 		localStorage.removeItem(appConfig.auth.sessionStorageKey);
+		sessionStorage.removeItem('encryptedPrivateKey');
+		this.encryptedPrivateKey = null;
+		this.password = null;
 	}
 
-	async login(email: string, password: string) {
+	/**
+	 * Challenge-based login flow
+	 */
+	async login(username: string, password: string) {
 		this.isLoading = true;
 		this.error = null;
 
 		try {
-			const authService = DIContainer.getAuthService();
-			const user = await authService.login(email, password);
+			// Step 1: Get encrypted private key and challenge
+			const step1Response = await fetch('/api/auth/login-step1', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ username })
+			});
+
+			if (!step1Response.ok) {
+				const error = await step1Response.json();
+				throw new Error(error.error || 'Login failed');
+			}
+
+			const { publicKey, encryptedPrivateKey, challenge } = await step1Response.json();
+
+			// Step 2: Decrypt private key with password
+			let privateKey: string;
+			try {
+				privateKey = await decryptPrivateKey(encryptedPrivateKey, password);
+			} catch (e) {
+				throw new Error('Invalid password or corrupted key');
+			}
+
+			// Step 3: Sign challenge with private key
+			const signature = await signChallenge(challenge, privateKey);
+
+			// Step 4: Verify signature and authenticate
+			const step2Response = await fetch('/api/auth/login-step2', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ publicKey, challenge, signature })
+			});
+
+			if (!step2Response.ok) {
+				const error = await step2Response.json();
+				throw new Error(error.error || 'Authentication failed');
+			}
+
+			const user = await step2Response.json();
+			
+			// Restore Date objects
+			user.createdAt = new Date(user.createdAt);
+			
 			this.currentUser = user;
 			this.saveSession(user);
+
+			// Store encrypted key and password for on-demand decryption
+			this.encryptedPrivateKey = encryptedPrivateKey;
+			this.password = password;
+			sessionStorage.setItem('encryptedPrivateKey', encryptedPrivateKey);
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : 'Login failed';
 			throw e;
@@ -57,29 +112,61 @@ class AuthStore {
 		}
 	}
 
+	/**
+	 * Signup with client-side keypair generation
+	 */
 	async signup(data: { email: string; password: string; name?: string; username?: string; birthdate?: string; location?: string; timezone?: string }) {
 		this.isLoading = true;
 		this.error = null;
 
 		try {
+			// Generate Ed25519 keypair client-side
+			const { publicKey, privateKey } = await generateEd25519KeyPair();
+
+			// Encrypt private key with user's password
+			const encryptedPrivateKey = await encryptPrivateKey(privateKey, data.password);
+
+			// Create user with encrypted keypair
 			const authService = DIContainer.getAuthService();
 			const user = await authService.signup({
+				publicKey,
+				encryptedPrivateKey,
 				email: data.email,
-				password: data.password,
+				password: data.password, // Used for encryption, not stored on server
 				name: data.name || data.email.split('@')[0],
 				username: data.username,
 				birthdate: data.birthdate,
 				location: data.location,
 				timezone: data.timezone
 			});
+
 			this.currentUser = user;
 			this.saveSession(user);
+
+			// Store encrypted key and password for session
+			this.encryptedPrivateKey = encryptedPrivateKey;
+			this.password = data.password;
+			sessionStorage.setItem('encryptedPrivateKey', encryptedPrivateKey);
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : 'Signup failed';
 			throw e;
 		} finally {
 			this.isLoading = false;
 		}
+	}
+
+	/**
+	 * Decrypt private key on demand (for signing operations)
+	 */
+	async decryptPrivateKeyOnDemand(password?: string): Promise<string> {
+		const pwd = password || this.password;
+		const encKey = this.encryptedPrivateKey || sessionStorage.getItem('encryptedPrivateKey');
+
+		if (!pwd || !encKey) {
+			throw new Error('No encrypted key or password available');
+		}
+
+		return await decryptPrivateKey(encKey, pwd);
 	}
 
 	logout() {
