@@ -27,9 +27,9 @@
 			const relationService = DIContainer.getRelationService();
 			
 			const [friendsData, receivedData, sentData] = await Promise.all([
-				relationService.getFriends(authStore.currentUser.publicKey),
-				relationService.getReceivedRequests(authStore.currentUser.publicKey),
-				relationService.getSentRequests(authStore.currentUser.publicKey)
+				relationService.getFriends(authStore.currentUser.id),
+				relationService.getReceivedRequests(authStore.currentUser.id),
+				relationService.getSentRequests(authStore.currentUser.id)
 			]);
 			friends = friendsData;
 			receivedRequests = receivedData;
@@ -47,7 +47,7 @@
 
 		try {
 			const relationService = DIContainer.getRelationService();
-			await relationService.removeRelation(authStore.currentUser.publicKey, relationId);
+			await relationService.removeRelation(authStore.currentUser.id, relationId);
 			toast.success('Friend removed');
 			await loadAllData();
 		} catch (error) {
@@ -61,7 +61,7 @@
 
 		try {
 			const relationService = DIContainer.getRelationService();
-			await relationService.approveRequest(authStore.currentUser.publicKey, relationId);
+			await relationService.approveRequest(authStore.currentUser.id, relationId);
 			toast.success('Friend request approved!');
 			await loadAllData();
 		} catch (error) {
@@ -75,7 +75,7 @@
 
 		try {
 			const relationService = DIContainer.getRelationService();
-			await relationService.rejectRequest(authStore.currentUser.publicKey, relationId);
+			await relationService.rejectRequest(authStore.currentUser.id, relationId);
 			toast.success('Friend request rejected');
 			await loadAllData();
 		} catch (error) {
@@ -89,7 +89,7 @@
 
 		try {
 			const relationService = DIContainer.getRelationService();
-			await relationService.removeRelation(authStore.currentUser.publicKey, relationId);
+			await relationService.removeRelation(authStore.currentUser.id, relationId);
 			toast.success('Request cancelled');
 			await loadAllData();
 		} catch (error) {

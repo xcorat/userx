@@ -21,6 +21,7 @@ export class SQLiteUserRepository implements IUserRepository {
 		
 		const rows = stmt.all() as any[];
 		return rows.map((row) => ({
+			id: row.publicKey,
 			...row,
 			createdAt: new Date(row.createdAt)
 		}));
@@ -38,6 +39,7 @@ export class SQLiteUserRepository implements IUserRepository {
 		if (!row) return null;
 		
 		return {
+			id: row.publicKey,
 			...row,
 			createdAt: new Date(row.createdAt)
 		};
@@ -55,6 +57,7 @@ export class SQLiteUserRepository implements IUserRepository {
 		if (!row) return null;
 		
 		return {
+			id: row.publicKey,
 			...row,
 			createdAt: new Date(row.createdAt)
 		};
@@ -63,7 +66,7 @@ export class SQLiteUserRepository implements IUserRepository {
 	async findByUsername(username: string): Promise<User | null> {
 		const stmt = this.db.prepare(`
 			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
-				   birthdate, location, timezone, created_at as createdAt
+			       birthdate, location, timezone, created_at as createdAt
 			FROM users
 			WHERE LOWER(username) = LOWER(?)
 		`);
@@ -72,12 +75,11 @@ export class SQLiteUserRepository implements IUserRepository {
 		if (!row) return null;
 		
 		return {
+			id: row.publicKey,
 			...row,
 			createdAt: new Date(row.createdAt)
 		};
-	}
-
-	async searchUsers(query: string): Promise<User[]> {
+	}	async searchUsers(query: string): Promise<User[]> {
 		if (!query.trim()) {
 			return [];
 		}
@@ -94,6 +96,7 @@ export class SQLiteUserRepository implements IUserRepository {
 		const rows = stmt.all(searchTerm, searchTerm, searchTerm) as any[];
 		
 		return rows.map((row) => ({
+			id: row.publicKey,
 			...row,
 			createdAt: new Date(row.createdAt)
 		}));

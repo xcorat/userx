@@ -24,11 +24,13 @@ class AuthStore {
 		if (stored) {
 			try {
 				const parsed = JSON.parse(stored);
-				// Restore Date objects
+				// Restore Date objects and ensure id field is set
 				this.currentUser = {
+					id: parsed.id || parsed.publicKey,
 					...parsed,
 					createdAt: new Date(parsed.createdAt)
 				};
+				console.log('Loaded session for user:', this.currentUser);
 			} catch (e) {
 				console.error('Failed to load session', e);
 				this.clearSession();
@@ -37,6 +39,7 @@ class AuthStore {
 	}
 
 	private saveSession(user: User) {
+		console.log('Saving session for user:', user);
 		localStorage.setItem(appConfig.auth.sessionStorageKey, JSON.stringify(user));
 	}
 
@@ -92,10 +95,14 @@ class AuthStore {
 				throw new Error(error.error || 'Authentication failed');
 			}
 
-			const user = await step2Response.json();
+			const userData = await step2Response.json() as any;
 			
-			// Restore Date objects
-			user.createdAt = new Date(user.createdAt);
+			// Restore Date objects and ensure id field is set
+			const user: User = {
+				id: userData.id || userData.publicKey,
+				...userData,
+				createdAt: new Date(userData.createdAt)
+			};
 			
 			this.currentUser = user;
 			this.saveSession(user);

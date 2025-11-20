@@ -15,6 +15,7 @@ export class D1UserRepository implements IUserRepository {
 		`).all();
 		
 		return results.map((row: any) => ({
+			id: row.publicKey,
 			...row,
 			createdAt: new Date(row.createdAt)
 		}));
@@ -31,8 +32,9 @@ export class D1UserRepository implements IUserRepository {
 		if (!row) return null;
 		
 		return {
+			id: (row as any).publicKey,
 			...row,
-			createdAt: new Date(row.createdAt as string)
+			createdAt: new Date((row as any).createdAt as string)
 		} as User;
 	}
 
@@ -47,15 +49,16 @@ export class D1UserRepository implements IUserRepository {
 		if (!row) return null;
 		
 		return {
+			id: (row as any).publicKey,
 			...row,
-			createdAt: new Date(row.createdAt as string)
+			createdAt: new Date((row as any).createdAt as string)
 		} as User;
 	}
 
 	async findByUsername(username: string): Promise<User | null> {
 		const row = await this.db.prepare(`
 			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
-				   birthdate, location, timezone, created_at as createdAt
+			       birthdate, location, timezone, created_at as createdAt
 			FROM users
 			WHERE LOWER(username) = LOWER(?)
 		`).bind(username).first();
@@ -63,12 +66,11 @@ export class D1UserRepository implements IUserRepository {
 		if (!row) return null;
 		
 		return {
+			id: (row as any).publicKey,
 			...row,
-			createdAt: new Date(row.createdAt as string)
+			createdAt: new Date((row as any).createdAt as string)
 		} as User;
-	}
-
-	async searchUsers(query: string): Promise<User[]> {
+	}	async searchUsers(query: string): Promise<User[]> {
 		if (!query.trim()) {
 			return [];
 		}
@@ -82,6 +84,7 @@ export class D1UserRepository implements IUserRepository {
 		`).bind(`%${query}%`, `%${query}%`, `%${query}%`).all();
 
 		return results.map((row: any) => ({
+			id: row.publicKey,
 			...row,
 			createdAt: new Date(row.createdAt)
 		}));

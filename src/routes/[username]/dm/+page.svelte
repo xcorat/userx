@@ -61,7 +61,7 @@
 		try {
 			const answerData: CreateDMAnswerDTO = {
 				dmQuestionId: dmId,
-				userId: authStore.currentUser.publicKey,
+				userId: authStore.currentUser.id,
 				choiceId: choiceId || undefined
 			};
 

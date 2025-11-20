@@ -16,11 +16,20 @@ export class APIUserRepository implements IUserRepository {
 	}
 
 	private parseUser(user: any): User {
-		return {
+		console.log('Parsing user:', user);
+		// Backwards compatible: ensure 'id' is present and set from publicKey if needed
+		const id = user.id || user.publicKey ;
+		const parsed: any = {
 			...user,
-			createdAt: new Date(user.createdAt),
-			updatedAt: new Date(user.updatedAt)
+			id,
+			publicKey: user.publicKey || id,
+			createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
 		};
+
+		// updatedAt is optional in some responses, only parse if present
+		if (user.updatedAt) parsed.updatedAt = new Date(user.updatedAt);
+
+		return parsed as User;
 	}
 
 	async findAll(): Promise<User[]> {

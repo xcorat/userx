@@ -1,6 +1,7 @@
 // User domain model
 
 export interface User {
+	id: string;
 	publicKey: string;
 	username: string;
 	name: string;

@@ -34,7 +34,7 @@
 			const userService = DIContainer.getUserService();
 			const allUsers = await userService.getAllUsers();
 			// Filter out current user
-			users = allUsers.filter(u => u.publicKey !== authStore.currentUser?.publicKey);
+			users = allUsers.filter(u => u.id !== authStore.currentUser?.id);
 		} catch (err) {
 			toast.error('Failed to load users');
 		} finally {
@@ -90,7 +90,7 @@
 
 		try {
 			const data: CreateDMQuestionDTO = {
-				senderId: authStore.currentUser.publicKey,
+				senderId: authStore.currentUser.id,
 				recipientId: selectedUserId,
 				text: questionText.trim(),
 				choices: nonEmptyChoices.length > 0 
@@ -138,8 +138,8 @@
 							class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							<option value="">Select a user</option>
-						{#each users as user (user.publicKey)}
-							<option value={user.publicKey}>
+						{#each users as user (user.id)}
+							<option value={user.id}>
 									{user.name} {user.username ? `(@${user.username})` : ''}
 								</option>
 							{/each}

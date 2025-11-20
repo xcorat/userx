@@ -131,10 +131,10 @@ export class RelationService {
 			const friendId = relation.fromUserId === userId ? relation.toUserId : relation.fromUserId;
 			const friend = await this.userRepo.findById(friendId);
 			
-			if (friend) {
+				if (friend) {
 				friendsWithUser.push({
 					id: relation.id,
-					userId: friend.id,
+						userId: friend.publicKey || friend.id,
 					username: friend.username,
 					name: friend.name,
 					avatarUrl: friend.avatarUrl,
@@ -160,10 +160,10 @@ export class RelationService {
 		for (const relation of sentPending) {
 			const user = await this.userRepo.findById(relation.toUserId);
 			
-			if (user) {
+				if (user) {
 				requestsWithUser.push({
 					id: relation.id,
-					userId: user.id,
+						userId: user.publicKey || user.id,
 					username: user.username,
 					name: user.name,
 					avatarUrl: user.avatarUrl,
@@ -189,10 +189,10 @@ export class RelationService {
 		for (const relation of receivedPending) {
 			const user = await this.userRepo.findById(relation.fromUserId);
 			
-			if (user) {
+				if (user) {
 				requestsWithUser.push({
 					id: relation.id,
-					userId: user.id,
+						userId: user.publicKey || user.id,
 					username: user.username,
 					name: user.name,
 					avatarUrl: user.avatarUrl,
