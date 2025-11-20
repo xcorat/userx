@@ -230,6 +230,14 @@ private parseQuestion(question: any): PublicQuestion {
 
 ## Current Status
 
+### Recent Commits (latest)
+- `9e457aa` (Nov 19, 2025) — Add Ed25519 credentials test page & memeball styling tweak (`/tests/credentials`, `/memeball/+page.svelte`)
+- `a09a380` (Nov 19, 2025) — Phase 9: Update UI components for Ed25519 authentication (replace `User.id` → `User.publicKey`, login/onboard updates, DM/friends/profile changes)
+- `3af0fdb` (Nov 19, 2025) — Fix TypeScript compilation errors; encryption/time parsing, and login-step API fixes
+- `d9dbdf8` (Nov 19, 2025) — Phase 8: Generate seed data with Ed25519 keypairs
+- `bed9daf` (Nov 19, 2025) — Phase 7: auth store and client-side crypto updates
+
+
 ### Working Features:
 - ✅ User registration with SQLite persistence via API
 - ✅ User profile with answer visibility toggle
@@ -263,6 +271,25 @@ private parseQuestion(question: any): PublicQuestion {
 - [ ] Comprehensive testing suite
 - [ ] Performance optimizations
 - [ ] Mobile responsiveness polish
+
+---
+
+## Phase 10: Testing & QA (Planned)
+**Status**: Planned (Manual + Automated Testing)
+
+### Goals:
+- Manually validate Ed25519 login/signup flows end-to-end using `/tests/credentials` with both hardcoded and DB users.
+- Validate challenge-response auth: login-step1 -> login-step2 flow with signed challenge verification.
+- Validate decryption and signing flows: verify that private keys are decrypted and signing works; verification passes using public keys.
+- Test cross-feature regressions due to publicKey migration: profile, DM, friend workflows, and question flows.
+- Add automated integration tests for: sign/verify, signup with key generation, login challenge-sign flow.
+
+### Tasks:
+- Manual QA checklist for developers and testers
+- Write end-to-end tests using Playwright (or preferred framework) for the main auth flow
+- Add unit tests for `lib/utils/keypair.ts` and `lib/utils/encryption.ts` verifying encrypt/decrypt and sign/verify
+- Add CI integration to run tests on PRs
+
 
 ---
 
@@ -635,6 +662,73 @@ CREATE TABLE IF NOT EXISTS meme_interactions (
 
 ---
 
+## Phase 7: Ed25519 Keypair Identity & Client-Side Crypto ✅
+**Status**: Completed (November 19, 2025)
+
+### Implemented:
+- **Ed25519 Identity**: The user's public key now acts as the user ID across the system; private keys are stored encrypted.
+- **Client-Side Crypto**: Password-based key encryption using PBKDF2 + AES-GCM; clients generate key pairs, encrypt private key locally, and store encrypted private key with the public key as the ID on the server.
+- **Auth Flow**: Challenge-response flow implemented via two-step endpoints: challenge issuance and signed-challenge verification.
+- **Auth Store & Utilities**: `auth.store.svelte.ts`, `lib/utils/encryption.ts`, and `lib/utils/keypair.ts` were added/updated for key management and signing.
+
+### Key Files Modified/Created:
+- `src/lib/utils/encryption.ts` — PBKDF2 & AES-GCM helpers for encrypt/decrypt
+- `src/lib/utils/keypair.ts` — Keypair generation and signing helpers (Ed25519)
+- `src/lib/stores/auth.store.svelte.ts` — Client-side authentication flow updated for challenge authentication
+- `src/routes/api/auth/login-step1/+server.ts` & `src/routes/api/auth/login-step2/+server.ts` — New challenge endpoints
+- `src/lib/repositories/implementations/mock/mock-data.ts` & seed scripts (phase 8 seeding relying on this)
+
+### Notes:
+- The system now identifies users by public key and uses encrypted private keys (never stored in plaintext) for signing authentication challenges.
+
+---
+
+## Phase 8: Seed Data & Ed25519 Key Generation ✅
+**Status**: Completed (November 19, 2025)
+
+### Implemented:
+- **Seed Script**: Scripts generate Ed25519 keypairs for seeded users and store encrypted private keys in seed data.
+- **Deterministic IDs**: Seed generation uses deterministic UUIDs for consistent identity across environments.
+- **Seed Data Files**: `scripts/generate-keypairs.mjs`, `scripts/generated-keypairs.txt`, `scripts/d1-seed.sql` updated to include Ed25519 public keys and encrypted private keys.
+
+### Key Files Modified/Created:
+- `scripts/generate-keypairs.mjs` — Keypair generator helper used in seed process
+- `scripts/generated-keypairs.txt` — Generated outputs for the seeded users
+- `scripts/d1-seed.sql` / `d1-seed.ts` — New seed data entries for Cloudflare D1 and SQLite
+- `src/lib/repositories/implementations/mock/mock-data.ts` — Added test users with encrypted private keys
+
+### Notes:
+- Test users created: alicejohnson, bobsmith, caroldavis, davidwilson, emmabrown (test password: `password`). These users include public keys and encrypted private keys used for testing.
+
+---
+
+## Phase 9: UI Updates & Credentials Tester ✅
+**Status**: Completed (November 19, 2025)
+
+### Implemented:
+- **Second-factor & identity update**: UI changed to reference `User.publicKey` as the user identifier, replacing legacy `User.id` usage across pages and components.
+- **Login/Signup Flows**: Login changed to username/password for the username-based login, and password usage made required for encrypting private keys during onboarding.
+- **UI Files Updated**: Profile, DM, friends, and composer pages updated to use the public key; all TypeScript issues relating to `User.id` fixed.
+- **Credentials Tester Page**: `src/routes/tests/credentials/+page.svelte` added. This page lets developers generate keypairs; encrypt/decrypt private keys; sign and verify challenge strings; and load test users from both hardcoded test data and the database via `/api/users`.
+- **Database Integration**: Added feature to fetch `users` via `/api/users` for real test data exposure (test DB only).
+
+### Key Files Modified/Created:
+- `src/routes/login/+page.svelte` — Login UI updated for username flow
+- `src/routes/onboard/+page.svelte` — Signup/onboarding flow updated, password made required
+- `src/routes/[username]/+page.svelte` — Profile view now uses `publicKey` for lookup
+- `src/routes/[username]/profile/+page.svelte` — My profile uses `publicKey`
+- `src/routes/[username]/dm/+page.svelte` and `compose/+page.svelte` — DM pages use `publicKey` and fixed a corruption in compose page
+- `src/routes/[username]/friends/+page.svelte` — Friends page updated to use `publicKey`
+- `src/routes/tests/credentials/+page.svelte` — New credentials tester page, includes DB load option
+- `src/routes/memeball/+page.svelte` — Minor style adjustments removed global body background override
+
+### Notes:
+- All TypeScript errors for `User.id` missing were fixed by switching to `User.publicKey` across UI components.
+- The credentials tester exposes encrypted private keys, which is acceptable for the test database environment, and helps validate the full login/encryption/decryption/signing flow.
+
+
+---
+
 ## Development Commands
 ## Phase 6: Friend Relations & Social Features ✅
 **Status**: Completed (November 15, 2025)
@@ -846,7 +940,7 @@ This section provides a quick reference for the implemented features and their l
 | Feature | Location | Status | Notes |
 |---------|----------|--------|-------|
 | User Registration | `/onboard` | ✅ | Email validation, username uniqueness |
-| User Login | `/login` | ✅ | Email-based authentication |
+| User Login | `/login` | ✅ | Username + password with Ed25519 challenge-response authentication |
 | User Profiles | `/profile/[userId]` | ✅ | View other users, public answers only |
 | Question Creation | `/questions/new` | ✅ | 2-6 choices, image optional |
 | Question Browsing | `/questions` | ✅ | Sorted (newest/popular), paginated (20/page) |
@@ -856,6 +950,7 @@ This section provides a quick reference for the implemented features and their l
 | Memeball (Memes) | `/memeball` | ✅ | Swipeable meme voting system |
 | Meme Submission | `/memeball/add` | ✅ | Daily token (1 per day) |
 | Database Test UI | `/tests` | ✅ | Debug database state |
+| Credentials Tester | `/tests/credentials` | ✅ | Test Ed25519: generate, encrypt, decrypt, sign, verify (DB/hardcoded users) |
 
 ### Architecture Layers
 
@@ -1046,9 +1141,9 @@ $effect(() => {
 
 ---
 
-**Last Updated**: November 14, 2025  
-**Total Phases Completed**: 6  
-**Total Features**: 11+  
+**Last Updated**: November 19, 2025  
+**Total Phases Completed**: 9  
+**Total Features**: 12+  
 **Total API Endpoints**: 40+  
 **Total Database Tables**: 10  
-**Lines of Code**: 5000+
+**Lines of Code**: 5500+
