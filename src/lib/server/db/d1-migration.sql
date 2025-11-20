@@ -173,5 +173,3 @@ CREATE TABLE IF NOT EXISTS user_relations (
 CREATE INDEX IF NOT EXISTS idx_user_relations_from_user ON user_relations(from_user_id);
 CREATE INDEX IF NOT EXISTS idx_user_relations_to_user ON user_relations(to_user_id);
 CREATE INDEX IF NOT EXISTS idx_user_relations_status ON user_relations(status);
-
-```

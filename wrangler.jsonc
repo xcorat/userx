@@ -10,6 +10,11 @@
 			"binding": "DB",
 			"database_name": "qna-app-db",
 			"database_id": "e75db648-de0c-4235-90c6-53357b6d1a31"
+		},
+		{
+			"binding": "qna_app_db",
+			"database_name": "qna-app-db",
+			"database_id": "48492587-bc73-45be-831b-98d84ac7e080"
 		}
 	],
 	"assets": {
@@ -20,15 +25,15 @@
 		"enabled": false,
 		"head_sampling_rate": 1,
 		"logs": {
-		"enabled": true,
-		"head_sampling_rate": 1,
-		"persist": true,
-		"invocation_logs": true
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"persist": true,
+			"invocation_logs": true
 		},
 		"traces": {
-		"enabled": false,
-		"persist": true,
-		"head_sampling_rate": 1
+			"enabled": false,
+			"persist": true,
+			"head_sampling_rate": 1
 		}
 	}
 }
