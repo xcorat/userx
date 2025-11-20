@@ -10,7 +10,7 @@
  *   pnpm tsx scripts/d1-seed.ts --generate-sql > scripts/d1-seed.sql
  */
 
-import { mockUsers, mockQuestions, mockAnswers, mockDMQuestions, mockDMAnswers, mockMemes, mockMemeInteractions } from '../src/lib/repositories/implementations/mock/mock-data';
+import { mockUsers, mockQuestions, mockAnswers, mockDMQuestions, mockDMAnswers, mockMemes, mockMemeInteractions, testKeypairs } from '../src/lib/repositories/implementations/mock/mock-data';
 
 const generateSeedSQL = (): string => {
 	const statements: string[] = [];
@@ -20,11 +20,21 @@ const generateSeedSQL = (): string => {
 		const escapedName = user.name.replace(/'/g, "''");
 		const escapedEmail = user.email.replace(/'/g, "''");
 		const escapedAvatar = user.avatarUrl ? `'${user.avatarUrl.replace(/'/g, "''")}'` : 'NULL';
-		
+        
+		// Use public_key and match the schema
 		statements.push(
-			`INSERT INTO users (id, username, name, email, password, avatar_url, created_at, updated_at) ` +
-			`VALUES ('${user.id}', '${user.username}', '${escapedName}', '${escapedEmail}', 'password', ${escapedAvatar}, '${user.createdAt.toISOString()}', '${user.createdAt.toISOString()}');`
+			`INSERT INTO users (public_key, username, name, email, avatar_url, created_at, updated_at) ` +
+			`VALUES ('${user.publicKey}', '${user.username}', '${escapedName}', '${escapedEmail}', ${escapedAvatar}, '${user.createdAt.toISOString()}', '${user.createdAt.toISOString()}');`
 		);
+
+		// If we have an encrypted private key for this test user, insert it into user_keypairs
+		const shortName = Object.keys(testKeypairs).find(k => user.username.startsWith(k));
+		const encryptedKey = shortName ? (testKeypairs as any)[shortName] : null;
+		if (encryptedKey) {
+			statements.push(
+				`INSERT INTO user_keypairs (public_key, encrypted_private_key, created_at) VALUES ('${user.publicKey}', '${encryptedKey}', '${user.createdAt.toISOString()}');`
+			);
+		}
 	}
 
 	// Insert questions and choices

@@ -72,7 +72,7 @@
 			if (!response.ok) {
 				throw new Error('Failed to fetch users from database');
 			}
-			const data = await response.json();
+			const data: any = await response.json();
 			dbUsers = data.users || [];
 			toast.success(`Loaded ${dbUsers.length} users from database`);
 		} catch (err) {
@@ -139,32 +139,9 @@
 			return;
 		}
 
-		async function handleValidatePrivateKey() {
-			error = '';
-			validationResult = null;
+    
 
-			if (!decryptedPrivateKey.trim() || !publicKey.trim()) {
-				error = 'Decrypted private key and public key are required for validation';
-				return;
-			}
-
-			try {
-				// Sign a short challenge and verify with the provided public key
-				const challenge = testChallenge || ('validate-' + Date.now());
-				const sig = await signChallenge(challenge, decryptedPrivateKey);
-				const isValid = await verifySignature(challenge, sig, publicKey);
-				validationResult = isValid;
-				if (isValid) {
-					toast.success('Private key validated against public key');
-				} else {
-					toast.error('Private key validation failed');
-				}
-			} catch (err) {
-				error = err instanceof Error ? err.message : 'Failed to validate private key';
-				validationResult = false;
-				toast.error('Validation failed');
-			}
-		}
+    
 
 		try {
 			const sig = await signChallenge(testChallenge, decryptedPrivateKey);
@@ -172,6 +149,33 @@
 			toast.success('Challenge signed!');
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to sign challenge';
+		}
+	}
+
+	async function handleValidatePrivateKey() {
+		error = '';
+		validationResult = null;
+
+		if (!decryptedPrivateKey.trim() || !publicKey.trim()) {
+			error = 'Decrypted private key and public key are required for validation';
+			return;
+		}
+
+		try {
+			// Sign a short challenge and verify with the provided public key
+			const challenge = testChallenge || ('validate-' + Date.now());
+			const sig = await signChallenge(challenge, decryptedPrivateKey);
+			const isValid = await verifySignature(challenge, sig, publicKey);
+			validationResult = isValid;
+			if (isValid) {
+				toast.success('Private key validated against public key');
+			} else {
+				toast.error('Private key validation failed');
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to validate private key';
+			validationResult = false;
+			toast.error('Validation failed');
 		}
 	}
 
@@ -419,10 +423,10 @@
 								<div class="flex items-center justify-between">
 									<Label>Decrypted Private Key</Label>
 									<div class="flex items-center gap-2">
-										<button class="text-sm text-slate-500" on:click={() => isPrivateKeyEditable = !isPrivateKeyEditable}>
+										<button class="text-sm text-slate-500" onclick={() => isPrivateKeyEditable = !isPrivateKeyEditable}>
 											{isPrivateKeyEditable ? 'Lock' : 'Edit'}
 										</button>
-										<button class="text-sm text-slate-500" on:click={() => { decryptedPrivateKey = ''; validationResult = null; }}>
+											<button class="text-sm text-slate-500" onclick={() => { decryptedPrivateKey = ''; validationResult = null; }}>
 											Clear
 										</button>
 									</div>

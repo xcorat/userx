@@ -63,11 +63,11 @@ export class SQLiteUserRepository implements IUserRepository {
 	async findByUsername(username: string): Promise<User | null> {
 		const stmt = this.db.prepare(`
 			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
-			       birthdate, location, timezone, created_at as createdAt
+				   birthdate, location, timezone, created_at as createdAt
 			FROM users
-			WHERE username = ?
+			WHERE LOWER(username) = LOWER(?)
 		`);
-		
+        
 		const row = stmt.get(username) as any;
 		if (!row) return null;
 		

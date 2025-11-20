@@ -3,7 +3,7 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { mockUsers, mockQuestions, mockAnswers, mockDMQuestions, mockDMAnswers, mockMemes, mockMemeInteractions } from '$lib/repositories/implementations/mock/mock-data';
+import { mockUsers, mockQuestions, mockAnswers, mockDMQuestions, mockDMAnswers, mockMemes, mockMemeInteractions, testKeypairs } from '$lib/repositories/implementations/mock/mock-data';
 import type { IUserRepository } from '$lib/repositories/interfaces/IUserRepository';
 import type { IQuestionRepository } from '$lib/repositories/interfaces/IQuestionRepository';
 import type { IAnswerRepository } from '$lib/repositories/interfaces/IAnswerRepository';
@@ -89,8 +89,13 @@ function seedDatabase(database: any): void {
 		console.log('Seeding database with mock data...');
 		
 		const insertUser = database.prepare(`
-			INSERT INTO users (id, username, name, email, password, avatar_url, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO users (public_key, username, name, email, avatar_url, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
+		`);
+
+		const insertUserKeypair = database.prepare(`
+			INSERT INTO user_keypairs (public_key, encrypted_private_key, created_at)
+			VALUES (?, ?, ?)
 		`);
 		
 		const insertQuestion = database.prepare(`
@@ -136,16 +141,24 @@ function seedDatabase(database: any): void {
 		// Seed users
 		console.log(`Seeding ${mockUsers.length} users...`);
 		for (const user of mockUsers) {
+			// Use publicKey (not id) and do not insert a password column (schema doesn't have it)
 			insertUser.run(
-				user.id,
+				user.publicKey,
 				user.username,
 				user.name,
 				user.email,
-				'password', // Default password for all users
 				user.avatarUrl || null,
 				user.createdAt.toISOString(),
 				user.createdAt.toISOString()
 			);
+
+			// Seed user_keypairs with an encryptedPrivateKey if we have one available in testKeypairs
+			// testKeypairs keys are short names like 'alice', 'bob', etc. We detect by username prefix.
+			const shortName = Object.keys(testKeypairs).find(k => user.username.startsWith(k));
+			const encryptedKey = shortName ? (testKeypairs as any)[shortName] : null;
+			if (encryptedKey) {
+				insertUserKeypair.run(user.publicKey, encryptedKey, user.createdAt.toISOString());
+			}
 		}
 		console.log(`✓ Users seeded`);
 		

@@ -55,9 +55,9 @@ export class D1UserRepository implements IUserRepository {
 	async findByUsername(username: string): Promise<User | null> {
 		const row = await this.db.prepare(`
 			SELECT public_key as publicKey, username, name, email, avatar_url as avatarUrl,
-			       birthdate, location, timezone, created_at as createdAt
+				   birthdate, location, timezone, created_at as createdAt
 			FROM users
-			WHERE username = ?
+			WHERE LOWER(username) = LOWER(?)
 		`).bind(username).first();
 		
 		if (!row) return null;

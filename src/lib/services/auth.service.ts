@@ -12,8 +12,10 @@ export interface LoginStep1Response {
 	challenge: string;
 }
 
+// Shared challenges store across AuthService instances (in-memory)
+const challengesStore: Map<string, { challenge: string; expires: number }> = new Map();
+
 export class AuthService {
-	private challenges: Map<string, { challenge: string; expires: number }> = new Map();
 
 	constructor(private userRepo: IUserRepository) {}
 
@@ -21,7 +23,8 @@ export class AuthService {
 	 * Step 1 of login: Get user's encrypted private key and generate challenge
 	 */
 	async loginStep1(username: string): Promise<LoginStep1Response> {
-		const user = await this.userRepo.findByUsername(username);
+		const normalizedUsername = (username || '').trim().toLowerCase();
+		const user = await this.userRepo.findByUsername(normalizedUsername);
 		if (!user) {
 			throw new AppError(ErrorCode.NOT_FOUND, 'User not found');
 		}
@@ -35,8 +38,8 @@ export class AuthService {
 		const challenge = crypto.randomUUID();
 		const expires = Date.now() + 5 * 60 * 1000; // 5 minutes
 
-		// Store challenge temporarily
-		this.challenges.set(user.publicKey, { challenge, expires });
+		// Store challenge temporarily (shared store)
+		challengesStore.set(user.publicKey, { challenge, expires });
 
 		return {
 			publicKey: user.publicKey,
@@ -50,7 +53,7 @@ export class AuthService {
 	 */
 	async loginStep2(publicKey: string, challenge: string, signature: string): Promise<User> {
 		// Verify challenge exists and hasn't expired
-		const storedChallenge = this.challenges.get(publicKey);
+		const storedChallenge = challengesStore.get(publicKey);
 		if (!storedChallenge) {
 			throw new AppError(ErrorCode.UNAUTHORIZED, 'Invalid or expired challenge');
 		}
@@ -60,7 +63,7 @@ export class AuthService {
 		}
 
 		if (Date.now() > storedChallenge.expires) {
-			this.challenges.delete(publicKey);
+			challengesStore.delete(publicKey);
 			throw new AppError(ErrorCode.UNAUTHORIZED, 'Challenge expired');
 		}
 
@@ -71,7 +74,7 @@ export class AuthService {
 		}
 
 		// Clean up used challenge
-		this.challenges.delete(publicKey);
+		challengesStore.delete(publicKey);
 
 		// Return authenticated user
 		const user = await this.userRepo.findById(publicKey);

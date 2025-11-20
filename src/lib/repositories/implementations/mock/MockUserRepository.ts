@@ -31,7 +31,8 @@ export class MockUserRepository implements IUserRepository {
 	}
 
 	async findByUsername(username: string): Promise<User | null> {
-		return this.users.find((u) => u.username === username) || null;
+		const normalized = (username || '').trim().toLowerCase();
+		return this.users.find((u) => (u.username || '').trim().toLowerCase() === normalized) || null;
 	}
 
 	async searchUsers(query: string): Promise<User[]> {

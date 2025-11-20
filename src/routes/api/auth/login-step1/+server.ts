@@ -7,7 +7,8 @@ import { AuthService } from '$lib/services/auth.service';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const { username } = await request.json() as { username: string };
+		const body = await request.json() as { username?: string };
+		const username = (body.username || '').trim();
 
 		if (!username) {
 			return json({ error: 'Username is required' }, { status: 400 });
@@ -15,7 +16,6 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const userRepo = ServerRepositoryFactory.getUserRepository();
 		const authService = new AuthService(userRepo);
-
 		const response = await authService.loginStep1(username);
 
 		return json(response);
