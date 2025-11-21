@@ -42,7 +42,7 @@ export class APIMemeBallRepository implements IMemeBallRepository {
 	}
 
 	async findById(id: string): Promise<Meme | null> {
-		const response = await fetch(`${API_BASE}/memes/${id}`);
+		const response = await fetch(`${API_BASE}/memes/${encodeURIComponent(id)}`);
 		if (response.status === 404) return null;
 		const meme = await this.handleResponse<any>(response);
 		return this.parseMeme(meme);
@@ -66,7 +66,7 @@ export class APIMemeBallRepository implements IMemeBallRepository {
 	}
 
 	async delete(id: string): Promise<void> {
-		const response = await fetch(`${API_BASE}/memes/${id}`, { method: 'DELETE' });
+		const response = await fetch(`${API_BASE}/memes/${encodeURIComponent(id)}`, { method: 'DELETE' });
 		await this.handleResponse<void>(response);
 	}
 
@@ -92,7 +92,7 @@ export class APIMemeBallRepository implements IMemeBallRepository {
 	}
 
 	async findUserInteraction(userId: string, memeId: string): Promise<MemeInteraction | null> {
-		const response = await fetch(`${API_BASE}/memes/${memeId}/interactions?userId=${encodeURIComponent(userId)}`);
+		const response = await fetch(`${API_BASE}/memes/${encodeURIComponent(memeId)}/interactions?userId=${encodeURIComponent(userId)}`);
 		if (response.status === 404) return null;
 		const interaction = await this.handleResponse<any>(response);
 		return interaction ? this.parseInteraction(interaction) : null;
@@ -115,7 +115,7 @@ export class APIMemeBallRepository implements IMemeBallRepository {
 	}
 
 	async getMemeStats(memeId: string): Promise<{ totalPicks: number; totalRejects: number }> {
-		const response = await fetch(`${API_BASE}/memes/${memeId}/stats`);
+		const response = await fetch(`${API_BASE}/memes/${encodeURIComponent(memeId)}/stats`);
 		return this.handleResponse<{ totalPicks: number; totalRejects: number }>(response);
 	}
 
@@ -134,13 +134,13 @@ export class APIMemeBallRepository implements IMemeBallRepository {
 	}
 
 	async getUserMemeStats(userId: string): Promise<UserMemeStats> {
-		const response = await fetch(`${API_BASE}/users/${userId}/meme-stats`);
+		const response = await fetch(`${API_BASE}/users/${encodeURIComponent(userId)}/meme-stats`);
 		return this.handleResponse<UserMemeStats>(response);
 	}
 
 	async getUserDailySubmissionCount(userId: string, date: Date): Promise<number> {
 		const dateStr = date.toISOString().split('T')[0];
-		const response = await fetch(`${API_BASE}/users/${userId}/meme-submissions?date=${dateStr}`);
+		const response = await fetch(`${API_BASE}/users/${encodeURIComponent(userId)}/meme-submissions?date=${dateStr}`);
 		const data = await this.handleResponse<{ count: number }>(response);
 		return data.count;
 	}

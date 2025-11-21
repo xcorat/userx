@@ -80,18 +80,31 @@
 	});
 
 	function handlePointerDown(event: PointerEvent) {
+		console.log('Pointer down event:', event);
 		if (disabled || isDragging) return;
-		
+
+		// If the initial press occurs on an interactive control, do NOT start drag.
+		// This preserves button/link/input behavior (e.g., Skip Intro).
+		const interactiveSelector = 'button, a, input, textarea, select, [role="button"], [data-interactive="true"], [data-no-drag]';
+		const rawTarget = event.target as HTMLElement | null;
+		const interactive = rawTarget && rawTarget.closest(interactiveSelector) as HTMLElement | null;
+		// If the interactive element matched is a descendant (not the card itself), do not start drag.
+		if (interactive && interactive !== (event.currentTarget as HTMLElement)) {
+			// Don't prevent default or capture pointer - let the button handle the click
+			return;
+		}
+
+		// For non-interactive areas, prevent native selection and start dragging
 		event.preventDefault();
 		const target = event.currentTarget as HTMLElement;
 		pointerId = event.pointerId;
 		target.setPointerCapture(pointerId);
-		
+
 		dragState = 'dragging';
 		isDragging = true;
 		originPos = { x: event.clientX, y: event.clientY };
 		dragOffset = { x: 0, y: 0 };
-		
+
 		onDragStart?.();
 	}
 
@@ -217,12 +230,12 @@
 </Card.Root>
 
 <style>
-	:global(.swipe-card) {
+	.swipe-card {
 		position: relative;
 		width: 100%;
 		height: 100%;
 		cursor: grab;
-		touch-action: none;
+		touch-action: pan-y pinch-zoom;
 		user-select: none;
 		/* Override shadcn defaults for swipe functionality */
 		border-radius: 16px !important;
@@ -232,11 +245,25 @@
 		gap: 0 !important; /* Remove default gap */
 	}
 	
-	:global(.swipe-card.dragging) {
+	/* Allow pointer events on buttons and interactive elements */
+	:global(.swipe-card button),
+	:global(.swipe-card a),
+	:global(.swipe-card input),
+	:global(.swipe-card textarea),
+	:global(.swipe-card select),
+	:global(.swipe-card [role="button"]),
+	:global(.swipe-card [data-interactive="true"]),
+	:global(.swipe-card [data-no-drag]) {
+		touch-action: auto;
+		pointer-events: auto;
+		user-select: auto;
+	}
+	
+	.swipe-card.dragging {
 		cursor: grabbing;
 	}
 	
-	:global(.swipe-card.disabled) {
+	.swipe-card.disabled {
 		cursor: default;
 		pointer-events: none;
 	}
@@ -264,19 +291,19 @@
 		transform: translate(50%, -50%);
 	}
 	
-	:global(.arrow-icon) {
+	.arrow-icon {
 		filter: drop-shadow(0 3px 12px rgba(0, 0, 0, 0.4));
 	}
 	
-	:global(.arrow-icon.accept) {
+	.arrow-icon.accept {
 		color: #10b981; /* green-500 */
 	}
 	
-	:global(.arrow-icon.reject) {
+	.arrow-icon.reject {
 		color: #ef4444; /* red-500 */
 	}
 	
-	:global(.indicator-text) {
+	.indicator-text {
 		font-weight: bold;
 		font-size: 2rem;
 		text-transform: uppercase;
@@ -284,15 +311,15 @@
 		filter: drop-shadow(0 3px 12px rgba(0, 0, 0, 0.6));
 	}
 	
-	:global(.indicator-text.accept) {
+	.indicator-text.accept {
 		color: #10b981; /* green-500 */
 	}
 	
-	:global(.indicator-text.reject) {
+	.indicator-text.reject {
 		color: #ef4444; /* red-500 */
 	}
 	
-	:global(.swipe-card .card-content) {
+	.swipe-card .card-content {
 		width: 100%;
 		height: 100%;
 		position: relative;
@@ -304,7 +331,7 @@
 	}
 	
 	/* Keyboard accessibility */
-	:global(.swipe-card:focus-visible) {
+	.swipe-card:focus-visible {
 		outline: 2px solid #3b82f6;
 		outline-offset: 2px;
 	}

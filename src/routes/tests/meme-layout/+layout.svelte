@@ -11,7 +11,8 @@
     let { children } = $props();
 
     // Check if current route is bootstrap - use reactive $page store
-    let isBootstrap = $derived($page.url.pathname === '/memeball');
+    // Use $derived with a function so it recalculates whenever $page changes
+    let isBootstrap = $derived(() => $page.url.pathname === '/memeball');
 
     // Ensure user is authenticated for memeball
     onMount(() => {
@@ -53,7 +54,8 @@
         position: fixed;
         top: 0;
         left: 0;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
 
     .memeball-content {

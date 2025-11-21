@@ -9,11 +9,18 @@ export const load = async ({ url }: { url: URL }) => {
 		const stored = localStorage.getItem(appConfig.auth.sessionStorageKey);
 		const isAuthenticated = !!stored;
 
-		const publicPaths = ['/', '/login', '/signup', '/onboard', '/tests', '/about'];
-		const isPublicPath = publicPaths.includes(url.pathname);
+		// Public paths list (root paths). Subpaths are allowed if they match a public root.
+		// For example, '/tests' should cover '/tests/credentials' too.
+		const publicPaths = ['/', '/login', '/signup', '/onboard', '/tests', '/about', '/memeball/transmission'];
+		const isPublicPath = publicPaths.some(
+			(p) => url.pathname === p || url.pathname.startsWith(`${p}/`)
+		);
+
+		// memeball itself is a public path, but not its children other than transmission
+		const isMemeBallEntry = url.pathname === '/memeball'; 
 
 		// Redirect to landing if not authenticated and trying to access protected route
-		if (!isAuthenticated && !isPublicPath) {
+		if (!isAuthenticated && !isPublicPath && !isMemeBallEntry) {
 			throw redirect(307, '/');
 		}
 

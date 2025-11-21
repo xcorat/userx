@@ -10,11 +10,15 @@
 	let { children } = $props();
 
 	// Check if current route is bootstrap - use reactive $page store
-	let isBootstrap = $derived($page.url.pathname === '/memeball');
+	// Use $derived with a function so it recalculates whenever $page changes
+	let isBootstrap = $derived(() => $page.url.pathname === '/memeball');
 
-	// Ensure user is authenticated for memeball
+	// Ensure user is authenticated for main memeball views, but allow transmission & base redirect without login
 	onMount(() => {
-		if (!authStore.isAuthenticated) {
+		const path = $page.url.pathname;
+		const isTransmission = path.startsWith('/memeball/transmission');
+		const isBase = path === '/memeball';
+		if (!authStore.isAuthenticated && !isTransmission && !isBase) {
 			goto('/login');
 		}
 		// Set CSS variable for header offset so components (RightToolbar) can align below header
@@ -62,13 +66,18 @@
 		height: 100vh;
 		width: 100vw;
 		color: #f8f5ff;
-		overflow-x: hidden;
+		 overflow-x: hidden;
+		 /* Allow vertical scrolling when the inner content needs more height than the viewport
+			 or the app is viewed on a narrow/small device. Previously overflow: hidden prevented
+			 vertical scrolling. */
+		 overflow-y: auto;
 		background: radial-gradient(circle at top, rgba(88, 28, 135, 0.35), transparent 55%),
 			linear-gradient(135deg, #040014 0%, #05011f 50%, #080a29 100%);
 		position: fixed;
 		top: 0;
 		left: 0;
-		overflow: hidden;
+		/* Keep horizontal overflow hidden but do allow vertical scrolling */
+		overflow-x: hidden;
 	}
 
 	.memeball-content {
@@ -78,11 +87,13 @@
 		right: 0;
 		bottom: 0;
 		z-index: 1;
+		/* Make the content scrollable while the background stays fixed */
+		overflow-y: auto;
 	}
 
 
 	.memeball-content.with-header {
-		/** no change for now.*/
-		top: 0rem;
+		/* account for header offset set in JS so content doesn't hide behind header */
+		top: var(--memeball-header-offset, 0px);
 	}
 </style>

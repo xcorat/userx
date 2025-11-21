@@ -124,6 +124,14 @@
 	function handleStart(event: PointerEvent) {
 		if (disabled || !currentCard) return;
 		
+		// Check if the target is interactive - allow clicks to pass through
+		const targetElement = event.target as HTMLElement;
+		const matchedInteractive = targetElement.closest('button, a, input, textarea, select, [role="button"], [data-no-drag]') as HTMLElement | null;
+		// If the matched interactive element is not the card's element (currentTarget), return early to allow click
+		if (matchedInteractive && matchedInteractive !== (event.currentTarget as HTMLElement)) {
+			return;
+		}
+
 		event.preventDefault();
 		const target = event.currentTarget as HTMLElement;
 		target.setPointerCapture(event.pointerId);
@@ -379,5 +387,19 @@
 		.swipe-indicator {
 			font-size: 3rem;
 		}
+	}
+
+	/* Ensure interactive elements work correctly */
+	:global(.swipe-card-stack button),
+	:global(.swipe-card-stack a),
+	:global(.swipe-card-stack input),
+	:global(.swipe-card-stack textarea),
+	:global(.swipe-card-stack select),
+	:global(.swipe-card-stack [role="button"]),
+	:global(.swipe-card-stack [data-no-drag]) {
+		touch-action: auto;
+		user-select: text;
+		cursor: auto;
+		pointer-events: auto;
 	}
 </style>

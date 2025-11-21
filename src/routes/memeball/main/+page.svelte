@@ -253,7 +253,10 @@
 	.meme-viewer {
 		position: absolute;
 		inset: 0;
-		overflow: hidden;
+		 /* Allow page to scroll vertically when content is taller than viewport.
+			 Keep horizontal overflow hidden to avoid stray content horizontally. */
+		 overflow-x: hidden;
+		 overflow-y: auto;
 		display: flex;
 		align-items: center;
 		justify-content: center;

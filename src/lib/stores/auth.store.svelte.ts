@@ -1,5 +1,6 @@
 // Auth Store using Svelte 5 runes
 import { browser } from '$app/environment';
+import { dev } from '$app/environment';
 import type { User } from '$lib/models';
 import DIContainer from '$lib/config/di-container';
 import { appConfig } from '$lib/config/app.config';
@@ -22,13 +23,21 @@ class AuthStore {
 	}
 
 	private loadBootstrapSkipped() {
+		// In dev mode, always show transmission sequence
+		if (dev) {
+			this.bootstrapSkipped = false;
+			return;
+		}
 		const skipped = localStorage.getItem(appConfig.storage.bootstrapSkippedKey);
 		this.bootstrapSkipped = skipped === 'true';
 	}
 
 	setBootstrapSkipped(value: boolean) {
 		this.bootstrapSkipped = value;
-		localStorage.setItem(appConfig.storage.bootstrapSkippedKey, String(value));
+		// In dev mode, don't persist to localStorage
+		if (!dev) {
+			localStorage.setItem(appConfig.storage.bootstrapSkippedKey, String(value));
+		}
 	}
 
 	private loadSession() {

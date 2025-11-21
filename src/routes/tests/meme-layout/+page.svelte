@@ -116,7 +116,8 @@
     .meme-viewer {
         position: absolute;
         inset: 0;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
         display: flex;
         align-items: center;
         justify-content: center;
