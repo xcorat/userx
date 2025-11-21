@@ -39,7 +39,8 @@ export const appConfig = {
 		// - API: Client-side access through SvelteKit API routes
 		dbPath: 'qna-app.db',
 		// API configuration - relative URL since SvelteKit serves both frontend and API
-		apiBaseUrl: '/api'
+		apiBaseUrl: '/api',
+		bootstrapSkippedKey: 'qna_memeball_skipped'
 	},
 
 	auth: {

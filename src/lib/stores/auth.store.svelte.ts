@@ -10,13 +10,25 @@ class AuthStore {
 	currentUser = $state<User | null>(null);
 	isLoading = $state(false);
 	error = $state<string | null>(null);
+	bootstrapSkipped = $state(false);
 	private encryptedPrivateKey: string | null = null;
 	private password: string | null = null; // Stored in memory only
 
 	constructor() {
 		if (browser) {
 			this.loadSession();
+			this.loadBootstrapSkipped();
 		}
+	}
+
+	private loadBootstrapSkipped() {
+		const skipped = localStorage.getItem(appConfig.storage.bootstrapSkippedKey);
+		this.bootstrapSkipped = skipped === 'true';
+	}
+
+	setBootstrapSkipped(value: boolean) {
+		this.bootstrapSkipped = value;
+		localStorage.setItem(appConfig.storage.bootstrapSkippedKey, String(value));
 	}
 
 	private loadSession() {

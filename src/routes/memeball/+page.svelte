@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import SwipeCardStack from '$lib/components/ui/SwipeCardStack.svelte';
 	import * as Card from '$lib/components/ui/card';
+	import { authStore } from '$lib/stores/auth.store.svelte';
 
 	type Transmission = {
 		id: string;
@@ -55,6 +56,12 @@
 	let showExitNotice = $state(false);
 	let showHints = $state(false);
 
+	$effect(() => {
+		if (authStore.bootstrapSkipped) {
+			goto(joinDestination);
+		}
+	});
+
 	function attemptShutdown() {
 		if (typeof window === 'undefined') {
 			goto('/');
@@ -87,12 +94,19 @@
 		
 		// If all transmissions are done, go to main memeball
 		if (transmissions.length === 0) {
+			authStore.setBootstrapSkipped(true);
 			goto(joinDestination);
 		}
 	}
 
 	function handleCardsEmpty() {
 		// All transmissions completed
+		authStore.setBootstrapSkipped(true);
+		goto(joinDestination);
+	}
+
+	function handleSkip() {
+		authStore.setBootstrapSkipped(true);
 		goto(joinDestination);
 	}
 </script>
@@ -141,6 +155,12 @@
 			{/if}
 		</section>
 
+		{#if transmissions.length > 0}
+			<button class="skip-button" onclick={handleSkip}>
+				Skip Intro
+			</button>
+		{/if}
+
 		{#if showExitNotice}
 			<div class="exit-notice">
 				Manual exit required. Hold your device's power button until the screen dims.
@@ -159,7 +179,10 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0;
-		overflow: hidden;
+		 /* Allow vertical scrolling in case the content's min-height is larger than
+			 the available viewport height (small devices). Previously this hid overflow
+			 which prevented scrolling when content overflowed. */
+		 overflow-y: auto;
 	}
 
 	.nebula {
@@ -187,6 +210,8 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
+		/* Support flexible content height and scrolling inside the memeball page */
+		min-height: 100%;
 		z-index: 1;
 		display: flex;
 		flex-direction: column;
@@ -198,6 +223,7 @@
 
 	.card-stack {
 		position: relative;
+		/* Fill parent but allow the page to scroll if the card stack has a min-height larger than viewport */
 		height: 100%;
 		width: 100%;
 		max-width: none;
@@ -278,6 +304,28 @@
 		border: 1px solid rgba(250, 204, 21, 0.3);
 		color: #fde68a;
 		font-size: 0.9rem;
+	}
+
+	.skip-button {
+		position: absolute;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%);
+		background: rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		color: rgba(255, 255, 255, 0.7);
+		padding: 0.5rem 1.5rem;
+		border-radius: 20px;
+		font-size: 0.9rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		z-index: 10;
+		backdrop-filter: blur(4px);
+	}
+
+	.skip-button:hover {
+		background: rgba(255, 255, 255, 0.2);
+		color: white;
 	}
 
 	@media (max-width: 640px) {
