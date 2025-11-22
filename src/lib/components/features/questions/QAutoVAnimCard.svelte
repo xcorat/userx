@@ -34,12 +34,18 @@
     dispatch('answer_selected', { questionId: question.id, answerId, elapsedMs: elapsed, success: true });
 
     // autoscroll if nextCardRef exists
+    startAutoScroll(question.id);
+
+    return;
+  }
+
+  function startAutoScroll(questionId: string) {
     if (nextCardRef) {
-      dispatch('autoScrollRequested', { questionId: question.id, nextCardRef });
+      dispatch('autoScrollRequested', { questionId, nextCardRef });
       // schedule start after a small delay to allow animations to finish
       if (typeof setTimeout !== 'undefined') {
         pendingAutoScroll = (setTimeout(() => {
-          dispatch('autoScrollStarted', { questionId: question.id });
+          dispatch('autoScrollStarted', { questionId });
           try { nextCardRef.scrollIntoView({ behavior: 'smooth', block: 'center' }) } catch {}
 
           // use IntersectionObserver to detect when the target is sufficiently visible
@@ -47,7 +53,7 @@
             io = new IntersectionObserver((entries) => {
               const ent = entries[0];
               if (ent && ent.isIntersecting) {
-                dispatch('autoScrollComplete', { questionId: question.id });
+                dispatch('autoScrollComplete', { questionId });
                 try { (nextCardRef as HTMLElement).focus(); } catch {}
                 cleanupObserver();
               }
@@ -56,22 +62,28 @@
           } else {
             // Fallback: assume 600ms
             pendingComplete = (setTimeout(() => {
-              dispatch('autoScrollComplete', { questionId: question.id });
+              dispatch('autoScrollComplete', { questionId });
               try { (nextCardRef as HTMLElement).focus(); } catch {}
             }, 600) as unknown) as ReturnType<typeof setTimeout>;
           }
         }, autoScrollDelay) as unknown) as ReturnType<typeof setTimeout> ;
       } else {
         // fallback: directly start and complete
-        dispatch('autoScrollStarted', { questionId: question.id });
-        dispatch('autoScrollComplete', { questionId: question.id });
+        dispatch('autoScrollStarted', { questionId });
+        dispatch('autoScrollComplete', { questionId });
         try { (nextCardRef as HTMLElement).focus(); } catch {}
       }
     } else {
-      dispatch('autoScrollRequested', { questionId: question.id });
+      dispatch('autoScrollRequested', { questionId });
     }
+  }
 
-    return;
+  function handleSkip(e: CustomEvent) {
+    const detail = e.detail as { questionId: string };
+    // Re-dispatch skip so parent can handle it too
+    dispatch('skip', detail);
+    // Start autoscroll behaviour same as selection
+    startAutoScroll(detail?.questionId ?? question.id);
   }
 
   function handleSelectionError(e: CustomEvent) {
@@ -121,5 +133,5 @@
   });
 </script>
 
-<QVAnimCard bind:cardNode={cardNode} {question} {className} {normalizedPosition} {scrollData} {isAnswered} {onAnswerSelect} on:answered={(e) => handleSelected(e)} on:selectionError={(e) => handleSelectionError(e)} on:answerSelect={(e) => dispatch('answerSelect', e.detail)} on:skip={(e) => dispatch('skip', e.detail)} />
+<QVAnimCard bind:cardNode={cardNode} {question} {className} {normalizedPosition} {scrollData} {isAnswered} {onAnswerSelect} on:answered={(e) => handleSelected(e)} on:selectionError={(e) => handleSelectionError(e)} on:answerSelect={(e) => dispatch('answerSelect', e.detail)} on:skip={(e) => handleSkip(e)} />
 
