@@ -33,5 +33,17 @@
 		color: var(--foreground);
 	}
 	
+	/* Override background when transparent prop is true */
+	.app-header.bg-transparent {
+		background: transparent !important;
+		/* Ensure foreground color is inherited properly on transparent headers */
+		color: var(--foreground, #f8f5ff);
+	}
+	
+	/* Ensure all child elements inherit the light color on transparent headers */
+	.app-header.bg-transparent :global(*) {
+		color: inherit;
+	}
+	
 	/* Keep styling simple; hover state controlled with utility classes */
 </style>

@@ -232,7 +232,7 @@
 		position: relative;
 		height: 100%;
 		width: 100%;
-		max-width: none;
+		max-width: 900px;
 		margin: 0;
 	}
 
@@ -265,7 +265,7 @@
 		letter-spacing: 0.05em !important;
 		color: rgba(248, 245, 255, 0.95) !important;
 		text-align:center !important;
-    
+		margin-top: 10vh !important;
 	}
 
 	:global(.transmission-body) {
@@ -282,6 +282,7 @@
 		flex-direction: column;
 		gap: 1.5rem;
 		margin: 2rem 0;
+		padding-left: 2rem;
 	}
 
 	.message-item {
@@ -405,6 +406,42 @@
 
 		.card-stack {
 			height: 100%;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		:global(.transmission-title) {
+			font-size: 1.75rem !important;
+		}
+
+		:global(.transmission-body) {
+			font-size: 1.25rem !important;
+		}
+
+		.message-item {
+			font-size: 1.15rem;
+		}
+
+		.transmission-card-content {
+			padding: 2.5rem;
+		}
+	}
+
+	@media (min-width: 1280px) {
+		:global(.transmission-title) {
+			font-size: 2rem !important;
+		}
+
+		:global(.transmission-body) {
+			font-size: 1.35rem !important;
+		}
+
+		.message-item {
+			font-size: 1.25rem;
+		}
+
+		.transmission-card-content {
+			padding: 3rem;
 		}
 	}
 </style>

@@ -9,9 +9,10 @@
 	
 	let { children } = $props();
 
-	// Check if current route is bootstrap - use reactive $page store
-	// Use $derived with a function so it recalculates whenever $page changes
-	let isBootstrap = $derived(() => $page.url.pathname === '/memeball');
+	// Check if current route is bootstrap or transmission - use reactive $page store
+	// Use $derived so it recalculates whenever $page changes
+	let isBootstrap = $derived($page.url.pathname === '/memeball');
+	let isTransmission = $derived($page.url.pathname.startsWith('/memeball/transmission'));
 
 	// Ensure user is authenticated for main memeball views, but allow transmission & base redirect without login
 	onMount(() => {
@@ -21,25 +22,13 @@
 		if (!authStore.isAuthenticated && !isTransmission && !isBase) {
 			goto('/login');
 		}
-		// Set CSS variable for header offset so components (RightToolbar) can align below header
-		function setHeaderOffset() {
-			try {
-				const header = document.querySelector('.app-header') as HTMLElement | null;
-				const defaultOffset = 56;
-				const height = header ? header.offsetHeight : defaultOffset;
-				document.documentElement.style.setProperty('--memeball-header-offset', `${height}px`);
-			} catch (e) { /* ignore in SSR */ }
-		}
 
-		setHeaderOffset();
 		// Apply per-app theme for memeball
 		applyTheme('memeball');
-		window.addEventListener('resize', setHeaderOffset);
-		// Cleanup not necessary, this runs on client only - but let's add anyway
-		// Remove on unmount
-				return () => {
-			try { window.removeEventListener('resize', setHeaderOffset); } catch (e) { /* ignore */ }
-					try { resetTheme(); } catch (e) { /* ignore */ }
+
+		// Cleanup on unmount
+		return () => {
+			try { resetTheme(); } catch (e) { /* ignore */ }
 		};
 	});
 </script>
@@ -47,12 +36,12 @@
 <!-- Full screen dark space theme -->
 <div class="memeball-layout">
 	<!-- Header with transparent background and navigation -->
-	{#if authStore.isAuthenticated && !isBootstrap}
+	{#if authStore.isAuthenticated && !isBootstrap && !isTransmission}
 		<MemeBallHeader />
 	{/if}
 
 	<!-- Main content area -->
-	<main class="memeball-content" class:with-header={!isBootstrap}>
+	<main class="memeball-content">
 		{@render children?.()}
 	</main>
 </div>
@@ -91,9 +80,5 @@
 		overflow-y: auto;
 	}
 
-
-	.memeball-content.with-header {
-		/* account for header offset set in JS so content doesn't hide behind header */
-		top: var(--memeball-header-offset, 0px);
-	}
+	/* Header overlays content - no offset needed */
 </style>
