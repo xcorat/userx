@@ -4,7 +4,6 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { applyTheme, resetTheme } from '$lib/utils/theme';
 	import MemeBallHeader from '$lib/components/layout/MemeBallHeader.svelte';
 	
 	let { children } = $props();
@@ -22,14 +21,7 @@
 		if (!authStore.isAuthenticated && !isTransmission && !isBase) {
 			goto('/login');
 		}
-
-		// Apply per-app theme for memeball
-		applyTheme('memeball');
-
-		// Cleanup on unmount
-		return () => {
-			try { resetTheme(); } catch (e) { /* ignore */ }
-		};
+		// Note: Theme is now managed centrally in root +layout.svelte
 	});
 </script>
 

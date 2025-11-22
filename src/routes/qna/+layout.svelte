@@ -1,7 +1,5 @@
 <script lang="ts">
 	import '../../app.css';
-	import { onMount, onDestroy } from 'svelte';
-	import { applyTheme, resetTheme } from '$lib/utils/theme';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import UserMenu from '$lib/components/features/user-menu.svelte';
 	import AppMenu from '$lib/components/features/app-menu.svelte';
@@ -17,13 +15,7 @@
 	let { children } = $props();
 	let isMenuOpen = $state(false);
 
-	onMount(() => {
-		applyTheme('qna');
-	});
-
-	onDestroy(() => {
-		resetTheme();
-	});
+	// Note: Theme is now managed centrally in root +layout.svelte
 </script>
 
 <div class="min-h-screen bg-background">

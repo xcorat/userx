@@ -118,4 +118,50 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Memeball Theme - Dark space theme */
+  .memeball-theme {
+    --background: #040014;
+    --foreground: #f8f5ff;
+    --card: #0a0020;
+    --card-foreground: #f8f5ff;
+    --popover: #0a0020;
+    --popover-foreground: #f8f5ff;
+    --primary: #00b894;
+    --primary-foreground: #ffffff;
+    --secondary: #2b2b3b;
+    --secondary-foreground: #f8f5ff;
+    --muted: #2b2b3b;
+    --muted-foreground: #bfbdd6;
+    --accent: #7b2cbf;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #2b2b3b;
+    --input: #2b2b3b;
+    --ring: #6e00b9;
+  }
+
+  /* QnA Theme - Clean blue theme */
+  .qna-theme {
+    --background: #ffffff;
+    --foreground: #111827;
+    --card: #ffffff;
+    --card-foreground: #111827;
+    --popover: #ffffff;
+    --popover-foreground: #111827;
+    --primary: #2563eb;
+    --primary-foreground: #ffffff;
+    --secondary: #f3f4f6;
+    --secondary-foreground: #111827;
+    --muted: #f3f4f6;
+    --muted-foreground: #6b7280;
+    --accent: #059669;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #e5e7eb;
+    --input: #e5e7eb;
+    --ring: #60a5fa;
+  }
 }

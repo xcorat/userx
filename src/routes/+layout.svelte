@@ -1,14 +1,15 @@
 <script lang="ts">
 	import '../app.css';
 	import { Toaster } from 'svelte-sonner';
-	import { onMount } from 'svelte';
-	import { resetTheme } from '$lib/utils/theme';
+	import { page } from '$app/stores';
+	import { applyTheme, getThemeFromRoute } from '$lib/utils/theme';
 	
 	let { children } = $props();
 
-	// Ensure default theme variables are used when rendering the root layout
-	onMount(() => {
-		resetTheme();
+	// Centralized theme management: apply theme based on current route
+	$effect(() => {
+		const themeName = getThemeFromRoute($page.url.pathname);
+		applyTheme(themeName);
 	});
 </script>
 

@@ -1,34 +1,52 @@
-import { themes, defaultThemeName, type ThemeMap } from '$lib/config/themes';
+// Theme names that map to CSS class names
+const THEME_CLASSES = ['memeball-theme', 'qna-theme'] as const;
+export type ThemeName = 'memeball' | 'qna' | 'default';
 
-function setCssVars(map: ThemeMap) {
-  // Guard against server-side rendering where `document` is undefined
-  if (typeof document === 'undefined' || !document.documentElement) return;
-  const root = document.documentElement;
-  Object.entries(map).forEach(([key, value]) => {
-    root.style.setProperty(key, value);
-  });
-}
-
-function removeCssVars(map: ThemeMap) {
-  // Guard against server-side rendering where `document` is undefined
-  if (typeof document === 'undefined' || !document.documentElement) return;
-  const root = document.documentElement;
-  Object.keys(map).forEach((key) => {
-    root.style.removeProperty(key);
-  });
-}
-
-export function applyTheme(themeName: string) {
-  const theme = themes[themeName];
-  if (!theme) {
-    console.warn(`[theme] Theme '${themeName}' not found, defaulting to '${defaultThemeName}'`);
-    setCssVars(themes[defaultThemeName]);
-    return;
+/**
+ * Get the theme name from the current route pathname
+ */
+export function getThemeFromRoute(pathname: string): ThemeName {
+  if (pathname.startsWith('/memeball')) {
+    return 'memeball';
   }
-  setCssVars(theme);
+  if (pathname.startsWith('/qna')) {
+    return 'qna';
+  }
+  return 'default';
 }
 
+/**
+ * Apply a theme by adding the corresponding CSS class to the document element
+ */
+export function applyTheme(themeName: ThemeName) {
+  // Guard against server-side rendering where `document` is undefined
+  if (typeof document === 'undefined' || !document.documentElement) return;
+  
+  const root = document.documentElement;
+  
+  // Remove all theme classes first
+  THEME_CLASSES.forEach(className => {
+    root.classList.remove(className);
+  });
+  
+  // Add the new theme class (if not default)
+  if (themeName !== 'default') {
+    const themeClass = `${themeName}-theme`;
+    root.classList.add(themeClass);
+  }
+}
+
+/**
+ * Reset theme by removing all theme classes (fallback to :root default theme)
+ */
 export function resetTheme() {
-  // Remove all known token overrides to fallback to :root
-  Object.values(themes).forEach((map) => removeCssVars(map));
+  // Guard against server-side rendering where `document` is undefined
+  if (typeof document === 'undefined' || !document.documentElement) return;
+  
+  const root = document.documentElement;
+  
+  // Remove all theme classes
+  THEME_CLASSES.forEach(className => {
+    root.classList.remove(className);
+  });
 }
