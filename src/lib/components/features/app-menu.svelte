@@ -28,7 +28,7 @@
         </slot>
     </DropdownMenuTrigger>
 
-    <DropdownMenuContent align={align} class="w-56">
+    <DropdownMenuContent align={align} class="min-w-[14rem]">
         <!-- Optional top slot (custom quick links or actions) -->
         <slot name="top" />
 
@@ -57,9 +57,3 @@
     </DropdownMenuContent>
 </DropdownMenu>
 
-<style>
-    /* Keep basic sizing consistent with other header icons */
-    :global(.w-56) {
-        min-width: 14rem;
-    }
-</style>
