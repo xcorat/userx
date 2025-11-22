@@ -190,8 +190,14 @@
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: 
+			flex 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+			opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+			-webkit-clip-path 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+			clip-path 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 		overflow: hidden;
+		will-change: clip-path;
+		transform: translateZ(0);
 	}
 
 	.panel.hidden {
@@ -203,12 +209,14 @@
 	.panel.expanded {
 		flex: 100;
 		cursor: default;
+		will-change: auto;
 	}
 
 	/* QnA Panel - Light, Material Design */
 	.qna-panel {
 		background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 		color: #1e293b;
+		-webkit-clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
 		clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
 		box-shadow: 
 			inset 0 1px 0 0 rgba(255, 255, 255, 0.5),
@@ -216,14 +224,19 @@
 	}
 
 	.qna-panel.expanded {
+		-webkit-clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 		clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 	}
 
 	.qna-panel:not(.expanded):hover {
-		transform: scale(1.02);
 		box-shadow: 
 			inset 0 1px 0 0 rgba(255, 255, 255, 0.5),
 			0 20px 40px -5px rgba(0, 0, 0, 0.15);
+	}
+	
+	.qna-panel:not(.expanded):hover .panel-content {
+		transform: scale(1.02);
+		transition: transform 0.3s ease;
 	}
 
 	.qna-panel .panel-icon {
@@ -239,6 +252,7 @@
 	.about-panel {
 		background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%);
 		color: #064e3b;
+		-webkit-clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%);
 		clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%);
 		position: relative;
 	}
@@ -255,12 +269,17 @@
 	}
 
 	.about-panel.expanded {
+		-webkit-clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 		clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 	}
 
 	.about-panel:not(.expanded):hover {
-		transform: scale(1.02);
 		filter: brightness(1.05);
+	}
+	
+	.about-panel:not(.expanded):hover .panel-content {
+		transform: scale(1.02);
+		transition: transform 0.3s ease;
 	}
 
 	.about-panel .panel-icon {
@@ -280,6 +299,7 @@
 			radial-gradient(ellipse at center, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
 			linear-gradient(180deg, #0a0014 0%, #1a0030 100%);
 		color: #f8f5ff;
+		-webkit-clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
 		clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
 		position: relative;
 		overflow: hidden;
@@ -320,14 +340,19 @@
 	}
 
 	.memeball-panel.expanded {
+		-webkit-clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 		clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 	}
 
 	.memeball-panel:not(.expanded):hover {
-		transform: scale(1.02);
 		box-shadow: 
 			inset 0 0 80px rgba(124, 58, 237, 0.3),
 			0 20px 60px -5px rgba(124, 58, 237, 0.4);
+	}
+	
+	.memeball-panel:not(.expanded):hover .panel-content {
+		transform: scale(1.02);
+		transition: transform 0.3s ease;
 	}
 
 	.memeball-panel .panel-icon {
@@ -367,6 +392,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		transform: translateZ(0);
 	}
 
 	.icon-container {
@@ -461,18 +487,22 @@
 		}
 
 		.qna-panel {
+			-webkit-clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
 			clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
 		}
 
 		.about-panel {
+			-webkit-clip-path: polygon(0 15%, 100% 0, 100% 85%, 0 100%);
 			clip-path: polygon(0 15%, 100% 0, 100% 85%, 0 100%);
 		}
 
 		.memeball-panel {
+			-webkit-clip-path: polygon(0 15%, 100% 0, 100% 100%, 0 100%);
 			clip-path: polygon(0 15%, 100% 0, 100% 100%, 0 100%);
 		}
 
 		.panel.expanded {
+			-webkit-clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 			clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 		}
 
