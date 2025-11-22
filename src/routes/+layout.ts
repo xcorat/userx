@@ -9,19 +9,29 @@ export const load = async ({ url }: { url: URL }) => {
 		const stored = localStorage.getItem(appConfig.auth.sessionStorageKey);
 		const isAuthenticated = !!stored;
 
+		// Handle redirects for unauthenticated users
+		if (!isAuthenticated) {
+			// Redirect /memeball to /memeball/transmission
+			if (url.pathname === '/memeball') {
+				throw redirect(307, '/memeball/transmission');
+			}
+			
+			// Redirect /qna to /qna/onboarding
+			if (url.pathname === '/qna') {
+				throw redirect(307, '/qna/onboarding');
+			}
+		}
+
 		// Public paths list (root paths). Subpaths are allowed if they match a public root.
 		// For example, '/tests' should cover '/tests/credentials' too.
-		const publicPaths = ['/', '/login', '/signup', '/onboard', '/tests', '/about', '/memeball/transmission'];
+		const publicPaths = ['/welcome', '/login', '/signup', '/tests', '/about', '/memeball/transmission', '/qna/onboarding'];
 		const isPublicPath = publicPaths.some(
 			(p) => url.pathname === p || url.pathname.startsWith(`${p}/`)
 		);
 
-		// memeball itself is a public path, but not its children other than transmission
-		const isMemeBallEntry = url.pathname === '/memeball'; 
-
-		// Redirect to landing if not authenticated and trying to access protected route
-		if (!isAuthenticated && !isPublicPath && !isMemeBallEntry) {
-			throw redirect(307, '/');
+		// Redirect to welcome screen if not authenticated and trying to access protected route
+		if (!isAuthenticated && !isPublicPath) {
+			throw redirect(307, '/welcome');
 		}
 
 		// No automatic redirect for authenticated users - let them choose the app section
