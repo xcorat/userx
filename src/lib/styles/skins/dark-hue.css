@@ -1,0 +1,299 @@
+/**
+ * Memeball Dark Hue Skin
+ * 
+ * Default skin for memeball with a dark purple/space aesthetic.
+ * This skin defines the visual identity: deep space backgrounds,
+ * purple/pink nebula effects, and ethereal gridline patterns.
+ * 
+ * To use this skin: Import it in src/app.css
+ * To create a new skin: Copy this file and modify the values
+ */
+
+/* Import the base token system */
+@import '../memeball-tokens.css';
+@import '../memeball-base.css';
+
+:root {
+  /* ============================================
+     DARK HUE COLOR PALETTE
+     ============================================ */
+  
+  /* Base Colors - Deep space background */
+  --memeball-background: #040014;
+  --memeball-foreground: #f8f5ff;
+  
+  /* Surface Colors - Glassmorphic overlays */
+  --memeball-surface: rgba(3, 1, 20, 0.82);
+  --memeball-surface-foreground: #f8f5ff;
+  --memeball-surface-hover: rgba(3, 1, 20, 0.92);
+  
+  /* Card Colors - Transmission cards */
+  --memeball-card-background: rgba(3, 1, 20, 0.82);
+  --memeball-card-foreground: #f8f5ff;
+  --memeball-card-border: rgba(255, 255, 255, 0.08);
+  
+  /* Primary Action Colors - Success/Pick green */
+  --memeball-primary: #00b894;
+  --memeball-primary-hover: #06d6a0;
+  --memeball-primary-foreground: #ffffff;
+  
+  /* Secondary Colors */
+  --memeball-secondary: #2b2b3b;
+  --memeball-secondary-foreground: #f8f5ff;
+  
+  /* Accent Colors - Purple highlights */
+  --memeball-accent: #7b2cbf;
+  --memeball-accent-hover: #9d4edd;
+  --memeball-accent-foreground: #ffffff;
+  
+  /* Success/Pick Colors */
+  --memeball-success: #10b981;
+  --memeball-success-dark: #059669;
+  --memeball-success-foreground: #ffffff;
+  
+  /* Destructive/Reject Colors */
+  --memeball-destructive: #ef4444;
+  --memeball-destructive-dark: #dc2626;
+  --memeball-destructive-foreground: #ffffff;
+  
+  /* Warning Colors */
+  --memeball-warning: #facc15;
+  --memeball-warning-foreground: #000000;
+  
+  /* Muted Colors */
+  --memeball-muted: #2b2b3b;
+  --memeball-muted-foreground: #bfbdd6;
+  
+  /* Border Colors */
+  --memeball-border: rgba(255, 255, 255, 0.12);
+  --memeball-border-subtle: rgba(255, 255, 255, 0.08);
+  --memeball-border-emphasis: rgba(255, 255, 255, 0.2);
+  
+  /* Input Colors */
+  --memeball-input-background: rgba(255, 255, 255, 0.05);
+  --memeball-input-border: rgba(255, 255, 255, 0.2);
+  --memeball-input-border-focus: #10b981;
+  --memeball-input-foreground: #f8f5ff;
+  
+  /* Ring/Focus Colors */
+  --memeball-ring: #6e00b9;
+  
+  /* Alpha/Overlay Colors */
+  --memeball-overlay: rgba(0, 0, 0, 0.3);
+  --memeball-overlay-strong: rgba(0, 0, 0, 0.6);
+  
+  /* Semantic Colors with Opacity */
+  --memeball-error-light: rgba(248, 113, 113, 0.1);
+  --memeball-error-border: rgba(248, 113, 113, 0.3);
+  --memeball-error-text: #f87171;
+  
+  --memeball-success-light: rgba(16, 185, 129, 0.1);
+  --memeball-success-border: rgba(16, 185, 129, 0.3);
+  
+  --memeball-warning-light: rgba(250, 204, 21, 0.12);
+  --memeball-warning-border: rgba(250, 204, 21, 0.3);
+  --memeball-warning-text: #fde68a;
+  
+  /* ============================================
+     DARK HUE GRADIENTS
+     ============================================ */
+  
+  /* Main background - purple haze over deep space */
+  --memeball-gradient-background: radial-gradient(
+      circle at top,
+      rgba(88, 28, 135, 0.35),
+      transparent 55%
+    ),
+    linear-gradient(135deg, #040014 0%, #05011f 50%, #080a29 100%);
+  
+  /* Nebula effect - colorful light sources */
+  --memeball-gradient-nebula: radial-gradient(
+      circle at 20% 20%,
+      rgba(255, 255, 255, 0.08),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 80% 10%,
+      rgba(99, 102, 241, 0.15),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 50% 80%,
+      rgba(236, 72, 153, 0.12),
+      transparent 30%
+    );
+  
+  /* Button gradients */
+  --memeball-gradient-primary: linear-gradient(135deg, #10b981, #06d6a0);
+  --memeball-gradient-destructive: linear-gradient(135deg, #ef4444, #dc2626);
+  --memeball-gradient-accent: linear-gradient(135deg, #7b2cbf, #9d4edd);
+  
+  /* ============================================
+     DARK HUE EFFECTS
+     ============================================ */
+  
+  /* Shadows - darker for space theme */
+  --memeball-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --memeball-shadow-md: 0 8px 16px rgba(0, 0, 0, 0.4);
+  --memeball-shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.5);
+  --memeball-shadow-xl: 0 30px 120px rgba(12, 12, 60, 0.45);
+  
+  /* Colored Shadows */
+  --memeball-shadow-primary: 0 8px 16px rgba(16, 185, 129, 0.3);
+  --memeball-shadow-primary-hover: 0 12px 24px rgba(16, 185, 129, 0.4);
+  --memeball-shadow-destructive: 0 8px 16px rgba(239, 68, 68, 0.3);
+  --memeball-shadow-destructive-hover: 0 12px 24px rgba(239, 68, 68, 0.4);
+  
+  /* Nebula & Gridline Pattern Opacity */
+  --memeball-nebula-opacity: 1;
+  --memeball-gridline-opacity: 0.25;
+  
+  /* Gridline Pattern - subtle space grid */
+  --memeball-gridline-size: 160px;
+  --memeball-gridline-color-primary: rgba(255, 255, 255, 0.06);
+  --memeball-gridline-color-secondary: rgba(255, 255, 255, 0.04);
+  --memeball-gridline-mask: radial-gradient(
+    circle at center,
+    #000 45%,
+    transparent 70%
+  );
+  
+  /* ============================================
+     DARK HUE TYPOGRAPHY
+     ============================================ */
+  
+  /* Use system font stack for clean legibility */
+  --memeball-font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, sans-serif;
+  
+  /* Font sizes optimized for space UI */
+  --memeball-text-xs: 0.7rem;
+  --memeball-text-sm: 0.8rem;
+  --memeball-text-base: 0.9rem;
+  --memeball-text-md: 1rem;
+  --memeball-text-lg: 1.1rem;
+  --memeball-text-xl: 1.25rem;
+  --memeball-text-2xl: 1.5rem;
+  --memeball-text-3xl: 2rem;
+  --memeball-text-4xl: 4rem;
+}
+
+/* ============================================
+   DARK HUE SPECIFIC OVERRIDES
+   ============================================ */
+
+/* Transmission title styling - uppercase sci-fi look */
+.memeball-transmission-title {
+  font-size: var(--memeball-text-2xl);
+  line-height: var(--memeball-leading-tight);
+  text-transform: uppercase;
+  letter-spacing: var(--memeball-tracking-wide);
+  color: var(--memeball-foreground);
+  text-align: center;
+  opacity: 0.95;
+}
+
+/* Transmission body text */
+.memeball-transmission-body {
+  color: var(--memeball-foreground);
+  opacity: 0.85;
+  line-height: var(--memeball-leading-loose);
+  font-size: var(--memeball-text-lg);
+  text-align: center;
+  white-space: pre-line;
+}
+
+/* Message items in transmission */
+.memeball-message-item {
+  color: var(--memeball-foreground);
+  opacity: 0.85;
+  line-height: var(--memeball-leading-loose);
+  font-size: var(--memeball-text-md);
+}
+
+/* Answer buttons in transmission */
+.memeball-answer-button {
+  padding: var(--memeball-space-md) var(--memeball-space-2xl);
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: var(--memeball-radius-lg);
+  color: var(--memeball-foreground);
+  opacity: 0.9;
+  font-size: var(--memeball-text-base);
+  cursor: pointer;
+  transition: all var(--memeball-duration-normal) var(--memeball-ease);
+  letter-spacing: var(--memeball-tracking-wide);
+}
+
+.memeball-answer-button:hover {
+  background: rgba(99, 102, 241, 0.3);
+  border-color: rgba(99, 102, 241, 0.6);
+  transform: translateY(-2px);
+}
+
+.memeball-answer-button:active {
+  transform: translateY(0);
+}
+
+/* Swipe hints */
+.memeball-hint-left {
+  color: rgba(248, 113, 113, 0.8);
+}
+
+.memeball-hint-right {
+  color: rgba(74, 222, 128, 0.8);
+}
+
+/* Token status colors */
+.memeball-token-icon {
+  color: var(--memeball-success);
+}
+
+.memeball-token-icon-warning {
+  color: var(--memeball-error-text);
+}
+
+/* Footer text in pink */
+.memeball-footer-text {
+  font-size: var(--memeball-text-base);
+  color: rgba(236, 72, 153, 0.8);
+}
+
+/* Guidelines list styling */
+.memeball-guidelines-bullet {
+  color: var(--memeball-success);
+  font-weight: var(--memeball-font-bold);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS FOR DARK HUE
+   ============================================ */
+
+@media (min-width: 1024px) {
+  .memeball-transmission-title {
+    font-size: 1.75rem;
+  }
+
+  .memeball-transmission-body {
+    font-size: 1.25rem;
+  }
+
+  .memeball-message-item {
+    font-size: 1.15rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .memeball-transmission-title {
+    font-size: 2rem;
+  }
+
+  .memeball-transmission-body {
+    font-size: 1.35rem;
+  }
+
+  .memeball-message-item {
+    font-size: 1.25rem;
+  }
+}
+

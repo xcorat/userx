@@ -1,0 +1,437 @@
+/**
+ * Memeball Base Styles
+ * 
+ * Common patterns and reusable components for the memeball experience.
+ * These styles utilize the design tokens from memeball-tokens.css
+ */
+
+/* ============================================
+   BACKGROUND EFFECTS
+   ============================================ */
+
+.memeball-nebula {
+  position: absolute;
+  inset: 0;
+  background: var(--memeball-gradient-nebula);
+  filter: blur(var(--memeball-blur-xl));
+  pointer-events: none;
+  opacity: var(--memeball-nebula-opacity);
+}
+
+.memeball-gridlines {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      var(--memeball-gridline-color-primary) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      var(--memeball-gridline-color-secondary) 1px,
+      transparent 1px
+    );
+  background-size: var(--memeball-gridline-size) var(--memeball-gridline-size);
+  opacity: var(--memeball-gridline-opacity);
+  mask-image: var(--memeball-gridline-mask);
+  pointer-events: none;
+}
+
+/* ============================================
+   CARD & SURFACE STYLES
+   ============================================ */
+
+.memeball-card {
+  background: var(--memeball-card-background);
+  border: 1px solid var(--memeball-card-border);
+  border-radius: var(--memeball-radius-2xl);
+  box-shadow: var(--memeball-shadow-xl);
+  backdrop-filter: var(--memeball-backdrop-blur-lg);
+  color: var(--memeball-card-foreground);
+}
+
+.memeball-card-sm {
+  background: var(--memeball-card-background);
+  border: 1px solid var(--memeball-card-border);
+  border-radius: var(--memeball-radius-lg);
+  box-shadow: var(--memeball-shadow-md);
+  backdrop-filter: var(--memeball-backdrop-blur-md);
+}
+
+.memeball-glassmorphism {
+  background: var(--memeball-surface);
+  border: 1px solid var(--memeball-border-subtle);
+  backdrop-filter: var(--memeball-backdrop-blur-xl);
+}
+
+.memeball-glassmorphism-strong {
+  background: var(--memeball-surface-hover);
+  border: 1px solid var(--memeball-border);
+  backdrop-filter: var(--memeball-backdrop-blur-xl);
+}
+
+/* ============================================
+   BUTTON VARIANTS
+   ============================================ */
+
+.memeball-btn-base {
+  padding: var(--memeball-space-md) var(--memeball-space-xl);
+  border-radius: var(--memeball-radius-lg);
+  font-size: var(--memeball-text-base);
+  font-weight: var(--memeball-font-medium);
+  cursor: pointer;
+  transition: all var(--memeball-duration-normal) var(--memeball-ease);
+  letter-spacing: var(--memeball-tracking-wide);
+  border: none;
+}
+
+.memeball-btn-primary {
+  background: var(--memeball-gradient-primary);
+  color: var(--memeball-primary-foreground);
+  box-shadow: var(--memeball-shadow-primary);
+}
+
+.memeball-btn-primary:hover:not(:disabled) {
+  box-shadow: var(--memeball-shadow-primary-hover);
+  transform: translateY(-2px);
+}
+
+.memeball-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.memeball-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.memeball-btn-destructive {
+  background: var(--memeball-gradient-destructive);
+  color: var(--memeball-destructive-foreground);
+  box-shadow: var(--memeball-shadow-destructive);
+}
+
+.memeball-btn-destructive:hover:not(:disabled) {
+  box-shadow: var(--memeball-shadow-destructive-hover);
+  transform: translateY(-2px);
+}
+
+.memeball-btn-ghost {
+  background: var(--memeball-input-background);
+  border: 1px solid var(--memeball-border-emphasis);
+  color: var(--memeball-foreground);
+  backdrop-filter: var(--memeball-backdrop-blur-md);
+}
+
+.memeball-btn-ghost:hover:not(:disabled) {
+  background: var(--memeball-surface);
+  border-color: var(--memeball-border-emphasis);
+}
+
+/* Action Bar Circular Buttons */
+.memeball-action-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--memeball-radius-full);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--memeball-duration-normal) var(--memeball-ease);
+  color: white;
+}
+
+.memeball-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.memeball-action-btn-reject {
+  background: var(--memeball-gradient-destructive);
+  box-shadow: var(--memeball-shadow-destructive);
+}
+
+.memeball-action-btn-reject:hover:not(:disabled) {
+  box-shadow: var(--memeball-shadow-destructive-hover);
+}
+
+.memeball-action-btn-pick {
+  background: var(--memeball-gradient-primary);
+  box-shadow: var(--memeball-shadow-primary);
+}
+
+.memeball-action-btn-pick:hover:not(:disabled) {
+  box-shadow: var(--memeball-shadow-primary-hover);
+}
+
+/* Small Skip Button */
+.memeball-btn-skip {
+  background: var(--memeball-input-background);
+  border: none;
+  color: var(--memeball-muted-foreground);
+  padding: var(--memeball-space-xs) var(--memeball-space-md);
+  border-radius: var(--memeball-radius-sm);
+  font-size: var(--memeball-text-xs);
+  cursor: pointer;
+  transition: all var(--memeball-duration-normal) var(--memeball-ease);
+  backdrop-filter: var(--memeball-backdrop-blur-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--memeball-space-sm);
+}
+
+.memeball-btn-skip:hover {
+  background: var(--memeball-surface);
+  color: var(--memeball-foreground);
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+
+.memeball-input {
+  background: var(--memeball-input-background);
+  border: 1px solid var(--memeball-input-border);
+  color: var(--memeball-input-foreground);
+  padding: var(--memeball-space-md) var(--memeball-space-lg);
+  border-radius: var(--memeball-radius-md);
+  font-size: var(--memeball-text-md);
+  transition: border-color var(--memeball-duration-normal) var(--memeball-ease);
+}
+
+.memeball-input:focus {
+  outline: none;
+  border-color: var(--memeball-input-border-focus);
+}
+
+.memeball-input-error {
+  border-color: var(--memeball-error-border);
+  background: var(--memeball-error-light);
+}
+
+.memeball-label {
+  color: var(--memeball-foreground);
+  font-weight: var(--memeball-font-medium);
+  font-size: var(--memeball-text-base);
+  margin-bottom: var(--memeball-space-sm);
+  display: block;
+}
+
+.memeball-help-text {
+  font-size: var(--memeball-text-sm);
+  color: var(--memeball-muted-foreground);
+  margin-top: var(--memeball-space-xs);
+}
+
+.memeball-error-text {
+  font-size: var(--memeball-text-sm);
+  color: var(--memeball-error-text);
+  margin-top: var(--memeball-space-xs);
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.memeball-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--memeball-border);
+  border-top: 3px solid var(--memeball-foreground);
+  border-radius: var(--memeball-radius-full);
+  animation: memeball-spin 1.5s linear infinite;
+}
+
+.memeball-spinner-sm {
+  width: 32px;
+  height: 32px;
+  border-width: 2px;
+}
+
+@keyframes memeball-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.memeball-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: var(--memeball-foreground);
+  gap: var(--memeball-space-xl);
+}
+
+.memeball-loading-text {
+  font-size: var(--memeball-text-xl);
+  font-weight: var(--memeball-font-medium);
+  color: var(--memeball-foreground);
+}
+
+.memeball-loading-subtext {
+  font-size: var(--memeball-text-base);
+  color: var(--memeball-muted-foreground);
+}
+
+/* ============================================
+   STATE DISPLAYS
+   ============================================ */
+
+.memeball-empty-state,
+.memeball-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: var(--memeball-foreground);
+  max-width: 400px;
+  padding: var(--memeball-space-2xl);
+  gap: var(--memeball-space-lg);
+}
+
+.memeball-state-icon {
+  font-size: var(--memeball-text-4xl);
+}
+
+.memeball-state-title {
+  font-size: var(--memeball-text-2xl);
+  font-weight: var(--memeball-font-semibold);
+  color: var(--memeball-foreground);
+}
+
+.memeball-error-title {
+  color: var(--memeball-error-text);
+}
+
+.memeball-state-message {
+  font-size: var(--memeball-text-md);
+  color: var(--memeball-muted-foreground);
+  line-height: var(--memeball-leading-relaxed);
+}
+
+/* ============================================
+   BANNERS & NOTICES
+   ============================================ */
+
+.memeball-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--memeball-space-lg);
+  padding: var(--memeball-space-lg) var(--memeball-space-xl);
+  border-radius: var(--memeball-radius-lg);
+}
+
+.memeball-banner-success {
+  background: var(--memeball-success-light);
+  border: 1px solid var(--memeball-success-border);
+}
+
+.memeball-banner-warning {
+  background: var(--memeball-warning-light);
+  border: 1px solid var(--memeball-warning-border);
+}
+
+.memeball-banner-error {
+  background: var(--memeball-error-light);
+  border: 1px solid var(--memeball-error-border);
+}
+
+/* ============================================
+   IMAGE PREVIEW
+   ============================================ */
+
+.memeball-image-preview {
+  border-radius: var(--memeball-radius-lg);
+  overflow: hidden;
+  background: var(--memeball-overlay-strong);
+  border: 1px solid var(--memeball-border-subtle);
+  position: relative;
+}
+
+.memeball-image-preview img {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: contain;
+  background: #000;
+}
+
+.memeball-preview-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--memeball-space-4xl);
+  gap: var(--memeball-space-lg);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes memeball-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.memeball-fade-in {
+  animation: memeball-fade-in 1s var(--memeball-ease-in) forwards;
+}
+
+@keyframes memeball-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.memeball-pulse {
+  animation: memeball-pulse 2s var(--memeball-ease-in-out) infinite;
+}
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+
+.memeball-text-gradient {
+  background: var(--memeball-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.memeball-divider {
+  height: 1px;
+  background: var(--memeball-border);
+  margin: var(--memeball-space-xl) 0;
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+@media (max-width: 640px) {
+  .memeball-action-btn {
+    width: 56px;
+    height: 56px;
+  }
+
+  .memeball-spinner {
+    width: 40px;
+    height: 40px;
+  }
+}
+

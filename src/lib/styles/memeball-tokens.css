@@ -1,0 +1,262 @@
+/**
+ * Memeball Design Tokens
+ * 
+ * Comprehensive design token system following Tailwind/Shadcn patterns.
+ * These tokens are used by all memeball skins and provide a consistent API.
+ * Individual skins override these values in their respective CSS files.
+ */
+
+:root {
+  /* ============================================
+     COLOR TOKENS
+     ============================================ */
+  
+  /* Base Colors */
+  --memeball-background: #040014;
+  --memeball-foreground: #f8f5ff;
+  
+  /* Surface Colors */
+  --memeball-surface: rgba(3, 1, 20, 0.82);
+  --memeball-surface-foreground: #f8f5ff;
+  --memeball-surface-hover: rgba(3, 1, 20, 0.92);
+  
+  /* Card Colors */
+  --memeball-card-background: rgba(3, 1, 20, 0.82);
+  --memeball-card-foreground: #f8f5ff;
+  --memeball-card-border: rgba(255, 255, 255, 0.08);
+  
+  /* Primary Action Colors */
+  --memeball-primary: #00b894;
+  --memeball-primary-hover: #06d6a0;
+  --memeball-primary-foreground: #ffffff;
+  
+  /* Secondary Colors */
+  --memeball-secondary: #2b2b3b;
+  --memeball-secondary-foreground: #f8f5ff;
+  
+  /* Accent Colors */
+  --memeball-accent: #7b2cbf;
+  --memeball-accent-hover: #9d4edd;
+  --memeball-accent-foreground: #ffffff;
+  
+  /* Success/Pick Colors */
+  --memeball-success: #10b981;
+  --memeball-success-dark: #059669;
+  --memeball-success-foreground: #ffffff;
+  
+  /* Destructive/Reject Colors */
+  --memeball-destructive: #ef4444;
+  --memeball-destructive-dark: #dc2626;
+  --memeball-destructive-foreground: #ffffff;
+  
+  /* Warning Colors */
+  --memeball-warning: #facc15;
+  --memeball-warning-foreground: #000000;
+  
+  /* Muted Colors */
+  --memeball-muted: #2b2b3b;
+  --memeball-muted-foreground: #bfbdd6;
+  
+  /* Border Colors */
+  --memeball-border: rgba(255, 255, 255, 0.12);
+  --memeball-border-subtle: rgba(255, 255, 255, 0.08);
+  --memeball-border-emphasis: rgba(255, 255, 255, 0.2);
+  
+  /* Input Colors */
+  --memeball-input-background: rgba(255, 255, 255, 0.05);
+  --memeball-input-border: rgba(255, 255, 255, 0.2);
+  --memeball-input-border-focus: #10b981;
+  --memeball-input-foreground: #f8f5ff;
+  
+  /* Ring/Focus Colors */
+  --memeball-ring: #6e00b9;
+  
+  /* Alpha/Overlay Colors */
+  --memeball-overlay: rgba(0, 0, 0, 0.3);
+  --memeball-overlay-strong: rgba(0, 0, 0, 0.6);
+  
+  /* Semantic Colors with Opacity */
+  --memeball-error-light: rgba(248, 113, 113, 0.1);
+  --memeball-error-border: rgba(248, 113, 113, 0.3);
+  --memeball-error-text: #f87171;
+  
+  --memeball-success-light: rgba(16, 185, 129, 0.1);
+  --memeball-success-border: rgba(16, 185, 129, 0.3);
+  
+  --memeball-warning-light: rgba(250, 204, 21, 0.12);
+  --memeball-warning-border: rgba(250, 204, 21, 0.3);
+  --memeball-warning-text: #fde68a;
+  
+  /* ============================================
+     GRADIENT TOKENS
+     ============================================ */
+  
+  --memeball-gradient-background: radial-gradient(
+      circle at top,
+      rgba(88, 28, 135, 0.35),
+      transparent 55%
+    ),
+    linear-gradient(135deg, #040014 0%, #05011f 50%, #080a29 100%);
+  
+  --memeball-gradient-nebula: radial-gradient(
+      circle at 20% 20%,
+      rgba(255, 255, 255, 0.08),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 80% 10%,
+      rgba(99, 102, 241, 0.15),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 50% 80%,
+      rgba(236, 72, 153, 0.12),
+      transparent 30%
+    );
+  
+  --memeball-gradient-primary: linear-gradient(135deg, #10b981, #06d6a0);
+  --memeball-gradient-destructive: linear-gradient(135deg, #ef4444, #dc2626);
+  --memeball-gradient-accent: linear-gradient(135deg, #7b2cbf, #9d4edd);
+  
+  /* ============================================
+     EFFECT TOKENS
+     ============================================ */
+  
+  /* Shadows */
+  --memeball-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --memeball-shadow-md: 0 8px 16px rgba(0, 0, 0, 0.3);
+  --memeball-shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.4);
+  --memeball-shadow-xl: 0 30px 120px rgba(12, 12, 60, 0.45);
+  
+  /* Colored Shadows */
+  --memeball-shadow-primary: 0 8px 16px rgba(16, 185, 129, 0.3);
+  --memeball-shadow-primary-hover: 0 12px 24px rgba(16, 185, 129, 0.4);
+  --memeball-shadow-destructive: 0 8px 16px rgba(239, 68, 68, 0.3);
+  --memeball-shadow-destructive-hover: 0 12px 24px rgba(239, 68, 68, 0.4);
+  
+  /* Blur Effects */
+  --memeball-blur-sm: 4px;
+  --memeball-blur-md: 12px;
+  --memeball-blur-lg: 20px;
+  --memeball-blur-xl: 40px;
+  
+  /* Backdrop Blur */
+  --memeball-backdrop-blur-sm: blur(4px);
+  --memeball-backdrop-blur-md: blur(12px);
+  --memeball-backdrop-blur-lg: blur(14px);
+  --memeball-backdrop-blur-xl: blur(20px);
+  
+  /* Nebula & Gridline Pattern Opacity */
+  --memeball-nebula-opacity: 1;
+  --memeball-gridline-opacity: 0.25;
+  
+  /* ============================================
+     TYPOGRAPHY TOKENS
+     ============================================ */
+  
+  /* Font Families */
+  --memeball-font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, sans-serif;
+  --memeball-font-family-mono: 'Courier New', Courier, monospace;
+  
+  /* Font Sizes */
+  --memeball-text-xs: 0.7rem;
+  --memeball-text-sm: 0.8rem;
+  --memeball-text-base: 0.9rem;
+  --memeball-text-md: 1rem;
+  --memeball-text-lg: 1.1rem;
+  --memeball-text-xl: 1.25rem;
+  --memeball-text-2xl: 1.5rem;
+  --memeball-text-3xl: 2rem;
+  --memeball-text-4xl: 2.5rem;
+  
+  /* Font Weights */
+  --memeball-font-normal: 400;
+  --memeball-font-medium: 500;
+  --memeball-font-semibold: 600;
+  --memeball-font-bold: 700;
+  
+  /* Line Heights */
+  --memeball-leading-tight: 1.3;
+  --memeball-leading-normal: 1.4;
+  --memeball-leading-relaxed: 1.5;
+  --memeball-leading-loose: 1.6;
+  
+  /* Letter Spacing */
+  --memeball-tracking-tight: -0.025em;
+  --memeball-tracking-normal: 0;
+  --memeball-tracking-wide: 0.05em;
+  --memeball-tracking-wider: 0.1em;
+  
+  /* ============================================
+     SPACING TOKENS
+     ============================================ */
+  
+  --memeball-space-xs: 0.25rem;
+  --memeball-space-sm: 0.5rem;
+  --memeball-space-md: 0.75rem;
+  --memeball-space-lg: 1rem;
+  --memeball-space-xl: 1.5rem;
+  --memeball-space-2xl: 2rem;
+  --memeball-space-3xl: 2.5rem;
+  --memeball-space-4xl: 3rem;
+  
+  /* ============================================
+     BORDER RADIUS TOKENS
+     ============================================ */
+  
+  --memeball-radius-sm: 5px;
+  --memeball-radius-md: 8px;
+  --memeball-radius-lg: 12px;
+  --memeball-radius-xl: 16px;
+  --memeball-radius-2xl: 24px;
+  --memeball-radius-full: 50%;
+  
+  /* ============================================
+     ANIMATION TOKENS
+     ============================================ */
+  
+  --memeball-duration-fast: 150ms;
+  --memeball-duration-normal: 200ms;
+  --memeball-duration-slow: 300ms;
+  --memeball-duration-slower: 500ms;
+  
+  --memeball-ease: ease;
+  --memeball-ease-in: ease-in;
+  --memeball-ease-out: ease-out;
+  --memeball-ease-in-out: ease-in-out;
+  
+  /* ============================================
+     Z-INDEX TOKENS
+     ============================================ */
+  
+  --memeball-z-base: 1;
+  --memeball-z-dropdown: 10;
+  --memeball-z-sticky: 20;
+  --memeball-z-fixed: 30;
+  --memeball-z-modal-backdrop: 40;
+  --memeball-z-modal: 50;
+  --memeball-z-popover: 60;
+  --memeball-z-tooltip: 70;
+  
+  /* ============================================
+     LAYOUT TOKENS
+     ============================================ */
+  
+  --memeball-min-height: 567px;
+  --memeball-action-bar-height: 88px;
+  
+  /* ============================================
+     GRIDLINE PATTERN TOKENS
+     ============================================ */
+  
+  --memeball-gridline-size: 160px;
+  --memeball-gridline-color-primary: rgba(255, 255, 255, 0.06);
+  --memeball-gridline-color-secondary: rgba(255, 255, 255, 0.04);
+  --memeball-gridline-mask: radial-gradient(
+    circle at center,
+    #000 45%,
+    transparent 70%
+  );
+}
+
