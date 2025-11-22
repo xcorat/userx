@@ -33,25 +33,9 @@
 			console.error('Failed to initialize meme store:', error);
 			toast.error('Failed to load memes. Please try again.');
 		}
-
-		// Set CSS variable for bottom offset so RightToolbar can align above the bottom action bar
-		function setBottomOffset() {
-			try {
-				const actionBar = document.querySelector('.action-bar') as HTMLElement | null;
-				const defaultOffset = 88; // approximate fallback
-				const height = actionBar ? actionBar.offsetHeight : defaultOffset;
-				// Add a small gap so the right toolbar doesn't sit directly on top of the action bar
-				document.documentElement.style.setProperty('--memeball-bottom-offset', `${height + 16}px`);
-				// Keep right offset aligned with the FAB default if the layout needs it
-				document.documentElement.style.setProperty('--memeball-right-offset', `2rem`);
-			} catch (e) {
-				/* ignore in SSR */
-			}
-		}
-
 	});
 
-	// Separate onMount to set CSS variables for non-async cleanup handler
+	// Set CSS variables for bottom offset so RightToolbar can align above the bottom action bar
 	onMount(() => {
 		function setBottomOffset() {
 			try {
@@ -237,7 +221,7 @@
 		</footer>
 	{/if}
 
-	<!-- Right Toolbar (auto toggles between FAB stack and vertical toolbar) -->
+	<!-- Right Toolbar (auto toggles between vertical toolbar and FAB on mobile) -->
 	{#if isInitialized && !memeStore.error}
 		<RightToolbar
 			items={[
@@ -453,35 +437,6 @@
 		box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
 	}
 
-	/* Floating Action Button */
-	.fab {
-		position: fixed;
-		bottom: 5.5rem;
-		right: 2rem;
-		width: 56px;
-		height: 56px;
-		border-radius: 50%;
-		background: linear-gradient(135deg, #10b981, #06d6a0);
-		border: none;
-		color: white;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition: all 200ms ease;
-		box-shadow: 0 12px 24px rgba(16, 185, 129, 0.3);
-		z-index: 50;
-	}
-
-	.fab:hover {
-		transform: scale(1.05);
-		box-shadow: 0 16px 32px rgba(16, 185, 129, 0.4);
-	}
-
-	.fab:active {
-		transform: scale(0.95);
-	}
-
 	/* Button styling */
 	:global(.refresh-btn) {
 		border-color: rgba(255, 255, 255, 0.2) !important;
@@ -508,23 +463,9 @@
 			height: 56px;
 		}
 
-		.fab {
-			bottom: 5rem;
-			right: 1.5rem;
-			width: 48px;
-			height: 48px;
-		}
-
 		.empty-actions {
 			flex-direction: column;
 			align-items: center;
-		}
-	}
-
-	/* Hide the old FAB on larger screens because the RightToolbar will show */
-	@media (min-width: 640px) {
-		.fab {
-			display: none;
 		}
 	}
 </style>

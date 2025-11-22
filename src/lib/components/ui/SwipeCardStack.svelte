@@ -5,6 +5,8 @@
 	 */
 	
 	import { onMount } from 'svelte';
+	import { gesture } from '$lib/actions/gesture';
+	import { getInteractiveAncestor } from '$lib/utils/gesture';
 	
 	interface Props<T = any> {
 		cards: T[];
@@ -56,8 +58,11 @@
 	function getTopCardTransform(): string {
 		if (removingState) {
 			const direction = removingState.direction === 'right' ? 1 : -1;
-			const finalX = direction * 500;
-			const finalY = removingState.y + Math.abs(removingState.x) * 0.2;
+			// Continue from current position to off-screen
+			// Add enough distance to ensure card exits screen completely
+			const additionalDistance = Math.max(500, 500 - Math.abs(removingState.x));
+			const finalX = removingState.x + direction * additionalDistance;
+			const finalY = removingState.y + Math.abs(additionalDistance) * 0.2;
 			const rotation = direction * 30;
 			return `translate(${finalX}px, ${finalY}px) rotate(${rotation}deg)`;
 		}
@@ -105,6 +110,8 @@
 	
 	// Get top card opacity during removal
 	function getTopCardOpacity(): number {
+		// Opacity is handled by CSS transition now, so it fades smoothly
+		// When removingState is set, CSS will transition from 1 to 0
 		if (removingState) return 0;
 		return 1;
 	}
@@ -121,42 +128,31 @@
 	});
 	
 	// Event handlers
-	function handleStart(event: PointerEvent) {
+	function handleStart(ctx: { x: number; y: number; event: PointerEvent }) {
 		if (disabled || !currentCard) return;
-		
-		// Check if the target is interactive - allow clicks to pass through
-		const targetElement = event.target as HTMLElement;
-		const matchedInteractive = targetElement.closest('button, a, input, textarea, select, [role="button"], [data-no-drag]') as HTMLElement | null;
-		// If the matched interactive element is not the card's element (currentTarget), return early to allow click
-		if (matchedInteractive && matchedInteractive !== (event.currentTarget as HTMLElement)) {
+
+		// If pointer started on an interactive element, bail out
+		const matchedInteractive = getInteractiveAncestor(ctx.event.target as HTMLElement | null);
+		if (matchedInteractive && matchedInteractive !== (ctx.event.currentTarget as HTMLElement)) {
 			return;
 		}
 
-		event.preventDefault();
-		const target = event.currentTarget as HTMLElement;
-		target.setPointerCapture(event.pointerId);
-		
 		dragState = 'dragging';
-		startPos = { x: event.clientX, y: event.clientY };
+		startPos = { x: ctx.x, y: ctx.y };
 		dragOffset = { x: 0, y: 0 };
 	}
 	
-	function handleMove(event: PointerEvent) {
+	function handleMove(ctx: { x: number; y: number; dx: number; dy: number; event: PointerEvent }) {
 		if (!isDragging) return;
-		
-		event.preventDefault();
+
 		dragOffset = {
-			x: event.clientX - startPos.x,
-			y: event.clientY - startPos.y
+			x: ctx.dx,
+			y: ctx.dy
 		};
 	}
 	
-	function handleEnd(event: PointerEvent) {
+	function handleEnd(ctx: { x: number; y: number; dx: number; dy: number; direction?: any; event: PointerEvent }) {
 		if (!isDragging) return;
-		
-		const target = event.currentTarget as HTMLElement;
-		target.releasePointerCapture(event.pointerId);
-		
 		finalizeDrag();
 	}
 	
@@ -190,6 +186,9 @@
 			} else {
 				onSwipeLeft?.(cardToRemove, indexToRemove);
 			}
+			
+			// Remove card from array BEFORE resetting removingState
+			cards = cards.slice(1);
 			
 			// Reset state
 			removingState = null;
@@ -251,10 +250,7 @@
 							z-index: ${cards.length - index};
 							cursor: ${isDragging ? 'grabbing' : 'grab'};
 						`}
-						onpointerdown={handleStart}
-						onpointermove={handleMove}
-						onpointerup={handleEnd}
-						onpointercancel={handleEnd}
+						use:gesture={{ onStart: handleStart, onMove: handleMove, onEnd: handleEnd, onCancel: handleEnd, interactiveSelector: 'button, a, input, textarea, select, [role="button"], [data-interactive="true"], [data-no-drag]' }}
 						role="button"
 						tabindex={disabled ? -1 : 0}
 					>

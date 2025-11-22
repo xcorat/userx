@@ -17,6 +17,9 @@ importers:
       svelte-sonner:
         specifier: ^1.0.6
         version: 1.0.6(svelte@5.43.7)
+      vittest:
+        specifier: ^1.0.2
+        version: 1.0.2
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20251113.0
@@ -1519,6 +1522,9 @@ packages:
       vite:
         optional: true
 
+  vittest@1.0.2:
+    resolution: {integrity: sha512-WD1KJZI37o0O7zUicZTwF651+F7TubWqs4Q3rHzUEfAZ4fBmZ6ErOeiuuX9r/XvCuwY3AQCoT+YAmvoj79JqrQ==}
+
   workerd@1.20251109.0:
     resolution: {integrity: sha512-VfazMiymlzos0c1t9AhNi0w8gN9+ZbCVLdEE0VDOsI22WYa6yj+pYOhpZzI/mOzCGmk/o1eNjLMkfjWli6aRVg==}
     engines: {node: '>=16'}
@@ -2752,6 +2758,8 @@ snapshots:
   vitefu@1.1.1(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)):
     optionalDependencies:
       vite: 7.2.2(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
+
+  vittest@1.0.2: {}
 
   workerd@1.20251109.0:
     optionalDependencies:

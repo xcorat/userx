@@ -4,7 +4,7 @@
 	import { questionsStore } from '$lib/stores/questions.store.svelte';
 	import type { SortOption } from '$lib/utils/sorting';
 	import type { CreateAnswerDTO } from '$lib/models';
-	import QuestionCard from '$lib/components/features/questions/QuestionCard.svelte';
+	import QuestionCardAdapter from '$lib/components/features/questions/QuestionCardAdapter.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Plus, ChevronLeft, ChevronRight } from 'lucide-svelte';
 
@@ -85,7 +85,7 @@
 	{:else}
 		<div class="grid gap-6 md:grid-cols-2">
 			{#each questionsStore.questions as question (question.id)}
-				<QuestionCard {question} onAnswer={handleAnswer} />
+				<QuestionCardAdapter {question} onAnswer={handleAnswer} onSkip={()=>{}} />
 			{/each}
 		</div>
 

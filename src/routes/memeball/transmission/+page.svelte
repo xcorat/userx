@@ -72,17 +72,15 @@
 	}
 
 	function handleSwipeLeft(transmission: Transmission) {
-		// Remove the card
-		transmissions = transmissions.slice(1);
+		// Card is automatically removed by SwipeCardStack
 		attemptShutdown();
 	}
 
 	function handleSwipeRight(transmission: Transmission) {
-		// Remove current transmission and continue
-		transmissions = transmissions.slice(1);
-		
-		// If all transmissions are done, go to main memeball
-		if (transmissions.length === 0) {
+		// Card is automatically removed by SwipeCardStack
+		// Check if this was the last card and navigate if needed
+		// Note: Check happens after the card is removed by the component
+		if (transmissions.length === 1) {
 			authStore.setBootstrapSkipped(true);
 			goto(joinDestination);
 		}
