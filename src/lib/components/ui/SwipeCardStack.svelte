@@ -249,6 +249,7 @@ import { getInteractiveAncestor } from '$lib/utils/gesture';
 							transition: ${isDragging ? 'none' : removingState ? 'all 0.3s ease-out' : 'all 0.3s ease-out'};
 							z-index: ${cards.length - index};
 							cursor: ${isDragging ? 'grabbing' : 'grab'};
+							filter: blur(0);
 						`}
 						use:gesture={{ onStart: handleStart, onMove: handleMove, onEnd: handleEnd, onCancel: handleEnd, interactiveSelector: 'button, a, input, textarea, select, [role="button"], [data-interactive="true"], [data-no-drag]' }}
 						role="button"
@@ -280,8 +281,9 @@ import { getInteractiveAncestor } from '$lib/utils/gesture';
 							transform: ${bgTransform.transform};
 							opacity: ${bgTransform.opacity};
 							z-index: ${cards.length - index};
-							transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+							transition: transform 0.3s ease-out, opacity 0.3s ease-out, filter 0.3s ease-out;
 							pointer-events: none;
+							filter: blur(8px);
 						`}
 					>
 						{@render children(card, index)}
@@ -343,6 +345,11 @@ import { getInteractiveAncestor } from '$lib/utils/gesture';
 	
 	.background-card {
 		pointer-events: none;
+		filter: blur(8px);
+	}
+	
+	.top-card {
+		filter: blur(0);
 	}
 	
 	/* Swipe indicators */
