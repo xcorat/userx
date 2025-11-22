@@ -122,7 +122,6 @@
 		transform: translate(-50%, -50%);
 		z-index: 100;
 		pointer-events: none;
-		animation: floatAroundRandom 75s ease-in-out infinite;
 	}
 
 	.auth-container {
@@ -146,10 +145,14 @@
 			inset 0 -1px 0 rgba(0, 0, 0, 0.3),
 			0 0 0 1px rgba(200, 200, 220, 0.1);
 		pointer-events: auto;
-		animation: slideUp 0.8s ease-out;
+		animation: slideUp 0.8s ease-out, floatAroundRandom 75s ease-in-out infinite;
 		justify-content: center;
 		position: relative;
 		overflow: hidden;
+	}
+
+	.auth-container:hover {
+		animation-play-state: paused;
 	}
 
 	/* Metallic shine effect */
@@ -239,20 +242,31 @@
 	@media (max-width: 1024px) {
 		.center-controls {
 			top: 65%;
-			animation: floatAroundTabletRandom 62s ease-in-out infinite;
+		}
+
+		.auth-container {
+			animation: slideUp 0.8s ease-out, floatAroundTabletRandom 62s ease-in-out infinite;
+		}
+
+		.auth-container:hover {
+			animation-play-state: paused;
 		}
 	}
 
 	@media (max-width: 768px) {
 		.center-controls {
 			top: 60%;
-			animation: floatAroundMobileRandom 51s ease-in-out infinite;
 		}
 
 		.auth-container {
 			width: 120px;
 			height: 120px;
 			padding: 1rem 0.75rem;
+			animation: slideUp 0.8s ease-out, floatAroundMobileRandom 51s ease-in-out infinite;
+		}
+
+		.auth-container:hover {
+			animation-play-state: paused;
 		}
 
 		.auth-link {
