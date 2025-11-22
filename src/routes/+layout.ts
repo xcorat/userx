@@ -16,10 +16,7 @@ export const load = async ({ url }: { url: URL }) => {
 				throw redirect(307, '/memeball/transmission');
 			}
 			
-			// Redirect /qna to /qna/onboarding
-			if (url.pathname === '/qna') {
-				throw redirect(307, '/qna/onboarding');
-			}
+			// Note: /qna redirect is now handled by /qna/+page.ts
 		}
 
 		// Public paths list (root paths). Subpaths are allowed if they match a public root.

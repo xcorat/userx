@@ -5,11 +5,11 @@
 	import { HelpCircle } from 'lucide-svelte';
 
 	function handleSignup() {
-		goto('/signup');
+		goto('/signup?redirect=/qna');
 	}
 
 	function handleLogin() {
-		goto('/login');
+		goto('/login?redirect=/qna');
 	}
 </script>
 
