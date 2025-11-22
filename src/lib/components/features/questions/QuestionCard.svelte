@@ -33,28 +33,30 @@
 		}
 	});
 
-	async function loadImage() {
-		if (!question.imageHashId) return;
-		
-		isLoadingImage = true;
-		try {
-			// Use fetch to call the API route directly
-			const response = await fetch(`/api/questions/${question.id}/image`);
-			if (response.ok) {
-				const image = await response.json();
-				imageUrl = image.imageUrl;
-			} else if (response.status !== 404) {
-				// Only log if it's not a 404 (no image found)
-				console.error('Failed to load question image:', response.statusText);
-				imageError = true;
-			}
-		} catch (error) {
-			console.error('Failed to load question image:', error);
-			imageError = true;
-		} finally {
-			isLoadingImage = false;
-		}
-	}
+  interface QuestionImage { imageUrl: string }
+
+  async function loadImage() {
+    if (!question.imageHashId) return;
+    
+    isLoadingImage = true;
+    try {
+      // Use fetch to call the API route directly
+      const response = await fetch(`/api/questions/${question.id}/image`);
+      if (response.ok) {
+        const image = await response.json() as QuestionImage;
+        imageUrl = image.imageUrl;
+      } else if (response.status !== 404) {
+        // Only log if it's not a 404 (no image found)
+        console.error('Failed to load question image:', response.statusText);
+        imageError = true;
+      }
+    } catch (error) {
+      console.error('Failed to load question image:', error);
+      imageError = true;
+    } finally {
+      isLoadingImage = false;
+    }
+  }
 
 	function getImageUrl(hashId: string): string {
 		return imageUrl || '';

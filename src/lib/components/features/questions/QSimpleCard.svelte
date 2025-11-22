@@ -1,7 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { QuestionChoice } from '$lib/models/types';
-  import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '$lib/components/ui/card';
+    import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '$lib/components/ui/card';
   import { RadioGroup, RadioGroupItem } from '$lib/components/ui/radio-group';
   import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge';
@@ -39,7 +38,7 @@ import type { QuestionData } from './types';
     pending = true;
     errorMessage = null;
     announcement = `Selected answer ${choiceId}`;
-    dispatch('answerSelect', { questionId: question.id, answerId: choiceId });
+    dispatch('answerSelect', { questionId: question.id, choiceId });
 
     if (onAnswerSelect) {
       try {
@@ -133,7 +132,7 @@ import type { QuestionData } from './types';
       </div>
       <div class="flex items-center gap-2">
         {#if onSkip}
-          <Button variant="outline" size="sm" on:click={handleSkipClick} disabled={pending || localAnswered}>Skip</Button>
+          <Button variant="outline" size="sm" onclick={handleSkipClick} disabled={pending || localAnswered}>Skip</Button>
         {/if}
         {#if pending}
           <span class="text-sm text-muted-foreground">Submitting...</span>

@@ -51,7 +51,7 @@
   <h2 class="text-lg font-medium">QCards Anim Demo</h2>
 
   {#each questions as q, i}
-    <div bind:this={cardNodes[i]} tabindex={0} class="max-w-md mx-auto">
+    <div bind:this={cardNodes[i]} class="max-w-md mx-auto">
       {#if i === 0}
         <QAutoVAnimCard question={q} normalizedPosition={normalized[i]} onAnswerSelect={fakeOnAnswer} nextCardRef={cardNodes[i+1]} />
       {:else}
