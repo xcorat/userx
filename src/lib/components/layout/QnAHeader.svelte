@@ -4,6 +4,7 @@
 	import AppMenu from '$lib/components/features/app-menu.svelte';
 	import { MessageCircle, Users, Search, HelpCircle } from 'lucide-svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
+	import { goto } from '$app/navigation';
 
 	// Props
 	let {
@@ -12,14 +13,18 @@
 		showBranding?: boolean;
 	} = $props();
 
+	function goToQuestions() {
+		goto('/qna/questions');
+	}
+
 	// Define navigation items for the QnA app - reactive to authStore changes
 	let navigationItems = $derived([
 		{
-			id: 'questions',
-			label: 'Questions',
-			href: '/qna/questions',
+			id: 'answers',
+			label: 'Answers',
+			href: '/qna/answers',
 			icon: HelpCircle,
-			title: 'Questions'
+			title: 'Answers'
 		},
 		{
 			id: 'search',
@@ -54,11 +59,15 @@
 	<!-- Custom left slot for QnA branding -->
 	<div slot="left" class="flex items-center gap-2">
 		{#if showBranding}
-			<AppMenu showApps={false}>
-				<HelpCircle slot="trigger" class="h-5 w-5 text-orange-500" />
-			</AppMenu>
+			<button 
+				onclick={goToQuestions}
+				class="p-2 hover:bg-muted rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
+				aria-label="Go to questions"
+			>
+				<HelpCircle class="h-5 w-5 text-orange-500" />
+			</button>
 			<h1 class="text-2xl font-bold">
-				<a href="/qna/questions" class="hidden sm:inline">Orph</a>
+				<a href="/qna/questions" class="hidden sm:inline hover:text-primary transition-colors">Orph</a>
 			</h1>
 		{/if}
 	</div>

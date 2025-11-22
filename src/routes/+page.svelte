@@ -15,7 +15,7 @@
 	}
 
 	function goToQnA() {
-		goto('/qna/questions');
+		goto('/qna/answers');
 	}
 
 	function goToMemeball() {

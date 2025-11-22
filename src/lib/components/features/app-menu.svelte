@@ -14,7 +14,7 @@
     export let align: 'start' | 'end' = 'start';
 
     const defaultApps: AppMenuItem[] = [
-        { id: 'orph', label: 'Orph', path: '/qna/questions', Icon: HelpCircle },
+        { id: 'orph', label: 'Orph', path: '/qna/answers', Icon: HelpCircle },
         { id: 'memeball', label: 'Memeball', path: '/memeball', Icon: Flame }
     ];
 

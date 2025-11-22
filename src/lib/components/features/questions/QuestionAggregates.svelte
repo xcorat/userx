@@ -1,15 +1,15 @@
 <script lang="ts">
-	import type { QuestionWithStats } from '$lib/models';
-	import type { QuestionAggregates } from '$lib/models/aggregate.model';
+import type { QuestionAggregates } from '$lib/models/aggregate.model';
+import type { QuestionChoice } from '$lib/models/types';
 	import { formatPercentage } from '$lib/utils/formatting';
 	import { Badge } from '$lib/components/ui/badge';
 
-	interface Props {
-		question: QuestionWithStats;
-		aggregates: QuestionAggregates;
-	}
+interface Props {
+	question: { id: string; text: string; choices: QuestionChoice[] };
+	aggregates: QuestionAggregates;
+}
 
-	let { question, aggregates }: Props = $props();
+let { question, aggregates }: Props = $props();
 </script>
 
 <div class="space-y-3">

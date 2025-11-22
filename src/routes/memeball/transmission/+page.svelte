@@ -3,6 +3,7 @@
 	import SwipeCardStack from '$lib/components/ui/SwipeCardStack.svelte';
 	import * as Card from '$lib/components/ui/card';
 	import { authStore } from '$lib/stores/auth.store.svelte';
+	import { ChevronRight } from 'lucide-svelte';
 
 	type Transmission = {
 		id: string;
@@ -19,7 +20,7 @@
 			id: '001',
 			title: '',
 			body: 'PLEASE TURN OFF YOUR PHONE!',
-			answers: ['ok!', 'wat?'] as [string, string]
+			answers: ['Ok!', 'Wat?'] as [string, string]
 		},
 		{
 			id: '002',
@@ -153,17 +154,20 @@
                                 {#if transmission.footer}
 									<p class="footer-text">{transmission.footer}</p>
                                 {/if}
-
+                            </Card.Footer>
+                            
+                            <div class="skip-button-container">
 								<button class="skip-button" data-no-drag onclick={handleSkip}>
                                     Skip Intro
+                                    <ChevronRight class="skip-icon" />
                                 </button>
+                            </div>
 
                                 <!-- {#if showExitNotice}
                                     <div class="exit-notice">
                                         Manual exit required. Hold your device's power button until the screen dims.
                                     </div>
                                 {/if} -->
-                            </Card.Footer>
 							{#if showHints}
 								<div class="swipe-hint">
 									<span class="hint-left">← Abort + Shutdown</span>
@@ -323,7 +327,6 @@
 		font-size: 0.95rem;
 		cursor: pointer;
 		transition: all 0.2s ease;
-		text-transform: lowercase;
 		letter-spacing: 0.05em;
 	}
 
@@ -380,9 +383,16 @@
 		font-size: 0.9rem;
 	}
 
+	.skip-button-container {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 1rem;
+		padding: 0 2rem;
+	}
+
 	.skip-button {
 		background: rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		border: none;
 		color: rgba(255, 255, 255, 0.7);
 		padding: 0.5rem 1.5rem;
 		border-radius: 20px;
@@ -390,12 +400,19 @@
 		cursor: pointer;
 		transition: all 0.2s ease;
 		backdrop-filter: blur(4px);
-		margin-top: 1rem;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	.skip-button:hover {
 		background: rgba(255, 255, 255, 0.2);
 		color: white;
+	}
+
+	.skip-icon {
+		width: 1rem;
+		height: 1rem;
 	}
 
 	@media (max-width: 640px) {
