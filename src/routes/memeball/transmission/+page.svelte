@@ -49,6 +49,7 @@
 	]);
 
 	const joinDestination = '/memeball/main';
+	let swipeCardStack = $state<any>(null);
 	let showExitNotice = $state(false);
 	let showHints = $state(false);
 
@@ -111,6 +112,7 @@
 		<section class="card-stack" aria-live="polite">
 			{#if transmissions.length > 0}
 				<SwipeCardStack
+					bind:this={swipeCardStack}
 					bind:cards={transmissions}
 					onSwipeLeft={handleSwipeLeft}
 					onSwipeRight={handleSwipeRight}
@@ -144,7 +146,7 @@
                                                 class="answer-button"
                                                 data-no-drag
                                                 aria-label={i === 0 ? `Reject — ${answer}` : `Accept — ${answer}`}
-                                                onclick={() => (i === 0 ? handleSwipeLeft(transmission) : handleSwipeRight(transmission))}
+                                                onclick={() => (i === 0 ? swipeCardStack?.swipeLeft() : swipeCardStack?.swipeRight())}
                                             >
                                                 {answer}
                                             </button>
@@ -185,11 +187,10 @@
 
 <style>
 	.memeball-shell {
-		min-height: 567px;
+		min-height: var(--memeball-min-height);
 		height: 100%;
-		background: radial-gradient(circle at top, rgba(88, 28, 135, 0.35), transparent 55%),
-			linear-gradient(135deg, #040014 0%, #05011f 50%, #080a29 100%);
-		color: #f8f5ff;
+		background: var(--memeball-gradient-background);
+		color: var(--memeball-foreground);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -200,21 +201,26 @@
 	.nebula {
 		position: absolute;
 		inset: 0;
-		background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 30%),
-			radial-gradient(circle at 80% 10%, rgba(99, 102, 241, 0.15), transparent 35%),
-			radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.12), transparent 30%);
-		filter: blur(40px);
+		background: var(--memeball-gradient-nebula);
+		filter: blur(var(--memeball-blur-xl));
 		pointer-events: none;
 	}
 
 	.gridlines {
 		position: absolute;
 		inset: 0;
-		background-image: linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-			linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-		background-size: 160px 160px;
-		opacity: 0.25;
-		mask-image: radial-gradient(circle at center, #000 45%, transparent 70%);
+		background-image: linear-gradient(
+				var(--memeball-gridline-color-primary) 1px,
+				transparent 1px
+			),
+			linear-gradient(
+				90deg,
+				var(--memeball-gridline-color-secondary) 1px,
+				transparent 1px
+			);
+		background-size: var(--memeball-gridline-size) var(--memeball-gridline-size);
+		opacity: var(--memeball-gridline-opacity);
+		mask-image: var(--memeball-gridline-mask);
 		pointer-events: none;
 	}
 
@@ -223,12 +229,12 @@
 		width: 100%;
 		height: 100%;
 		min-height: 427px;
-		z-index: 1;
+		z-index: var(--memeball-z-base);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 1.5rem;
+		gap: var(--memeball-space-2xl);
 		padding: 0;
 	}
 
@@ -243,40 +249,42 @@
 	.transmission-card-content {
 		width: 100%;
 		height: 100%;
-		padding: 2rem;
-		border-radius: 24px;
-		background: rgba(3, 1, 20, 0.82);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		box-shadow: 0 30px 120px rgba(12, 12, 60, 0.45);
-		backdrop-filter: blur(14px);
+		padding: var(--memeball-space-2xl);
+		border-radius: var(--memeball-radius-2xl);
+		background: var(--memeball-card-background);
+		border: 1px solid var(--memeball-card-border);
+		box-shadow: var(--memeball-shadow-xl);
+		backdrop-filter: var(--memeball-backdrop-blur-lg);
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		color: #f8f5ff;
+		color: var(--memeball-card-foreground);
 	}
 
 	:global(.transmission-stack .card) {
-		background: rgba(3, 1, 20, 0.82) !important;
-		border: 1px solid rgba(255, 255, 255, 0.08) !important;
-		box-shadow: 0 30px 120px rgba(12, 12, 60, 0.45) !important;
-		backdrop-filter: blur(14px);
+		background: var(--memeball-card-background);
+		border: 1px solid var(--memeball-card-border);
+		box-shadow: var(--memeball-shadow-xl);
+		backdrop-filter: var(--memeball-backdrop-blur-lg);
 	}
 
 	:global(.transmission-title) {
-		font-size: 1.5rem !important;
-		line-height: 1.3 !important;
-		text-transform: uppercase !important;
-		letter-spacing: 0.05em !important;
-		color: rgba(248, 245, 255, 0.95) !important;
-		text-align:center !important;
-		margin-top: 10vh !important;
+		font-size: var(--memeball-text-2xl);
+		line-height: var(--memeball-leading-tight);
+		text-transform: uppercase;
+		letter-spacing: var(--memeball-tracking-wide);
+		color: var(--memeball-foreground);
+		opacity: 0.95;
+		text-align: center;
+		margin-top: 10vh;
 	}
 
 	:global(.transmission-body) {
-		color: rgba(248, 245, 255, 0.85) !important;
-		line-height: 1.6;
-		font-size: 1.1rem;
-		margin: 1.5rem 0;
+		color: var(--memeball-foreground);
+		opacity: 0.85;
+		line-height: var(--memeball-leading-loose);
+		font-size: var(--memeball-text-lg);
+		margin: var(--memeball-space-2xl) 0;
 		text-align: center;
 		white-space: pre-line;
 	}
@@ -284,50 +292,39 @@
 	.transmission-messages {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
-		margin: 2rem 0;
-		padding-left: 2rem;
+		gap: var(--memeball-space-2xl);
+		margin: var(--memeball-space-2xl) 0;
+		padding-left: var(--memeball-space-2xl);
 	}
 
 	.message-item {
-		color: rgba(248, 245, 255, 0.85);
-		line-height: 1.6;
-		font-size: 1rem;
+		color: var(--memeball-foreground);
+		opacity: 0.85;
+		line-height: var(--memeball-leading-loose);
+		font-size: var(--memeball-text-md);
 		margin: 0;
 		opacity: 0;
-		animation: fadeIn 1s ease-in forwards;
-	}
-
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
+		animation: memeball-fade-in 1s ease-in forwards;
 	}
 
 	.transmission-answers {
 		display: flex;
 		justify-content: center;
-		gap: 1rem;
-        /* margin-top: auto; */
-		/* padding-bottom: 1rem; */
+		gap: var(--memeball-space-lg);
 		flex-wrap: wrap;
 	}
 
 	.answer-button {
-		padding: 0.75rem 2rem;
+		padding: var(--memeball-space-md) var(--memeball-space-2xl);
 		background: rgba(99, 102, 241, 0.2);
 		border: 1px solid rgba(99, 102, 241, 0.4);
-		border-radius: 12px;
-		color: rgba(248, 245, 255, 0.9);
-		font-size: 0.95rem;
+		border-radius: var(--memeball-radius-lg);
+		color: var(--memeball-foreground);
+		opacity: 0.9;
+		font-size: var(--memeball-text-base);
 		cursor: pointer;
-		transition: all 0.2s ease;
-		letter-spacing: 0.05em;
+		transition: all var(--memeball-duration-normal) var(--memeball-ease);
+		letter-spacing: var(--memeball-tracking-wide);
 	}
 
 	.answer-button:hover {
@@ -341,16 +338,16 @@
 	}
 
 	:global(.transmission-footer) {
-		padding-top: 0 !important;
+		padding-top: 0;
 		margin-top: auto;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 1rem;
+		gap: var(--memeball-space-lg);
 	}
 
 	.footer-text {
-		font-size: 0.9rem;
+		font-size: var(--memeball-text-base);
 		color: rgba(236, 72, 153, 0.8);
 		margin: 0;
 	}
@@ -358,11 +355,11 @@
 	.swipe-hint {
 		display: flex;
 		justify-content: space-between;
-		margin-top: 2rem;
-		font-size: 0.8rem;
-		color: rgba(248, 245, 255, 0.6);
+		margin-top: var(--memeball-space-2xl);
+		font-size: var(--memeball-text-sm);
+		color: var(--memeball-muted-foreground);
 		text-transform: uppercase;
-		letter-spacing: 0.1em;
+		letter-spacing: var(--memeball-tracking-wider);
 	}
 
 	.hint-left {
@@ -373,41 +370,31 @@
 		color: rgba(74, 222, 128, 0.8);
 	}
 
-	.exit-notice {
-		margin-top: 0.5rem;
-		padding: 0.85rem 1rem;
-		border-radius: 12px;
-		background: rgba(250, 204, 21, 0.12);
-		border: 1px solid rgba(250, 204, 21, 0.3);
-		color: #fde68a;
-		font-size: 0.9rem;
-	}
-
 	.skip-button-container {
 		display: flex;
 		justify-content: flex-end;
 		margin-top: 40%;
-		padding: 0 0rem;
+		padding: 0;
 	}
 
 	.skip-button {
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--memeball-input-background);
 		border: none;
-		color: rgba(255, 255, 255, 0.7);
-		padding: 0.25rem 0.75rem;
-		border-radius: 5px;
-		font-size: 0.7rem;
+		color: var(--memeball-muted-foreground);
+		padding: var(--memeball-space-xs) var(--memeball-space-md);
+		border-radius: var(--memeball-radius-sm);
+		font-size: var(--memeball-text-xs);
 		cursor: pointer;
-		transition: all 0.2s ease;
-		backdrop-filter: blur(4px);
+		transition: all var(--memeball-duration-normal) var(--memeball-ease);
+		backdrop-filter: var(--memeball-backdrop-blur-sm);
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--memeball-space-sm);
 	}
 
 	.skip-button:hover {
-		background: rgba(255, 255, 255, 0.2);
-		color: white;
+		background: var(--memeball-surface);
+		color: var(--memeball-foreground);
 	}
 
 	.skip-icon {
@@ -417,7 +404,7 @@
 
 	@media (max-width: 640px) {
 		.content {
-			gap: 1rem;
+			gap: var(--memeball-space-lg);
 			padding: 0;
 		}
 
@@ -428,11 +415,11 @@
 
 	@media (min-width: 1024px) {
 		:global(.transmission-title) {
-			font-size: 1.75rem !important;
+			font-size: 1.75rem;
 		}
 
 		:global(.transmission-body) {
-			font-size: 1.25rem !important;
+			font-size: 1.25rem;
 		}
 
 		.message-item {
@@ -446,11 +433,11 @@
 
 	@media (min-width: 1280px) {
 		:global(.transmission-title) {
-			font-size: 2rem !important;
+			font-size: 2rem;
 		}
 
 		:global(.transmission-body) {
-			font-size: 1.35rem !important;
+			font-size: 1.35rem;
 		}
 
 		.message-item {
@@ -458,7 +445,7 @@
 		}
 
 		.transmission-card-content {
-			padding: 3rem;
+			padding: var(--memeball-space-4xl);
 		}
 	}
 </style>

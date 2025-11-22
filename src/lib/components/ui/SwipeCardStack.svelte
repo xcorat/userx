@@ -4,9 +4,9 @@
 	 * Cards float away to reveal the next card below with smooth animations
 	 */
 	
-	import { onMount } from 'svelte';
-	import { gesture } from '$lib/actions/gesture';
-	import { getInteractiveAncestor } from '$lib/utils/gesture';
+import { onMount } from 'svelte';
+import { gesture, type GestureContext } from '$lib/actions/gesture';
+import { getInteractiveAncestor } from '$lib/utils/gesture';
 	
 	interface Props<T = any> {
 		cards: T[];
@@ -128,11 +128,11 @@
 	});
 	
 	// Event handlers
-	function handleStart(ctx: { x: number; y: number; event: PointerEvent }) {
+	function handleStart(ctx: GestureContext) {
 		if (disabled || !currentCard) return;
 
 		// If pointer started on an interactive element, bail out
-		const matchedInteractive = getInteractiveAncestor(ctx.event.target as HTMLElement | null);
+		const matchedInteractive = getInteractiveAncestor(ctx.event.target as Element | null);
 		if (matchedInteractive && matchedInteractive !== (ctx.event.currentTarget as HTMLElement)) {
 			return;
 		}
@@ -142,7 +142,7 @@
 		dragOffset = { x: 0, y: 0 };
 	}
 	
-	function handleMove(ctx: { x: number; y: number; dx: number; dy: number; event: PointerEvent }) {
+	function handleMove(ctx: GestureContext) {
 		if (!isDragging) return;
 
 		dragOffset = {
@@ -151,7 +151,7 @@
 		};
 	}
 	
-	function handleEnd(ctx: { x: number; y: number; dx: number; dy: number; direction?: any; event: PointerEvent }) {
+	function handleEnd(ctx: GestureContext) {
 		if (!isDragging) return;
 		finalizeDrag();
 	}

@@ -7,8 +7,9 @@
 export interface GestureContext {
 	x: number;
 	y: number;
-	dx?: number;
-	dy?: number;
+	dx: number;
+	dy: number;
+	direction?: 'left' | 'right' | 'up' | 'down';
 	event: PointerEvent;
 }
 
@@ -58,9 +59,9 @@ export function gesture(node: HTMLElement, config: GestureActionConfig) {
 	 * Check if the target element or its ancestors match the interactive selector
 	 */
 	function isInteractiveElement(target: EventTarget | null): boolean {
-		if (!target || !(target instanceof HTMLElement)) return false;
+		if (!target || !(target instanceof Element)) return false;
 		
-		const matchedElement = target.closest(interactiveSelector);
+		const matchedElement = (target as Element).closest(interactiveSelector);
 		// If the matched element is the node itself, it's not considered interactive
 		// (we want the node to be draggable)
 		return matchedElement !== null && matchedElement !== node;
@@ -94,6 +95,8 @@ export function gesture(node: HTMLElement, config: GestureActionConfig) {
 			config.onStart({
 				x: event.clientX,
 				y: event.clientY,
+				dx: 0,
+				dy: 0,
 				event
 			});
 		}
