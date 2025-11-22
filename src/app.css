@@ -2,6 +2,9 @@
 
 @import "tw-animate-css";
 
+/* Memeball Dark Hue Skin - Static import for build-time theme selection */
+@import "./lib/styles/skins/dark-hue.css";
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

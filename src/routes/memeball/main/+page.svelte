@@ -204,7 +204,7 @@
 						<!-- Main meme image -->
 						<img
 							src={meme.imageUrl}
-							alt="Meme image"
+							alt={meme.altText || "Meme"}
 							class="meme-image"
 						/>
 					</div>
@@ -251,10 +251,10 @@
 	.meme-viewer {
 		position: absolute;
 		inset: 0;
-		 /* Allow page to scroll vertically when content is taller than viewport.
+		/* Allow page to scroll vertically when content is taller than viewport.
 			 Keep horizontal overflow hidden to avoid stray content horizontally. */
-		 overflow-x: hidden;
-		 overflow-y: auto;
+		overflow-x: hidden;
+		overflow-y: auto;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -266,33 +266,28 @@
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
-		color: #f8f5ff;
+		color: var(--memeball-foreground);
 	}
 
 	.loading-spinner {
 		width: 48px;
 		height: 48px;
-		border: 3px solid rgba(248, 245, 255, 0.2);
-		border-top: 3px solid #f8f5ff;
-		border-radius: 50%;
-		animation: spin 1.5s linear infinite;
-		margin-bottom: 2rem;
-	}
-
-	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		border: 3px solid var(--memeball-border);
+		border-top: 3px solid var(--memeball-foreground);
+		border-radius: var(--memeball-radius-full);
+		animation: memeball-spin 1.5s linear infinite;
+		margin-bottom: var(--memeball-space-2xl);
 	}
 
 	.loading-text {
-		font-size: 1.25rem;
-		font-weight: 500;
-		margin-bottom: 0.5rem;
+		font-size: var(--memeball-text-xl);
+		font-weight: var(--memeball-font-medium);
+		margin-bottom: var(--memeball-space-sm);
 	}
 
 	.loading-subtext {
-		font-size: 0.9rem;
-		color: rgba(248, 245, 255, 0.6);
+		font-size: var(--memeball-text-base);
+		color: var(--memeball-muted-foreground);
 	}
 
 	/* Error state */
@@ -301,28 +296,28 @@
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
-		color: #f8f5ff;
+		color: var(--memeball-foreground);
 		max-width: 400px;
-		padding: 2rem;
+		padding: var(--memeball-space-2xl);
 	}
 
 	.error-icon {
-		font-size: 4rem;
-		margin-bottom: 1.5rem;
+		font-size: var(--memeball-text-4xl);
+		margin-bottom: var(--memeball-space-2xl);
 	}
 
 	.error-title {
-		font-size: 1.5rem;
-		font-weight: 600;
-		margin-bottom: 1rem;
-		color: #f87171;
+		font-size: var(--memeball-text-2xl);
+		font-weight: var(--memeball-font-semibold);
+		margin-bottom: var(--memeball-space-lg);
+		color: var(--memeball-error-text);
 	}
 
 	.error-message {
-		font-size: 1rem;
-		color: rgba(248, 245, 255, 0.8);
-		margin-bottom: 2rem;
-		line-height: 1.5;
+		font-size: var(--memeball-text-md);
+		color: var(--memeball-muted-foreground);
+		margin-bottom: var(--memeball-space-2xl);
+		line-height: var(--memeball-leading-relaxed);
 	}
 
 	/* Empty state */
@@ -331,32 +326,32 @@
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
-		color: #f8f5ff;
+		color: var(--memeball-foreground);
 		max-width: 400px;
-		padding: 2rem;
+		padding: var(--memeball-space-2xl);
 	}
 
 	.empty-icon {
-		font-size: 4rem;
-		margin-bottom: 1.5rem;
+		font-size: var(--memeball-text-4xl);
+		margin-bottom: var(--memeball-space-2xl);
 	}
 
 	.empty-title {
-		font-size: 1.5rem;
-		font-weight: 600;
-		margin-bottom: 1rem;
+		font-size: var(--memeball-text-2xl);
+		font-weight: var(--memeball-font-semibold);
+		margin-bottom: var(--memeball-space-lg);
 	}
 
 	.empty-message {
-		font-size: 1rem;
-		color: rgba(248, 245, 255, 0.8);
-		margin-bottom: 2rem;
-		line-height: 1.5;
+		font-size: var(--memeball-text-md);
+		color: var(--memeball-muted-foreground);
+		margin-bottom: var(--memeball-space-2xl);
+		line-height: var(--memeball-leading-relaxed);
 	}
 
 	.empty-actions {
 		display: flex;
-		gap: 1rem;
+		gap: var(--memeball-space-lg);
 		flex-wrap: wrap;
 		justify-content: center;
 	}
@@ -405,26 +400,26 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		z-index: 40;
+		z-index: var(--memeball-z-fixed);
 		background: transparent;
-		padding: 1rem 1.5rem;
+		padding: var(--memeball-space-lg) var(--memeball-space-2xl);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 1.5rem;
+		gap: var(--memeball-space-2xl);
 	}
 
 	.action-btn {
 		width: 64px;
 		height: 64px;
-		border-radius: 50%;
+		border-radius: var(--memeball-radius-full);
 		border: none;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		transition: all 200ms ease;
-		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+		transition: all var(--memeball-duration-normal) var(--memeball-ease);
+		box-shadow: var(--memeball-shadow-md);
 		color: white;
 	}
 
@@ -434,42 +429,42 @@
 	}
 
 	.reject-btn {
-		background: linear-gradient(135deg, #ef4444, #dc2626);
-		box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
+		background: var(--memeball-gradient-destructive);
+		box-shadow: var(--memeball-shadow-destructive);
 	}
 
 	.reject-btn:hover:not(:disabled) {
-		box-shadow: 0 12px 24px rgba(239, 68, 68, 0.4);
+		box-shadow: var(--memeball-shadow-destructive-hover);
 	}
 
 	.pick-btn {
-		background: linear-gradient(135deg, #10b981, #059669);
-		box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+		background: var(--memeball-gradient-primary);
+		box-shadow: var(--memeball-shadow-primary);
 	}
 
 	.pick-btn:hover:not(:disabled) {
-		box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
+		box-shadow: var(--memeball-shadow-primary-hover);
 	}
 
 	/* Button styling */
 	:global(.refresh-btn) {
-		border-color: rgba(255, 255, 255, 0.2) !important;
-		color: #f8f5ff !important;
-		background: rgba(3, 1, 20, 0.8) !important;
-		backdrop-filter: blur(12px);
+		border-color: var(--memeball-border-emphasis);
+		color: var(--memeball-foreground);
+		background: var(--memeball-surface);
+		backdrop-filter: var(--memeball-backdrop-blur-md);
 	}
 
 	:global(.submit-btn) {
-		background: linear-gradient(135deg, #10b981, #06d6a0) !important;
-		border: none !important;
-		color: white !important;
+		background: var(--memeball-gradient-primary);
+		border: none;
+		color: white;
 	}
 
 	/* Mobile responsiveness */
 	@media (max-width: 640px) {
 		.action-bar {
-			padding: 0.75rem 1rem;
-			gap: 1rem;
+			padding: var(--memeball-space-md) var(--memeball-space-lg);
+			gap: var(--memeball-space-lg);
 		}
 
 		.action-btn {

@@ -45,21 +45,18 @@
 		/* Ensure the full-screen layout covers the viewport and provides
 		   the background and foreground color without setting body styles */
 		height: 100%;
-		min-height: 567px;
+		min-height: var(--memeball-min-height);
 		width: 100vw;
-		color: #f8f5ff;
-		 overflow-x: hidden;
-		 /* Allow vertical scrolling when the inner content needs more height than the viewport
+		color: var(--memeball-foreground);
+		overflow-x: hidden;
+		/* Allow vertical scrolling when the inner content needs more height than the viewport
 			 or the app is viewed on a narrow/small device. Previously overflow: hidden prevented
 			 vertical scrolling. */
-		 overflow-y: auto;
-		background: radial-gradient(circle at top, rgba(88, 28, 135, 0.35), transparent 55%),
-			linear-gradient(135deg, #040014 0%, #05011f 50%, #080a29 100%);
+		overflow-y: auto;
+		background: var(--memeball-gradient-background);
 		position: fixed;
 		top: 0;
 		left: 0;
-		/* Keep horizontal overflow hidden but do allow vertical scrolling */
-		overflow-x: hidden;
 	}
 
 	.memeball-content {
@@ -68,7 +65,7 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		z-index: 1;
+		z-index: var(--memeball-z-base);
 		/* Make the content scrollable while the background stays fixed */
 		overflow-y: auto;
 	}
