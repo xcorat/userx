@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { toast } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
@@ -140,16 +141,21 @@
 			});
 			
 			toast.success('Account created successfully! Your cryptographic keys have been generated.');
-			goto('/');
+			const redirect = $page.url.searchParams.get('redirect');
+			goto(redirect || '/');
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Signup failed';
 		} finally {
 			isSubmitting = false;
 		}
 	}
+	function getLoginLink() {
+		const redirect = $page.url.searchParams.get('redirect');
+		return redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login';
+	}
 </script>
 
-<div class="flex min-h-[80vh] items-center justify-center">
+<div class="flex min-h-[80vh] flex-col items-center justify-center gap-4">
 	<Card.Root class="w-full max-w-md">
 		<Card.Header>
 			<Card.Title>Welcome! Let's get you started</Card.Title>
@@ -301,4 +307,9 @@
 			</div>
 		</Card.Footer>
 	</Card.Root>
+
+	<p class="text-sm text-muted-foreground">
+		Already have an account?
+		<a href={getLoginLink()} class="text-primary hover:underline">Login</a>
+	</p>
 </div>

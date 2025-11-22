@@ -48,7 +48,6 @@
 		}
 	]);
 
-	const joinDestination = '/memeball/main';
 	let swipeCardStack = $state<any>(null);
 	let showExitNotice = $state(false);
 	let showHints = $state(false);
@@ -78,25 +77,31 @@
 		attemptShutdown();
 	}
 
+	function navigateToNext() {
+		authStore.setBootstrapSkipped(true);
+		if (authStore.isAuthenticated) {
+			goto('/memeball/main');
+		} else {
+			goto('/signup?redirect=%2Fmemeball%2Fmain');
+		}
+	}
+
 	function handleSwipeRight(transmission: Transmission) {
 		// Card is automatically removed by SwipeCardStack
 		// Check if this was the last card and navigate if needed
 		// Note: Check happens after the card is removed by the component
 		if (transmissions.length === 1) {
-			authStore.setBootstrapSkipped(true);
-			goto(joinDestination);
+			navigateToNext();
 		}
 	}
 
 	function handleCardsEmpty() {
 		// All transmissions completed
-		authStore.setBootstrapSkipped(true);
-		goto(joinDestination);
+		navigateToNext();
 	}
 
 	function handleSkip() {
-		authStore.setBootstrapSkipped(true);
-		goto(joinDestination);
+		navigateToNext();
 	}
 </script>
 

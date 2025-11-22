@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -17,10 +18,16 @@
 
 		try {
 			await authStore.login(username, password);
-			goto('/');
+			const redirect = $page.url.searchParams.get('redirect');
+			goto(redirect || '/');
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Login failed';
 		}
+	}
+
+	function getSignupLink() {
+		const redirect = $page.url.searchParams.get('redirect');
+		return redirect ? `/signup?redirect=${encodeURIComponent(redirect)}` : '/signup';
 	}
 </script>
 
@@ -72,7 +79,7 @@
 
 				<p class="text-sm text-center text-muted-foreground">
 					Don't have an account?
-					<a href="/signup" class="text-primary hover:underline">Sign up</a>
+					<a href={getSignupLink()} class="text-primary hover:underline">Sign up</a>
 				</p>
 			</form>
 		</CardContent>
