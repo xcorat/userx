@@ -386,17 +386,17 @@
 	.skip-button-container {
 		display: flex;
 		justify-content: flex-end;
-		margin-top: 1rem;
-		padding: 0 2rem;
+		margin-top: 40%;
+		padding: 0 0rem;
 	}
 
 	.skip-button {
 		background: rgba(255, 255, 255, 0.1);
 		border: none;
 		color: rgba(255, 255, 255, 0.7);
-		padding: 0.5rem 1.5rem;
-		border-radius: 20px;
-		font-size: 0.9rem;
+		padding: 0.25rem 0.75rem;
+		border-radius: 5px;
+		font-size: 0.7rem;
 		cursor: pointer;
 		transition: all 0.2s ease;
 		backdrop-filter: blur(4px);
