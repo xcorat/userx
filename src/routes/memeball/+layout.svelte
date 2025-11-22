@@ -44,7 +44,8 @@
 	.memeball-layout {
 		/* Ensure the full-screen layout covers the viewport and provides
 		   the background and foreground color without setting body styles */
-		height: 100vh;
+		height: 100%;
+		min-height: 567px;
 		width: 100vw;
 		color: #f8f5ff;
 		 overflow-x: hidden;

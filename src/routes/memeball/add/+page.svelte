@@ -336,7 +336,8 @@
 
 <style>
 	.submit-page {
-		min-height: 100vh;
+		min-height: 467px;
+		height: 100%;
 		padding: 2rem 1rem 4rem;
 		max-width: 800px;
 		margin: 0 auto;

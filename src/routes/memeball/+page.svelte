@@ -30,7 +30,7 @@
 <style>
 	.memeball-shell {
 		min-height: 567px;
-		height: 100vh;
+		height:100%;
 		background: radial-gradient(circle at top, rgba(88, 28, 135, 0.35), transparent 55%),
 			linear-gradient(135deg, #040014 0%, #05011f 50%, #080a29 100%);
 		color: #f8f5ff;

@@ -19,6 +19,6 @@
 	</main>
 </div>
 
-<Toaster richColors position="bottom-right" closeButton toastOptions={{ style: 'opacity: 0.85;' }} />
+<Toaster richColors position="bottom-right" closeButton toastOptions={{ style: 'opacity: 0.75;' }} />
 
  
