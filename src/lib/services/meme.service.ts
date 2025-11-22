@@ -188,6 +188,19 @@ export class MemeService {
 		};
 	}
 
+	/**
+	 * Clear all user interactions (reset swipes)
+	 */
+	async clearUserInteractions(userId: string): Promise<void> {
+		// Validate user exists
+		const user = await this.userRepo.findById(userId);
+		if (!user) {
+			throw new AppError(ErrorCode.NOT_FOUND, 'User not found');
+		}
+
+		await this.memeRepo.deleteUserInteractions(userId);
+	}
+
 	// Private helper methods
 
 	private isValidImageUrl(url: string): boolean {

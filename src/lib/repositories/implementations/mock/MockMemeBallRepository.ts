@@ -203,6 +203,10 @@ export class MockMemeBallRepository implements IMemeBallRepository {
 		return this.interactions.filter(i => i.userId === userId);
 	}
 
+	async deleteUserInteractions(userId: string): Promise<void> {
+		this.interactions = this.interactions.filter(i => i.userId !== userId);
+	}
+
 	async getMemeStats(memeId: string): Promise<{ totalPicks: number; totalRejects: number }> {
 		const memeInteractions = this.interactions.filter(i => i.memeId === memeId);
 		

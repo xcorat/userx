@@ -39,3 +39,22 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'Failed to create interaction' }, { status: 500 });
 	}
 };
+
+// DELETE /api/memes/interactions - deleteUserInteractions()
+export const DELETE: RequestHandler = async ({ url }) => {
+	try {
+		const userId = url.searchParams.get('userId');
+		
+		if (!userId) {
+			return json({ error: 'userId required' }, { status: 400 });
+		}
+		
+		const memeRepo = ServerRepositoryFactory.getMemeRepository();
+		await memeRepo.deleteUserInteractions(userId);
+		
+		return json({ success: true });
+	} catch (error) {
+		console.error('Error deleting interactions:', error);
+		return json({ error: 'Failed to delete interactions' }, { status: 500 });
+	}
+};

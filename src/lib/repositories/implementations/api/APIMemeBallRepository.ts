@@ -114,6 +114,13 @@ export class APIMemeBallRepository implements IMemeBallRepository {
 		return interactions.map(i => this.parseInteraction(i));
 	}
 
+	async deleteUserInteractions(userId: string): Promise<void> {
+		const response = await fetch(`${API_BASE}/memes/interactions?userId=${encodeURIComponent(userId)}`, {
+			method: 'DELETE'
+		});
+		await this.handleResponse<void>(response);
+	}
+
 	async getMemeStats(memeId: string): Promise<{ totalPicks: number; totalRejects: number }> {
 		const response = await fetch(`${API_BASE}/memes/${encodeURIComponent(memeId)}/stats`);
 		return this.handleResponse<{ totalPicks: number; totalRejects: number }>(response);

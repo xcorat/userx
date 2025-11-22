@@ -283,6 +283,35 @@ class MemeStore {
 	}
 
 	/**
+	 * Clear all user swipe interactions
+	 */
+	async clearSwipes() {
+		if (!authStore.currentUser) {
+			this.error = 'Must be logged in to clear swipes';
+			return;
+		}
+
+		this.isLoading = true;
+		this.error = null;
+
+		try {
+			const memeService = DIContainer.getMemeService();
+			await memeService.clearUserInteractions(authStore.currentUser.id);
+
+			// Reload memes and stats after clearing
+			await Promise.all([
+				this.loadAvailableMemes(),
+				this.loadUserStats()
+			]);
+		} catch (e) {
+			this.error = e instanceof Error ? e.message : 'Failed to clear swipes';
+			throw e;
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	/**
 	 * Initialize store (load initial data)
 	 */
 	async initialize() {

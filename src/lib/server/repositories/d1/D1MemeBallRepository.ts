@@ -177,6 +177,10 @@ export class D1MemeBallRepository implements IMemeBallRepository {
 		return rows.map((row: any) => this.mapRowToInteraction(row));
 	}
 
+	async deleteUserInteractions(userId: string): Promise<void> {
+		await this.db.prepare('DELETE FROM meme_interactions WHERE user_id = ?').bind(userId).run();
+	}
+
 	async getMemeStats(memeId: string): Promise<{ totalPicks: number; totalRejects: number }> {
 		const row = await this.db.prepare(`
 			SELECT 

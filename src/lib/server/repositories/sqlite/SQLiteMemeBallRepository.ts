@@ -193,6 +193,11 @@ export class SQLiteMemeBallRepository implements IMemeBallRepository {
 		return rows.map((row) => this.mapRowToInteraction(row));
 	}
 
+	async deleteUserInteractions(userId: string): Promise<void> {
+		const stmt = this.db.prepare('DELETE FROM meme_interactions WHERE user_id = ?');
+		stmt.run(userId);
+	}
+
 	async getMemeStats(memeId: string): Promise<{ totalPicks: number; totalRejects: number }> {
 		const stmt = this.db.prepare(`
 			SELECT 

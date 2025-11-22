@@ -6,7 +6,7 @@
 	import { memeStore } from '$lib/stores/meme.store.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Plus, RefreshCw, Heart, X } from 'lucide-svelte';
+	import { Plus, RefreshCw, Heart, X, RotateCcw } from 'lucide-svelte';
 	import RightToolbar from '$lib/components/features/right-toolbar/RightToolbar.svelte';
 	import { toast } from 'svelte-sonner';
 	import type { MemeWithStats } from '$lib/models/meme.model';
@@ -75,7 +75,6 @@
 
 		try {
 			await memeStore.pickMeme(meme.id);
-			toast.success('Meme picked! 💖');
 			
 			// Check if we need to load more memes
 			if (memeStore.availableMemes.length < 5) {
@@ -118,6 +117,17 @@
 		} catch (error) {
 			console.error('Failed to refresh memes:', error);
 			toast.error('Failed to refresh memes.');
+		}
+	}
+
+	// Reset swipes
+	async function resetSwipes() {
+		try {
+			await memeStore.clearSwipes();
+			toast.success('Swipes reset! All memes are available again.');
+		} catch (error) {
+			console.error('Failed to reset swipes:', error);
+			toast.error('Failed to reset swipes.');
 		}
 	}
 
@@ -168,6 +178,10 @@
 				<Button onclick={refreshMemes} variant="outline" class="refresh-btn">
 					<RefreshCw size={16} />
 					Check for Updates
+				</Button>
+				<Button onclick={resetSwipes} variant="outline" class="refresh-btn">
+					<RotateCcw size={16} />
+					Reset Swipes
 				</Button>
 			</div>
 		</div>

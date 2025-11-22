@@ -27,6 +27,7 @@ export interface IMemeBallRepository {
 	findUserInteraction(userId: string, memeId: string): Promise<MemeInteraction | null>;
 	createInteraction(data: CreateMemeInteractionDTO): Promise<MemeInteraction>;
 	findUserInteractions(userId: string): Promise<MemeInteraction[]>;
+	deleteUserInteractions(userId: string): Promise<void>;
 	
 	// Meme statistics and rankings
 	getMemeStats(memeId: string): Promise<{ totalPicks: number; totalRejects: number }>;
