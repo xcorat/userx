@@ -20,10 +20,7 @@
 	<div class="w-full max-w-4xl space-y-8 text-center">
 		<!-- Hero Section -->
 		<div class="space-y-4">
-			<h1 class="text-5xl font-bold tracking-tight">Welcome Back!</h1>
-			<p class="text-xl text-muted-foreground">
-				Choose your experience
-			</p>
+			<h1 class="text-3xl font-bold tracking-tight">Welcome Back!</h1>
 		</div>
 
 		<!-- App Selection Cards -->

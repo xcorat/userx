@@ -23,8 +23,8 @@ const generateSeedSQL = (): string => {
         
 		// Use public_key and match the schema
 		statements.push(
-			`INSERT INTO users (public_key, username, name, email, avatar_url, created_at, updated_at) ` +
-			`VALUES ('${user.publicKey}', '${user.username}', '${escapedName}', '${escapedEmail}', ${escapedAvatar}, '${user.createdAt.toISOString()}', '${user.createdAt.toISOString()}');`
+			`INSERT INTO users (public_key, username, name, email, avatar_url, birthdate, location, timezone, created_at, updated_at) ` +
+			`VALUES ('${user.publicKey}', '${user.username}', '${escapedName}', '${escapedEmail}', ${escapedAvatar}, NULL, NULL, NULL, '${user.createdAt.toISOString()}', '${user.createdAt.toISOString()}');`
 		);
 
 		// If we have an encrypted private key for this test user, insert it into user_keypairs

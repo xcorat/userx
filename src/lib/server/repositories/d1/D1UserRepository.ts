@@ -111,7 +111,7 @@ export class D1UserRepository implements IUserRepository {
 		// Insert into users table
 		await this.db.prepare(`
 			INSERT INTO users (public_key, username, name, email, avatar_url, birthdate, location, timezone, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`).bind(
 			data.publicKey,
 			username,

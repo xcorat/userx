@@ -14,7 +14,7 @@
 	
 	function handleLogout() {
 		authStore.logout();
-		goto('/login');
+		goto('/');
 	}
 	
 	function goToProfile() {

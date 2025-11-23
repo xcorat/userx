@@ -21,7 +21,16 @@ export const load = async ({ url }: { url: URL }) => {
 
 		// Public paths list (root paths). Subpaths are allowed if they match a public root.
 		// For example, '/tests' should cover '/tests/credentials' too.
-		const publicPaths = ['/welcome', '/login', '/signup', '/tests', '/about', '/memeball/transmission', '/qna/onboarding'];
+		const publicPaths = [
+			'/welcome',
+			'/login',
+			'/signup',
+			'/tests',
+			'/about',
+			'/memeball/transmission',
+			'/qna/onboarding',
+			'/'
+		];
 		const isPublicPath = publicPaths.some(
 			(p) => url.pathname === p || url.pathname.startsWith(`${p}/`)
 		);
