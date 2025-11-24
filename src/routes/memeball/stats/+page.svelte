@@ -1,4 +1,4 @@
-<!-- Meme Stats Page - Display all memes with their accepted/rejected ratios -->
+<!-- Meme Stats Page - Display all memes sorted by acceptance ratio -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { MemeWithStats } from '$lib/models/meme.model';
@@ -45,7 +45,7 @@
 			
 			// Sort by acceptance ratio (descending)
 			if (ratioA !== ratioB) {
-				return ratioB - ratioA;
+				return (ratioB as number) - (ratioA as number);
 			}
 			
 			// Tiebreaker: more total responses = higher rank
@@ -202,7 +202,8 @@
 		inset: 0;
 		overflow-x: hidden;
 		overflow-y: auto;
-		padding: var(--memeball-space-2xl);
+		/* Added significant padding to avoid header overlap */
+		padding: calc(var(--memeball-space-4xl) * 2) var(--memeball-space-2xl) var(--memeball-space-2xl);
 		color: var(--memeball-foreground);
 	}
 
@@ -491,7 +492,7 @@
 	/* Mobile responsiveness */
 	@media (max-width: 640px) {
 		.stats-page {
-			padding: var(--memeball-space-lg);
+			padding: var(--memeball-space-4xl) var(--memeball-space-lg) var(--memeball-space-lg);
 		}
 
 		.stats-grid {
@@ -504,4 +505,3 @@
 		}
 	}
 </style>
-

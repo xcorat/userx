@@ -191,28 +191,31 @@
 		const ratio = acceptanceRatio;
 
 		// Red gradient for low acceptance (0.0 - 0.3)
-		if (ratio < 0.3) {
-			const intensity = ratio / 0.3; // 0 to 1
+		if (ratio < 0.33) {
+			const intensity = ratio / 0.33; // 0 to 1
 			const alpha1 = 0.3 + (0.1 * intensity); // 0.3 to 0.4
 			const alpha2 = 0.28 + (0.08 * intensity); // 0.28 to 0.36
 			const shadowAlpha = 0.4 + (0.08 * intensity); // 0.4 to 0.48
+			// Red danger color
 			return `background: linear-gradient(135deg, rgba(239,68,68,${alpha1}), rgba(220,38,38,${alpha2})); box-shadow: 0 6px 16px rgba(239,68,68,${shadowAlpha});`;
 		}
 
-		// Yellow/Orange gradient for medium acceptance (0.3 - 0.7)
-		if (ratio < 0.7) {
-			const normalized = (ratio - 0.3) / 0.4; // 0 to 1 within this range
+		// Yellow/Orange gradient for medium acceptance (0.33 - 0.66)
+		if (ratio < 0.66) {
+			const normalized = (ratio - 0.33) / 0.33; // 0 to 1 within this range
 			const alpha1 = 0.3 + (0.1 * normalized); // 0.3 to 0.4
 			const alpha2 = 0.28 + (0.08 * normalized); // 0.28 to 0.36
 			const shadowAlpha = 0.4 + (0.08 * normalized); // 0.4 to 0.48
+			// Yellow warning/neutral color
 			return `background: linear-gradient(135deg, rgba(251,191,36,${alpha1}), rgba(245,158,11,${alpha2})); box-shadow: 0 6px 16px rgba(251,191,36,${shadowAlpha});`;
 		}
 
-		// Green gradient for high acceptance (0.7 - 1.0)
-		const normalized = (ratio - 0.7) / 0.3; // 0 to 1 within this range
+		// Green gradient for high acceptance (0.66 - 1.0)
+		const normalized = (ratio - 0.66) / 0.34; // 0 to 1 within this range
 		const alpha1 = 0.3 + (0.1 * normalized); // 0.3 to 0.4
 		const alpha2 = 0.28 + (0.08 * normalized); // 0.28 to 0.36
 		const shadowAlpha = 0.4 + (0.08 * normalized); // 0.4 to 0.48
+		// Green primary/success color
 		return `background: linear-gradient(135deg, rgba(74,222,128,${alpha1}), rgba(34,197,94,${alpha2})); box-shadow: 0 6px 16px rgba(74,222,128,${shadowAlpha});`;
 	}
 
@@ -323,7 +326,16 @@
 	{#if isInitialized && !memeStore.error}
 		<RightToolbar
 			items={[
-				{ id: 'stats', icon: BarChart, handler: goToStats, ariaLabel: 'View stats', title: 'View stats', style: getStatsButtonColor() },
+				{ 
+					id: 'stats', 
+					icon: BarChart, 
+					handler: goToStats, 
+					ariaLabel: 'View stats', 
+					title: 'View stats', 
+					// Only pass style if we have a color to show, otherwise let it use default neutral via color prop
+					style: acceptanceRatio !== null ? getStatsButtonColor() : undefined,
+					color: acceptanceRatio === null ? 'neutral' : undefined
+				},
 				{ id: 'new', icon: Plus, handler: goToAddMeme, ariaLabel: 'Submit new meme', title: 'Submit new meme', color: 'primary' },
 				{ id: 'refresh', icon: RefreshCw, handler: refreshMemes, ariaLabel: 'Refresh memes', title: 'Refresh memes', color: 'neutral' },
 			]}

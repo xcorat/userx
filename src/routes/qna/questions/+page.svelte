@@ -9,6 +9,7 @@
 	import { Plus, ChevronLeft, ChevronRight } from 'lucide-svelte';
 
 	let sortValue = $state<SortOption>('newest');
+	let cardNodes = $state<HTMLElement[]>([]);
 
 	onMount(() => {
 		questionsStore.loadQuestions('newest', 1);
@@ -24,10 +25,25 @@
 
 	async function handlePreviousPage() {
 		await questionsStore.previousPage();
+		// Reset card nodes when page changes
+		cardNodes = [];
 	}
 
 	async function handleNextPage() {
 		await questionsStore.nextPage();
+		// Reset card nodes when page changes
+		cardNodes = [];
+	}
+
+	function getNextCardRef(index: number): HTMLElement | null {
+		const unansweredQuestions = questionsStore.questions.filter(q => !q.userAnswered);
+		// Only return next card ref if there's a next question and the node exists
+		if (index < unansweredQuestions.length - 1) {
+			const nextIndex = index + 1;
+			// Use a small delay to ensure the node is bound before accessing
+			return cardNodes[nextIndex] || null;
+		}
+		return null;
 	}
 </script>
 
@@ -49,8 +65,16 @@
 			<p class="text-center text-muted-foreground">No unanswered questions</p>
 		{:else}
 			<div class="grid gap-6 md:grid-cols-2">
-				{#each unansweredQuestions as question (question.id)}
-					<QuestionCardAdapter {question} onAnswer={handleAnswer} onSkip={()=>{}} />
+				{#each unansweredQuestions as question, index (question.id)}
+					<div bind:this={cardNodes[index]}>
+						<QuestionCardAdapter 
+							{question} 
+							onAnswer={handleAnswer} 
+							onSkip={()=>{}} 
+							nextCardRef={getNextCardRef(index)}
+							normalizedPosition={0}
+						/>
+					</div>
 				{/each}
 			</div>
 
