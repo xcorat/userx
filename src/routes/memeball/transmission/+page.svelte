@@ -25,13 +25,13 @@
 		{
 			id: '002',
 			title: '',
-			body: 'EVERY SECOND THIS SCREEN EMITS,\n\nTHOUSANDS OF SOULS PERISH...',
+			body: 'EVERY SECOND THIS SCREEN STAYS ON,\n\nA THOUSAND SOULS PERISH...',
 			answers: ['Sorry!', 'Too Bad!'] as [string, string]
 		},
 		{
 			id: '003',
 			title: '',
-			body: 'RIVERS OF ELECTRONS CHARGING THROUGH COMMUNITIES,\n\nRIPPING APART GALAXIES!\n\nDO YOU FEEL RESPONSIBLE?',
+			body: '... RIVERS OF ELECTRONS CHARGES THROUGH GALAXIES,\n\nRIPPING APART COMMUNITIES!\n\nTURN OFF YOUR DEVICE!',
 			answers: ['Yes', 'No'] as [string, string]
 		},
 		{
@@ -40,8 +40,8 @@
 			body: '',
 			messages: [
 				'You will bear the witness to the end of a civilization that has lost its ways.',
-				'You will help humanity select last of its memories to save.',
-				'Add your choices of memes to the mix, and each day one will be selected for Pandora\'s collection.',
+				'But you can help humanity select the last of its memories to save.',
+				'Swipe! Left to reject, right to vote for memes that you want to save to the mix, and each day one will be selected for Pandora\'s collection.',
 				'You can create one yourself, limited to one per day.'
 			],
 			answers: ['Exit', 'Join'] as [string, string]
@@ -51,6 +51,7 @@
 	let swipeCardStack = $state<any>(null);
 	let showExitNotice = $state(false);
 	let showHints = $state(false);
+	let showExitDialog = $state(false);
 
 	function attemptShutdown() {
 		if (typeof window === 'undefined') {
@@ -58,8 +59,17 @@
 			return;
 		}
 
-		showExitNotice = false;
+		// Show dialog instead of immediately closing
+		showExitDialog = true;
+	}
 
+	function handleClose() {
+		showExitDialog = false;
+		if (typeof window === 'undefined') {
+			return;
+		}
+
+		// Attempt to close the window/tab
 		const tempWindow = window.open('', '_self');
 		tempWindow?.close();
 
@@ -70,6 +80,11 @@
 				goto('/');
 			}
 		}, 150);
+	}
+
+	function handleContinue() {
+		showExitDialog = false;
+		goto('/memeball/main');
 	}
 
 	function handleSwipeLeft(transmission: Transmission) {
@@ -146,16 +161,22 @@
                             <Card.Footer class="transmission-footer">
                                 {#if transmission.answers}
                                     <div class="transmission-answers">
-                                        {#each transmission.answers as answer, i}
-                                            <button
-                                                class="answer-button"
-                                                data-no-drag
-                                                aria-label={i === 0 ? `Reject — ${answer}` : `Accept — ${answer}`}
-                                                onclick={() => (i === 0 ? swipeCardStack?.swipeLeft() : swipeCardStack?.swipeRight())}
-                                            >
-                                                {answer}
-                                            </button>
-                                        {/each}
+                                        <button
+                                            class="answer-button"
+                                            data-no-drag
+                                            aria-label={`Reject — ${transmission.answers[0]}`}
+                                            onclick={() => swipeCardStack?.swipeLeft()}
+                                        >
+                                            ← {transmission.answers[0]}
+                                        </button>
+                                        <button
+                                            class="answer-button"
+                                            data-no-drag
+                                            aria-label={`Accept — ${transmission.answers[1]}`}
+                                            onclick={() => swipeCardStack?.swipeRight()}
+                                        >
+                                            {transmission.answers[1]} →
+                                        </button>
                                     </div>
                                 {/if}
                                 {#if transmission.footer}
@@ -188,6 +209,44 @@
 		</section>
 
 	</div>
+
+	<!-- Exit Dialog -->
+	{#if showExitDialog}
+		<div 
+			class="exit-dialog-overlay" 
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="exit-dialog-title"
+			tabindex="-1"
+			onclick={(e) => e.target === e.currentTarget && (showExitDialog = false)}
+			onkeydown={(e) => e.key === 'Escape' && (showExitDialog = false)}
+		>
+			<div class="exit-dialog">
+				<div class="exit-dialog-content">
+					<h2 id="exit-dialog-title" class="exit-dialog-title">Thank You!</h2>
+					<div class="exit-dialog-message">
+						<p class="exit-dialog-line">
+							If this was a phone app, it would close the app (<i class="exit-dialog-italic">or ask to turn the phone off</i>).
+						</p>
+						<p class="exit-dialog-line exit-dialog-thanks">
+							Thanks for testing this prototype.
+						</p>
+						<p class="exit-dialog-line exit-dialog-question">
+							Continue to the app or close?
+						</p>
+					</div>
+					<div class="exit-dialog-buttons">
+						<button class="exit-dialog-button exit-dialog-button-close" onclick={handleClose}>
+							Close
+						</button>
+						<button class="exit-dialog-button exit-dialog-button-continue" onclick={handleContinue}>
+							Continue
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -405,6 +464,140 @@
 	.skip-icon {
 		width: 1rem;
 		height: 1rem;
+	}
+
+	.exit-dialog-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: var(--memeball-z-fixed, 9999);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(0, 0, 0, 0.7);
+		backdrop-filter: var(--memeball-backdrop-blur-lg, blur(20px));
+	}
+
+	.exit-dialog {
+		position: relative;
+		width: 90%;
+		max-width: 520px;
+		padding: var(--memeball-space-4xl) var(--memeball-space-2xl);
+		border-radius: var(--memeball-radius-2xl);
+		background: var(--memeball-card-background);
+		border: 1px solid var(--memeball-card-border);
+		box-shadow: var(--memeball-shadow-xl);
+		backdrop-filter: var(--memeball-backdrop-blur-lg);
+		animation: exit-dialog-fade-in 0.2s ease-out;
+	}
+
+	@keyframes exit-dialog-fade-in {
+		from {
+			opacity: 0;
+			transform: scale(0.95) translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1) translateY(0);
+		}
+	}
+
+	.exit-dialog-content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--memeball-space-3xl);
+		color: var(--memeball-card-foreground);
+	}
+
+	.exit-dialog-title {
+		font-size: var(--memeball-text-xl);
+		font-weight: var(--memeball-font-semibold, 600);
+		color: var(--memeball-foreground);
+		text-align: center;
+		margin: 0;
+		letter-spacing: var(--memeball-tracking-wide);
+		text-transform: uppercase;
+	}
+
+	.exit-dialog-message {
+		display: flex;
+		flex-direction: column;
+		gap: var(--memeball-space-lg);
+		text-align: center;
+		margin: 0;
+	}
+
+	.exit-dialog-line {
+		font-size: var(--memeball-text-base);
+		line-height: var(--memeball-leading-relaxed);
+		color: var(--memeball-foreground);
+		opacity: 0.9;
+		margin: 0;
+	}
+
+	.exit-dialog-italic {
+		font-style: italic;
+		opacity: 0.8;
+	}
+
+	.exit-dialog-thanks {
+		font-size: var(--memeball-text-lg);
+		color: var(--memeball-foreground);
+		opacity: 0.95;
+		font-weight: var(--memeball-font-medium, 500);
+		margin-top: var(--memeball-space-sm);
+	}
+
+	.exit-dialog-question {
+		font-size: var(--memeball-text-base);
+		color: var(--memeball-foreground);
+		opacity: 0.85;
+		margin-top: var(--memeball-space-xs);
+	}
+
+	.exit-dialog-buttons {
+		display: flex;
+		justify-content: center;
+		gap: var(--memeball-space-lg);
+		flex-wrap: wrap;
+	}
+
+	.exit-dialog-button {
+		padding: var(--memeball-space-md) var(--memeball-space-2xl);
+		border-radius: var(--memeball-radius-lg);
+		font-size: var(--memeball-text-base);
+		cursor: pointer;
+		transition: all var(--memeball-duration-normal) var(--memeball-ease);
+		letter-spacing: var(--memeball-tracking-wide);
+		border: 1px solid;
+		font-weight: var(--memeball-font-medium, 500);
+	}
+
+	.exit-dialog-button-close {
+		background: rgba(248, 113, 113, 0.2);
+		border-color: rgba(248, 113, 113, 0.4);
+		color: var(--memeball-foreground);
+	}
+
+	.exit-dialog-button-close:hover {
+		background: rgba(248, 113, 113, 0.3);
+		border-color: rgba(248, 113, 113, 0.6);
+		transform: translateY(-2px);
+	}
+
+	.exit-dialog-button-continue {
+		background: rgba(99, 102, 241, 0.2);
+		border-color: rgba(99, 102, 241, 0.4);
+		color: var(--memeball-foreground);
+	}
+
+	.exit-dialog-button-continue:hover {
+		background: rgba(99, 102, 241, 0.3);
+		border-color: rgba(99, 102, 241, 0.6);
+		transform: translateY(-2px);
+	}
+
+	.exit-dialog-button:active {
+		transform: translateY(0);
 	}
 
 	@media (max-width: 640px) {

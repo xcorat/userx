@@ -6,13 +6,15 @@
 	import { memeStore } from '$lib/stores/meme.store.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Plus, RefreshCw, Heart, X, RotateCcw } from 'lucide-svelte';
+	import { Plus, RefreshCw, Heart, X, RotateCcw, BarChart } from 'lucide-svelte';
 	import RightToolbar from '$lib/components/features/right-toolbar/RightToolbar.svelte';
 	import { toast } from 'svelte-sonner';
 	import type { MemeWithStats } from '$lib/models/meme.model';
 
 	let isInitialized = $state(false);
 	let swipeCardStack = $state<any>(null);
+	let statsData = $state<MemeWithStats[]>([]);
+	let acceptanceRatio = $state<number | null>(null);
 
 	onMount(async () => {
 		// Ensure user is authenticated
@@ -29,6 +31,9 @@
 			if (memeStore.availableMemes.length > 0) {
 				toast.success('Welcome to Memeball! Swipe or use buttons to interact with memes.');
 			}
+
+			// Fetch stats for the stats button
+			await loadStats();
 		} catch (error) {
 			console.error('Failed to initialize meme store:', error);
 			toast.error('Failed to load memes. Please try again.');
@@ -60,6 +65,9 @@
 			await memeStore.rejectMeme(meme.id);
 			toast.info('Meme rejected');
 			
+			// Refresh stats to update button color
+			await loadStats();
+			
 			// Check if we need to load more memes
 			if (memeStore.availableMemes.length < 5) {
 				loadMoreMemes();
@@ -75,6 +83,9 @@
 
 		try {
 			await memeStore.pickMeme(meme.id);
+			
+			// Refresh stats to update button color
+			await loadStats();
 			
 			// Check if we need to load more memes
 			if (memeStore.availableMemes.length < 5) {
@@ -135,6 +146,79 @@
 	function handleCardsEmpty() {
 		toast.info('No more memes! Loading more...');
 		loadMoreMemes();
+	}
+
+	// Load stats data
+	async function loadStats() {
+		try {
+			const response = await fetch('/api/memes/stats');
+			if (response.ok) {
+				const data = await response.json();
+				statsData = data;
+				calculateAcceptanceRatio();
+			}
+		} catch (error) {
+			console.error('Failed to load stats:', error);
+		}
+	}
+
+	// Calculate overall acceptance ratio
+	function calculateAcceptanceRatio() {
+		if (statsData.length === 0) {
+			acceptanceRatio = null;
+			return;
+		}
+
+		const totalPicks = statsData.reduce((sum, meme) => sum + meme.totalPicks, 0);
+		const totalRejects = statsData.reduce((sum, meme) => sum + meme.totalRejects, 0);
+		const total = totalPicks + totalRejects;
+
+		if (total === 0) {
+			acceptanceRatio = null;
+			return;
+		}
+
+		acceptanceRatio = totalPicks / total;
+	}
+
+	// Map acceptance ratio to color gradient
+	function getStatsButtonColor(): string {
+		if (acceptanceRatio === null) {
+			// Default neutral color when no stats
+			return 'background: rgba(255,255,255,0.4); box-shadow: 0 6px 16px rgba(0,0,0,0.48);';
+		}
+
+		const ratio = acceptanceRatio;
+
+		// Red gradient for low acceptance (0.0 - 0.3)
+		if (ratio < 0.3) {
+			const intensity = ratio / 0.3; // 0 to 1
+			const alpha1 = 0.3 + (0.1 * intensity); // 0.3 to 0.4
+			const alpha2 = 0.28 + (0.08 * intensity); // 0.28 to 0.36
+			const shadowAlpha = 0.4 + (0.08 * intensity); // 0.4 to 0.48
+			return `background: linear-gradient(135deg, rgba(239,68,68,${alpha1}), rgba(220,38,38,${alpha2})); box-shadow: 0 6px 16px rgba(239,68,68,${shadowAlpha});`;
+		}
+
+		// Yellow/Orange gradient for medium acceptance (0.3 - 0.7)
+		if (ratio < 0.7) {
+			const normalized = (ratio - 0.3) / 0.4; // 0 to 1 within this range
+			const alpha1 = 0.3 + (0.1 * normalized); // 0.3 to 0.4
+			const alpha2 = 0.28 + (0.08 * normalized); // 0.28 to 0.36
+			const shadowAlpha = 0.4 + (0.08 * normalized); // 0.4 to 0.48
+			return `background: linear-gradient(135deg, rgba(251,191,36,${alpha1}), rgba(245,158,11,${alpha2})); box-shadow: 0 6px 16px rgba(251,191,36,${shadowAlpha});`;
+		}
+
+		// Green gradient for high acceptance (0.7 - 1.0)
+		const normalized = (ratio - 0.7) / 0.3; // 0 to 1 within this range
+		const alpha1 = 0.3 + (0.1 * normalized); // 0.3 to 0.4
+		const alpha2 = 0.28 + (0.08 * normalized); // 0.28 to 0.36
+		const shadowAlpha = 0.4 + (0.08 * normalized); // 0.4 to 0.48
+		return `background: linear-gradient(135deg, rgba(74,222,128,${alpha1}), rgba(34,197,94,${alpha2})); box-shadow: 0 6px 16px rgba(74,222,128,${shadowAlpha});`;
+	}
+
+	// Navigate to stats page
+	function goToStats() {
+		goto('/memeball/stats');
 	}
 </script>
 
@@ -239,6 +323,7 @@
 	{#if isInitialized && !memeStore.error}
 		<RightToolbar
 			items={[
+				{ id: 'stats', icon: BarChart, handler: goToStats, ariaLabel: 'View stats', title: 'View stats', style: getStatsButtonColor() },
 				{ id: 'new', icon: Plus, handler: goToAddMeme, ariaLabel: 'Submit new meme', title: 'Submit new meme', color: 'primary' },
 				{ id: 'refresh', icon: RefreshCw, handler: refreshMemes, ariaLabel: 'Refresh memes', title: 'Refresh memes', color: 'neutral' },
 			]}

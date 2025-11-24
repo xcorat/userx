@@ -120,6 +120,22 @@ export class D1MemeBallRepository implements IMemeBallRepository {
 		return rows.map((row: any) => this.mapRowToMeme(row));
 	}
 
+	async findAllWithStats(): Promise<MemeWithStats[]> {
+		const { results: rows } = await this.db.prepare(`
+			SELECT m.id, m.content_hash as contentHash, m.image_url as imageUrl, m.alt_text as altText,
+			       m.submitted_by as submittedBy, m.submitted_at as submittedAt,
+			       m.width, m.height, m.is_animated as isAnimated, m.frame_count as frameCount,
+			       COALESCE(SUM(CASE WHEN mi.interaction_type = 'pick' THEN 1 ELSE 0 END), 0) as totalPicks,
+			       COALESCE(SUM(CASE WHEN mi.interaction_type = 'reject' THEN 1 ELSE 0 END), 0) as totalRejects
+			FROM memes m
+			LEFT JOIN meme_interactions mi ON m.id = mi.meme_id
+			GROUP BY m.id
+			ORDER BY m.submitted_at DESC
+		`).all();
+
+		return rows.map((row: any) => this.mapRowToMemeWithStats(row));
+	}
+
 	async findTodaysSubmissions(): Promise<Meme[]> {
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
