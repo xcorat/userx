@@ -7,11 +7,14 @@
 	import QuestionCardAdapter from '$lib/components/features/questions/QuestionCardAdapter.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Plus, ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { getHiddenQuestionIds, hideQuestion, isQuestionHidden } from '$lib/utils/hidden-questions';
 
 	let sortValue = $state<SortOption>('newest');
 	let cardNodes = $state<HTMLElement[]>([]);
+	let hiddenQuestions = $state<string[]>([]);
 
 	onMount(() => {
+		hiddenQuestions = getHiddenQuestionIds();
 		questionsStore.loadQuestions('newest', 1);
 	});
 
@@ -36,7 +39,7 @@
 	}
 
 	function getNextCardRef(index: number): HTMLElement | null {
-		const unansweredQuestions = questionsStore.questions.filter(q => !q.userAnswered);
+		const unansweredQuestions = questionsStore.questions.filter(q => !q.userAnswered && !hiddenQuestions.includes(q.id));
 		// Only return next card ref if there's a next question and the node exists
 		if (index < unansweredQuestions.length - 1) {
 			const nextIndex = index + 1;
@@ -44,6 +47,11 @@
 			return cardNodes[nextIndex] || null;
 		}
 		return null;
+	}
+
+	function handleHide(questionId: string) {
+		hideQuestion(questionId);
+		hiddenQuestions = getHiddenQuestionIds();
 	}
 </script>
 
@@ -60,17 +68,17 @@
 	{:else if questionsStore.error}
 		<p class="text-center text-destructive">{questionsStore.error}</p>
 	{:else}
-		{@const unansweredQuestions = questionsStore.questions.filter(q => !q.userAnswered)}
+		{@const unansweredQuestions = questionsStore.questions.filter(q => !q.userAnswered && !hiddenQuestions.includes(q.id))}
 		{#if unansweredQuestions.length === 0}
 			<p class="text-center text-muted-foreground">No unanswered questions</p>
 		{:else}
-			<div class="grid gap-6 md:grid-cols-2">
+			<div class="grid gap-6 md:grid-cols-2 scroll-container">
 				{#each unansweredQuestions as question, index (question.id)}
-					<div bind:this={cardNodes[index]}>
+					<div bind:this={cardNodes[index]} class="snap-item">
 						<QuestionCardAdapter 
 							{question} 
 							onAnswer={handleAnswer} 
-							onSkip={()=>{}} 
+							onSkip={() => handleHide(question.id)} 
 							nextCardRef={getNextCardRef(index)}
 							normalizedPosition={0}
 						/>
@@ -114,3 +122,20 @@
 		{/if}
 	{/if}
 </div>
+
+<style>
+	/* Scroll snapping for mobile/single column view */
+	@media (max-width: 767px) {
+		.scroll-container {
+			scroll-snap-type: y mandatory;
+			max-height: calc(100vh - 120px); /* Adjust based on header/nav height */
+			overflow-y: auto;
+			padding-bottom: 2rem; /* Bottom padding for last item */
+		}
+
+		.snap-item {
+			scroll-snap-align: center;
+			scroll-margin-top: 1rem;
+		}
+	}
+</style>

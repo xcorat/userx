@@ -5,9 +5,9 @@ export function clamp(val: number, min = -1, max = 1): number {
 export function mapNormalizedToTransform(normalizedPosition: number) {
   const pos = clamp(normalizedPosition, -1, 1);
   // tuning constants
-  const ROT_MAX = 18; // degrees
-  const SCALE_MAX = 0.06;
-  const TY = 50; // px
+  const ROT_MAX = 8; // degrees (reduced from 18 for lighter effect)
+  const SCALE_MAX = 0.04; // slightly reduced scale effect
+  const TY = 40; // px (reduced from 50)
   const opacityFactor = 0.2;
 
   const rotateX = pos * ROT_MAX;

@@ -1,36 +1,49 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-    import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '$lib/components/ui/card';
+  import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '$lib/components/ui/card';
   import { RadioGroup, RadioGroupItem } from '$lib/components/ui/radio-group';
   import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge';
   import { Check } from 'lucide-svelte';
   
-  
-import type { QuestionData } from './types';
+  import type { QuestionData } from './types';
+
+  interface Props {
+    question: QuestionData;
+    isAnswered?: boolean;
+    className?: string;
+    onAnswerSelect?: ((answerId: string) => Promise<any>);
+    onSkip?: (() => void);
+  }
 
   // Props
-  export let question: QuestionData;
-  export let isAnswered: boolean = false;
-  export let className: string = '';
-  export let onAnswerSelect: ((answerId: string) => Promise<any>) | undefined = undefined;
-  export let onSkip: (() => void) | undefined = undefined;
+  let { 
+    question, 
+    isAnswered = false, 
+    className = '', 
+    onAnswerSelect = undefined, 
+    onSkip = undefined 
+  }: Props = $props();
 
   const dispatch = createEventDispatcher();
 
-  let selectedChoiceId: string = '';
-  let lastSelected: string = '';
-  let pending = false;
-  let errorMessage: string | null = null;
-  let localAnswered = isAnswered;
-  let announcement = '';
+  let selectedChoiceId: string = $state('');
+  let lastSelected: string = $state('');
+  let pending = $state(false);
+  let errorMessage: string | null = $state(null);
+  let localAnswered = $state(isAnswered);
+  let announcement = $state('');
 
-  $: if (isAnswered !== localAnswered) localAnswered = isAnswered;
+  $effect(() => {
+    if (isAnswered !== localAnswered) localAnswered = isAnswered;
+  });
 
-  $: if (selectedChoiceId && selectedChoiceId !== lastSelected && !pending && !localAnswered) {
-    lastSelected = selectedChoiceId;
-    handleSelect(selectedChoiceId);
-  }
+  $effect(() => {
+    if (selectedChoiceId && selectedChoiceId !== lastSelected && !pending && !localAnswered) {
+      lastSelected = selectedChoiceId;
+      handleSelect(selectedChoiceId);
+    }
+  });
 
   async function handleSelect(choiceId: string) {
     if (localAnswered || pending) return;
@@ -132,7 +145,7 @@ import type { QuestionData } from './types';
       </div>
       <div class="flex items-center gap-2">
         {#if onSkip}
-          <Button variant="outline" size="sm" onclick={handleSkipClick} disabled={pending || localAnswered}>Skip</Button>
+          <Button variant="outline" size="sm" onclick={handleSkipClick} disabled={pending || localAnswered}>Hide</Button>
         {/if}
         {#if pending}
           <span class="text-sm text-muted-foreground">Submitting...</span>
@@ -150,6 +163,9 @@ import type { QuestionData } from './types';
     padding: 0;
     margin: -1px;
     overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;

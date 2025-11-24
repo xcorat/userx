@@ -5,11 +5,21 @@
   import { authStore } from '$lib/stores/auth.store.svelte';
   import { onMount, onDestroy } from 'svelte';
 
-  export let question: QuestionWithStats;
-  export let onAnswer: (data: CreateAnswerDTO) => Promise<void>;
-  export let onSkip: (() => void) | undefined = undefined;
-  export let nextCardRef: HTMLElement | null = null;
-  export let normalizedPosition: number | null = null;
+  interface Props {
+    question: QuestionWithStats;
+    onAnswer: (data: CreateAnswerDTO) => Promise<void>;
+    onSkip?: (() => void);
+    nextCardRef?: HTMLElement | null;
+    normalizedPosition?: number | null;
+  }
+
+  let { 
+    question, 
+    onAnswer, 
+    onSkip = undefined, 
+    nextCardRef = null, 
+    normalizedPosition = null 
+  }: Props = $props();
 
   // Screen size detection - mobile is below md breakpoint (768px)
   let isMobile = $state(false);
@@ -35,21 +45,23 @@
   });
 
   // Map QuestionWithStats -> QuestionData required by card components
-  let mapped: any = {
+  let mapped: any = $state({
     id: question.id,
     title: question.text,
     qcomment: '',
     answers: question.choices.map((c) => ({ id: c.id, text: c.text, stats: undefined })),
     footerLinks: undefined
-  };
+  });
 
-  $: mapped = {
-    id: question.id,
-    title: question.text,
-    qcomment: '',
-    answers: question.choices.map((c) => ({ id: c.id, text: c.text, stats: undefined })),
-    footerLinks: undefined
-  };
+  $effect(() => {
+    mapped = {
+      id: question.id,
+      title: question.text,
+      qcomment: '',
+      answers: question.choices.map((c) => ({ id: c.id, text: c.text, stats: undefined })),
+      footerLinks: undefined
+    };
+  });
 
   async function handleAnswerSelect(answerId: string) {
     if (!authStore.currentUser) throw new Error('Not authenticated');

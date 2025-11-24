@@ -4,25 +4,37 @@
   import { mapNormalizedToTransform } from './animation-utils';
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
 
-  export let question: QuestionData;
-  export let className: string = '';
-  export let normalizedPosition: number | null = null; // [-1..1]
-  export let scrollData: { viewportHeight?: number; cardTop?: number; cardHeight?: number } | null = null;
-  export let isAnswered: boolean = false;
-  export let onAnswerSelect: ((answerId: string) => Promise<any>) | undefined = undefined;
+  interface Props {
+    question: QuestionData;
+    className?: string;
+    normalizedPosition?: number | null; // [-1..1]
+    scrollData?: { viewportHeight?: number; cardTop?: number; cardHeight?: number } | null;
+    isAnswered?: boolean;
+    onAnswerSelect?: ((answerId: string) => Promise<any>);
+    cardNode?: HTMLElement | null;
+  }
+
+  let { 
+    question, 
+    className = '', 
+    normalizedPosition = null, 
+    scrollData = null, 
+    isAnswered = false, 
+    onAnswerSelect = undefined, 
+    cardNode = $bindable(null)
+  }: Props = $props();
 
   const dispatch = createEventDispatcher();
-  export let cardNode: HTMLElement | null = null;
 
-  let targetNormalized: number = normalizedPosition ?? 0;
-  let lastAppliedNormalized: number | null = null;
+  let targetNormalized: number = $state(normalizedPosition ?? 0);
+  let lastAppliedNormalized: number | null = $state(null);
   let rafId: number | undefined;
   let rafScheduled = false;
   let prefersReducedMotion = false;
   let mql: MediaQueryList | null = null;
   let mqlHandler: ((e: MediaQueryListEvent) => void) | null = null;
   let userInteractionHandler: ((e: Event) => void) | null = null;
-  let effectiveNormalized: number = normalizedPosition ?? 0;
+  let effectiveNormalized: number = $state(normalizedPosition ?? 0);
   let scrollListener: ((e: Event) => void) | null = null;
   let resizeListener: ((e: Event) => void) | null = null;
 
@@ -64,7 +76,7 @@
   }
 
   // compute normalized position from scrollData if provided or from node rect otherwise
-  $: {
+  $effect(() => {
     // prefer explicit normalizedPosition, fall back to scrollData if provided, then to node rect
     if (typeof normalizedPosition === 'number') {
       effectiveNormalized = normalizedPosition;
@@ -75,7 +87,7 @@
     }
 
     scheduleUpdate(effectiveNormalized);
-  }
+  });
 
   function computeNormalizedFromScrollData({ viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0, cardTop = 0, cardHeight = 0 } = {}) {
     const centerY = cardTop + cardHeight / 2;

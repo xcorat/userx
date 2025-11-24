@@ -3,17 +3,31 @@
   import type { QuestionData } from './types';
   import { createEventDispatcher, onMount, onDestroy } from 'svelte';
 
-  export let question: QuestionData;
-  export let className: string = '';
-  export let normalizedPosition: number | null = null;
-  export let scrollData: any = null;
-  export let isAnswered: boolean = false;
-  export let onAnswerSelect: ((answerId: string) => Promise<any>) | undefined = undefined;
-  export let nextCardRef: HTMLElement | null = null;
-  export let autoScrollDelay: number = 300; // ms between success and autoscroll
+  interface Props {
+    question: QuestionData;
+    className?: string;
+    normalizedPosition?: number | null;
+    scrollData?: any;
+    isAnswered?: boolean;
+    onAnswerSelect?: ((answerId: string) => Promise<any>);
+    nextCardRef?: HTMLElement | null;
+    autoScrollDelay?: number;
+    cardNode?: HTMLElement | null;
+  }
+
+  let { 
+    question, 
+    className = '', 
+    normalizedPosition = null, 
+    scrollData = null, 
+    isAnswered = false, 
+    onAnswerSelect = undefined, 
+    nextCardRef = null, 
+    autoScrollDelay = 300, 
+    cardNode = $bindable(null)
+  }: Props = $props();
 
   const dispatch = createEventDispatcher();
-  export let cardNode: HTMLElement | null = null;
 
   let pendingAutoScroll: ReturnType<typeof setTimeout> | undefined;
   let pendingComplete: ReturnType<typeof setTimeout> | undefined;
