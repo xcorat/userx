@@ -25,6 +25,17 @@
 		}
 	}
 
+	async function handleTestLogin() {
+		error = '';
+		try {
+			await authStore.login('alicejohnson', 'password');
+			const redirect = $page.url.searchParams.get('redirect');
+			goto(redirect || '/');
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Login failed';
+		}
+	}
+
 	function getSignupLink() {
 		const redirect = $page.url.searchParams.get('redirect');
 		return redirect ? `/signup?redirect=${encodeURIComponent(redirect)}` : '/signup';
@@ -75,6 +86,25 @@
 
 				<Button type="submit" class="w-full" disabled={authStore.isLoading}>
 					{authStore.isLoading ? 'Logging in...' : 'Login'}
+				</Button>
+
+				<div class="relative">
+					<div class="absolute inset-0 flex items-center">
+						<span class="w-full border-t" />
+					</div>
+					<div class="relative flex justify-center text-xs uppercase">
+						<span class="bg-background px-2 text-muted-foreground"> Or continue with </span>
+					</div>
+				</div>
+
+				<Button
+					type="button"
+					variant="outline"
+					class="w-full"
+					onclick={handleTestLogin}
+					disabled={authStore.isLoading}
+				>
+					Login as Alice (Test User)
 				</Button>
 
 				<p class="text-sm text-center text-muted-foreground">
