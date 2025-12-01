@@ -1,0 +1,240 @@
+/**
+ * Startup Earthy Skin
+ * 
+ * A modern, grounded palette with strong but earthy colors and muted backgrounds.
+ * Perfect for value proposition and marketing pages that need to feel
+ * professional, warm, and accessible.
+ * 
+ * Color Philosophy:
+ * - Warm neutral backgrounds (cream, beige)
+ * - Rich earthy accents (brown, terracotta, moss green)
+ * - High contrast for CTAs while maintaining warmth
+ * - Accessibility-first with WCAG AA+ contrast ratios
+ */
+
+/* Import the base token system */
+@import '../memeball-tokens.css';
+@import '../memeball-base.css';
+
+:root {
+  /* ============================================
+     STARTUP EARTHY COLOR PALETTE
+     ============================================ */
+  
+  /* Base Colors - Warm muted backgrounds */
+  --se-background: #f5f2ed;
+  --se-foreground: #2a251f;
+  
+  /* Surface Colors - Slightly darker for cards */
+  --se-surface: #ebe6dd;
+  --se-surface-foreground: #2a251f;
+  --se-surface-hover: #e3ddd2;
+  
+  /* Card Colors - Clean white with warm undertone */
+  --se-card-background: #ffffff;
+  --se-card-foreground: #2a251f;
+  --se-card-border: rgba(122, 90, 52, 0.12);
+  
+  /* Primary Action Colors - Rich brown */
+  --se-primary: #7a5a34;
+  --se-primary-hover: #5d4427;
+  --se-primary-foreground: #ffffff;
+  
+  /* Secondary Colors */
+  --se-secondary: #e3ddd2;
+  --se-secondary-foreground: #2a251f;
+  --se-secondary-2: #8b9d7f; /* Sage - for badges and section dividers */
+  --se-secondary-2-foreground: #ffffff;
+  --se-secondary-3: #6b6d70; /* Slate - for meta text and captions */
+  --se-secondary-3-foreground: #ffffff;
+  
+  /* Accent Colors - Deep moss green */
+  --se-accent: #4b7a56;
+  --se-accent-hover: #3a5f43;
+  --se-accent-foreground: #ffffff;
+  
+  /* Info Colors - Ink/blue-grey for "Learn more" links */
+  --se-info: #4a5568;
+  --se-info-hover: #2d3748;
+  --se-info-foreground: #ffffff;
+  
+  /* Highlight - Terracotta tint for subtle highlights */
+  --se-highlight: #e8a96e;
+  --se-highlight-light: rgba(232, 169, 110, 0.15);
+  --se-highlight-foreground: #2a251f;
+  
+  /* CTA/Highlight - Bright earthy terracotta */
+  --se-cta: #d98b3d;
+  --se-cta-hover: #c47729;
+  --se-cta-foreground: #ffffff;
+  
+  /* Success Colors */
+  --se-success: #4b7a56;
+  --se-success-dark: #3a5f43;
+  --se-success-foreground: #ffffff;
+  
+  /* Warning Colors */
+  --se-warning: #d98b3d;
+  --se-warning-foreground: #ffffff;
+  
+  /* Muted Colors - Mid-tone for secondary text */
+  --se-muted: #a8998a;
+  --se-muted-foreground: #6b6055;
+  
+  /* Border Colors */
+  --se-border: rgba(122, 90, 52, 0.15);
+  --se-border-subtle: rgba(122, 90, 52, 0.08);
+  --se-border-emphasis: rgba(122, 90, 52, 0.25);
+  
+  /* Input Colors */
+  --se-input-background: #ffffff;
+  --se-input-border: rgba(122, 90, 52, 0.2);
+  --se-input-border-focus: #4b7a56;
+  --se-input-foreground: #2a251f;
+  
+  /* Ring/Focus Colors */
+  --se-ring: #4b7a56;
+  
+  /* Alpha/Overlay Colors */
+  --se-overlay: rgba(42, 37, 31, 0.3);
+  --se-overlay-strong: rgba(42, 37, 31, 0.6);
+  
+  /* Semantic Colors with Opacity */
+  --se-error-light: rgba(217, 83, 79, 0.1);
+  --se-error-border: rgba(217, 83, 79, 0.3);
+  --se-error-text: #c14543;
+  
+  --se-success-light: rgba(75, 122, 86, 0.1);
+  --se-success-border: rgba(75, 122, 86, 0.3);
+  
+  --se-warning-light: rgba(217, 139, 61, 0.1);
+  --se-warning-border: rgba(217, 139, 61, 0.3);
+  --se-warning-text: #c47729;
+  
+  /* Badge & Chip Colors */
+  --se-badge-sage: rgba(139, 157, 127, 0.15);
+  --se-badge-sage-foreground: #5a6b4f;
+  --se-badge-slate: rgba(107, 109, 112, 0.12);
+  --se-badge-slate-foreground: #4a4c4f;
+  --se-badge-info: rgba(74, 85, 104, 0.12);
+  --se-badge-info-foreground: #2d3748;
+  
+  /* ============================================
+     STARTUP EARTHY GRADIENTS
+     ============================================ */
+  
+  /* Subtle warm gradient for hero sections */
+  --se-gradient-background: linear-gradient(
+    135deg,
+    #f5f2ed 0%,
+    #ebe6dd 50%,
+    #e3ddd2 100%
+  );
+  
+  /* Card hover gradient */
+  --se-gradient-card-hover: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #fdfcfb 100%
+  );
+  
+  /* Primary button gradient */
+  --se-gradient-primary: linear-gradient(135deg, #7a5a34, #5d4427);
+  
+  /* CTA button gradient */
+  --se-gradient-cta: linear-gradient(135deg, #d98b3d, #c47729);
+  
+  /* Accent gradient */
+  --se-gradient-accent: linear-gradient(135deg, #4b7a56, #3a5f43);
+  
+  /* ============================================
+     STARTUP EARTHY EFFECTS
+     ============================================ */
+  
+  /* Shadows - Soft and warm */
+  --se-shadow-sm: 0 1px 2px rgba(42, 37, 31, 0.08);
+  --se-shadow-md: 0 4px 8px rgba(42, 37, 31, 0.1);
+  --se-shadow-lg: 0 8px 16px rgba(42, 37, 31, 0.12);
+  --se-shadow-xl: 0 16px 32px rgba(42, 37, 31, 0.15);
+  
+  /* Colored Shadows */
+  --se-shadow-primary: 0 4px 12px rgba(122, 90, 52, 0.2);
+  --se-shadow-primary-hover: 0 8px 20px rgba(122, 90, 52, 0.25);
+  --se-shadow-cta: 0 4px 12px rgba(217, 139, 61, 0.25);
+  --se-shadow-cta-hover: 0 8px 20px rgba(217, 139, 61, 0.3);
+  
+  /* Blur Effects */
+  --se-blur-sm: 4px;
+  --se-blur-md: 12px;
+  --se-blur-lg: 20px;
+  
+  /* ============================================
+     STARTUP EARTHY TYPOGRAPHY
+     ============================================ */
+  
+  /* Font Families - System fonts for performance */
+  --se-font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  --se-font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+  
+  /* Font Sizes */
+  --se-text-xs: 0.75rem;
+  --se-text-sm: 0.875rem;
+  --se-text-base: 1rem;
+  --se-text-md: 1.125rem;
+  --se-text-lg: 1.25rem;
+  --se-text-xl: 1.5rem;
+  --se-text-2xl: 1.875rem;
+  --se-text-3xl: 2.25rem;
+  --se-text-4xl: 3rem;
+  
+  /* Font Weights */
+  --se-font-normal: 400;
+  --se-font-medium: 500;
+  --se-font-semibold: 600;
+  --se-font-bold: 700;
+  
+  /* Line Heights */
+  --se-leading-tight: 1.25;
+  --se-leading-normal: 1.5;
+  --se-leading-relaxed: 1.625;
+  --se-leading-loose: 1.75;
+  
+  /* Letter Spacing */
+  --se-tracking-tight: -0.025em;
+  --se-tracking-normal: 0;
+  --se-tracking-wide: 0.025em;
+  
+  /* ============================================
+     SPACING TOKENS
+     ============================================ */
+  
+  --se-space-xs: 0.25rem;
+  --se-space-sm: 0.5rem;
+  --se-space-md: 0.75rem;
+  --se-space-lg: 1rem;
+  --se-space-xl: 1.5rem;
+  --se-space-2xl: 2rem;
+  --se-space-3xl: 3rem;
+  --se-space-4xl: 4rem;
+  
+  /* ============================================
+     BORDER RADIUS TOKENS
+     ============================================ */
+  
+  --se-radius-sm: 4px;
+  --se-radius-md: 8px;
+  --se-radius-lg: 12px;
+  --se-radius-xl: 16px;
+  
+  /* ============================================
+     ANIMATION TOKENS
+     ============================================ */
+  
+  --se-duration-fast: 150ms;
+  --se-duration-normal: 200ms;
+  --se-duration-slow: 300ms;
+  
+  --se-ease: ease;
+  --se-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}

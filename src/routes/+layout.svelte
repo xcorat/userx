@@ -11,12 +11,21 @@
 		const themeName = getThemeFromRoute($page.url.pathname);
 		applyTheme(themeName);
 	});
+
+	// Check if we're on an about page (which has its own layout)
+	const isAboutPage = $derived($page.url.pathname.startsWith('/about'));
 </script>
 
 <div class="min-h-screen bg-background">
-	<main class="container mx-auto px-4 py-8 max-w-[950px]">
+	{#if isAboutPage}
+		<!-- About pages have their own layout with wider constraints -->
 		{@render children?.()}
-	</main>
+	{:else}
+		<!-- App pages use standard container with max-w-950px -->
+		<main class="container mx-auto px-4 py-8 max-w-[950px]">
+			{@render children?.()}
+		</main>
+	{/if}
 </div>
 
 <Toaster richColors position="bottom-right" closeButton toastOptions={{ style: 'opacity: 0.75;' }} />
