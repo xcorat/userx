@@ -2,7 +2,7 @@
 
 **Status:** Implemented (MVP)  
 **Target Workspace:** `/data/p2p/userx` (SvelteKit 2 + Svelte 5 + Vite)  
-**Upstream Package:** `$wasm` (`../araliya-net/crates/araliya-net-wasm/pkg` built from `araliya-net-core`, `araliya-net-user`, `araliya-net-qna` `[client]`, and `araliya-net-transport-iroh`)  
+**Upstream Package:** `$wasm` (`./vendor/araliya-net-wasm`, synced from `../araliya-net/crates/araliya-net-wasm/pkg` via `pnpm run sync:wasm`, built from `araliya-net-core`, `araliya-net-user`, `araliya-net-qna` `[client]`, and `araliya-net-transport-iroh`)  
 **Related Roadmap:** [05-qna-and-userx-mvp-integration.md](file:///data/p2p/araliya-net/docs/mvp_roadmap/05-qna-and-userx-mvp-integration.md)
 
 ---
@@ -34,7 +34,8 @@ Svelte Components → Reactive Stores (*.svelte.ts) → Services (araliyaService
    - Handles `registerWithVouchCard` / `registerUser` / `updateProfile`, per-field encrypted/public visibility via `setProfileField` and `getPrivateProfileFields`, and onboarding state via `completeOnboardingStep` / `getOnboardingState`.
    - Loads public genesis & community questions via `qnaListQuestions` + `qnaGetResults`, persists toggleable answers via `qnaSetAnswerVisibility` (`UserPrivate` `qna_private_responses` + optional public vote mirror), hydrates saved answers via `qnaListMyPrivateResponses`, and streams live public Q&A updates via `startEventPoller` (`WasmEventPoller` on `{ Domain: { domain: 'qna', channel: 'pub' } }`).
 
-4. **SvelteKit / Vite WASM Configuration**
-   - [svelte.config.js](file:///data/p2p/userx/svelte.config.js) maps `$wasm` to `../araliya-net/crates/araliya-net-wasm/pkg` using `@sveltejs/adapter-cloudflare`.
-   - [vite.config.ts](file:///data/p2p/userx/vite.config.ts) excludes `$wasm` from `optimizeDeps`, allows reading the sibling `araliya-net` package via `server.fs.allow: ['..']`, and proxies `/relay/*` to `http://127.0.0.1:8080`.
+4. **SvelteKit / Vite / Cloudflare Workers Configuration**
+   - [svelte.config.js](file:///data/p2p/userx/svelte.config.js) maps `$wasm` to `./vendor/araliya-net-wasm` (vendored in-repo so standalone CI/Cloudflare builds succeed without a sibling `araliya-net` checkout) using `@sveltejs/adapter-cloudflare`.
+   - [vite.config.ts](file:///data/p2p/userx/vite.config.ts) excludes `$wasm` from `optimizeDeps` and proxies `/relay/*` to `http://127.0.0.1:8080` during local development.
    - [src/routes/+layout.ts](file:///data/p2p/userx/src/routes/+layout.ts) sets `ssr = false`, and [src/app.d.ts](file:///data/p2p/userx/src/app.d.ts) provides Vite `?url` WASM import types.
+   - [wrangler.jsonc](file:///data/p2p/userx/wrangler.jsonc) configures the Cloudflare Worker (`name: "userx"`, `main: ".svelte-kit/cloudflare/_worker.js"`, `compatibility_date: "2025-01-01"`, `nodejs_compat`, `ASSETS` static assets directory `.svelte-kit/cloudflare`, and observability logs); [package.json](file:///data/p2p/userx/package.json) provides `pnpm run sync:wasm` and `pnpm run deploy`.

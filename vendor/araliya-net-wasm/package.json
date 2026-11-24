@@ -1,0 +1,17 @@
+{
+  "name": "araliya-net-wasm",
+  "type": "module",
+  "description": "Browser WASM (cdylib) facade composing araliya-net-core, user, qna, and Iroh transport.",
+  "version": "0.1.0",
+  "license": "MIT OR Apache-2.0",
+  "files": [
+    "araliya_net_wasm_bg.wasm",
+    "araliya_net_wasm.js",
+    "araliya_net_wasm.d.ts"
+  ],
+  "main": "araliya_net_wasm.js",
+  "types": "araliya_net_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

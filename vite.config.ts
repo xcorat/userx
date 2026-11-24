@@ -8,9 +8,6 @@ export default defineConfig({
 		exclude: ['$wasm']
 	},
 	server: {
-		fs: {
-			allow: ['..']
-		},
 		proxy: {
 			'/relay': {
 				target: 'http://127.0.0.1:8080',

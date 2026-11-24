@@ -7,7 +7,7 @@ const config = {
 
 	kit: {
 		alias: {
-			$wasm: '../araliya-net/crates/araliya-net-wasm/pkg'
+			$wasm: './vendor/araliya-net-wasm'
 		},
 		adapter: adapter({
 			routes: {

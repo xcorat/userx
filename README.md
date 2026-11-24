@@ -12,7 +12,7 @@ Mobile-first SvelteKit + Svelte 5 web client for `araliya-net`, powered in-brows
 Components (Svelte 5) → Stores (*.svelte.ts) → Services (araliyaService, vault.storage) → $wasm (araliya_net_wasm)
 ```
 
-- **`$wasm` Alias ([svelte.config.js](svelte.config.js)):** Resolves directly to `../araliya-net/crates/araliya-net-wasm/pkg` (`vite.config.ts` excludes `$wasm` from `optimizeDeps` and allows parent-directory reads via `server.fs.allow: ['..']`).
+- **`$wasm` Alias ([svelte.config.js](svelte.config.js)):** Resolves to `./vendor/araliya-net-wasm` (`vite.config.ts` excludes `$wasm` from `optimizeDeps`), vendoring the built `araliya-net-wasm` package inside the repository so standalone builds (including Cloudflare Workers Builds) succeed.
 - **Service Layer ([src/lib/services/araliya.service.ts](src/lib/services/araliya.service.ts)):** Singleton `araliyaService` wrapping `AraliyaWasmApp` and `WasmEventPoller`. Only HTTP bootstrap calls (`GET /status` and `POST /genesis/vouch` via `RELAY_BASE_URL = '/relay'`) use `fetch`; all identity, profile, encrypted private storage, Q&A, and event polling RPCs execute over signed Iroh QUIC/WSS streams inside WASM.
 - **Reactive Stores:**
   - [src/lib/stores/session.svelte.ts](src/lib/stores/session.svelte.ts) (`sessionStore`): Relay status checks, account creation, password unlock, WebCrypto quick-unlock restoration, recovery-key import/export, `lock()` / `logout()` / `resetAccount()`, and onboarding state.
@@ -77,22 +77,41 @@ Example `seed-qna.json` (root onboarding questions omit `position`):
 ```bash
 cd ../araliya-net
 wasm-pack build crates/araliya-net-wasm --target web -- --offline
+
+# Sync updated WASM build into userx/vendor/araliya-net-wasm
+cd ../userx
+pnpm run sync:wasm
 ```
 
-### 3. Run, Check, and Build `userx`
+### 3. Run, Check, Build, and Deploy `userx`
 
 ```bash
 # Development server (Vite proxies /relay -> http://127.0.0.1:8080)
-npm run dev
+pnpm run dev
 
 # SvelteKit sync + TypeScript / Svelte diagnostics
-npm run check
+pnpm run check
 
 # Production build (@sveltejs/adapter-cloudflare)
-npm run build
+pnpm run build
 
 # Preview production build
-npm run preview
+pnpm run preview
+
+# Build and deploy to Cloudflare Workers (via wrangler.jsonc)
+pnpm run deploy
 ```
 
-*(If `$HOME/.config` is read-only when running `npm run build` or `npm run check` with `@sveltejs/adapter-cloudflare` / Wrangler, set `export WRANGLER_LOG_DIR=/tmp/wrangler-logs` or `XDG_CONFIG_HOME=/tmp`.)*
+*(If `$HOME/.config` is read-only when running `pnpm run build` or `pnpm run check` with `@sveltejs/adapter-cloudflare` / Wrangler, set `export WRANGLER_LOG_DIR=/tmp/wrangler-logs` or `XDG_CONFIG_HOME=/tmp`.)*
+
+---
+
+## Cloudflare Workers Deployment
+
+- **Worker Config ([wrangler.jsonc](wrangler.jsonc)):** Targets `.svelte-kit/cloudflare/_worker.js` as `main`, enables `nodejs_compat`, binds static assets (`ASSETS`) to `.svelte-kit/cloudflare`, and enables invocation/worker logs.
+- **Vendored WASM (`vendor/araliya-net-wasm/`):** The compiled `araliya-net-wasm` artifacts are vendored in-repo so standalone Cloudflare Workers Builds succeed without checking out or building the sibling `araliya-net` Rust workspace. Whenever `araliya-net-wasm` changes, rebuild it and run `pnpm run sync:wasm` before committing.
+- **Cloudflare Workers Builds Commands:**
+  - Install: `pnpm install --frozen-lockfile`
+  - Build: `pnpm run build`
+  - Deploy: `npx wrangler deploy` (or locally `pnpm run deploy`)
+- **Production Relay Note:** `RELAY_BASE_URL` in [src/lib/config/genesis.config.ts](src/lib/config/genesis.config.ts) currently defaults to `'/relay'` (proxied to `http://127.0.0.1:8080` by Vite in local development). Connecting a deployed Worker to a live relay requires updating `RELAY_BASE_URL` to a public relay URL or adding a Worker `/relay/*` proxy route.
