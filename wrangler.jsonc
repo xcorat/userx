@@ -10,8 +10,8 @@
 	// Production environment variables (set in Cloudflare Dashboard -> Settings -> Variables and Secrets,
 	// or uncomment below to manage directly in git; note that uncommented keys override Dashboard values):
 	// "vars": {
-	// 	"PUBLIC_RELAY_ENDPOINT_ID": "<endpoint_id from relay startup log or GET /status>",
-	// 	"PUBLIC_ROOT_PUBKEY": "<optional root_pubkey hex/base64url for @genesis question badges>",
+		"PUBLIC_RELAY_ENDPOINT_ID": "<endpoint_id from relay startup log or GET /status>",
+		"PUBLIC_ROOT_PUBKEY": "<optional root_pubkey hex/base64url for @genesis question badges>",
 	// 	"PUBLIC_RELAY_URLS": "",
 	// 	"PUBLIC_RELAY_HTTP_URL": ""
 	// },
