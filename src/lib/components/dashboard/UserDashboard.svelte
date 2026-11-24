@@ -112,6 +112,17 @@
 		}
 	}
 
+	async function copyPublicKey() {
+		const pk = sessionStore.identity?.userPubkey;
+		if (!pk) return;
+		try {
+			await navigator.clipboard.writeText(pk);
+			toast.success('Copied public key');
+		} catch {
+			toast.error('Could not copy public key');
+		}
+	}
+
 	async function handleLockVault() {
 		exportedRecoveryKey = null;
 		await sessionStore.lock();
@@ -364,9 +375,22 @@
 					Live Relay &amp; Identity
 				</div>
 				<div class="space-y-1 rounded-lg bg-background/60 p-2.5 font-mono text-[10px] text-muted-foreground">
-					<p class="truncate">pk: {sessionStore.identity?.userPubkey ?? '—'}</p>
+					<div class="flex items-center justify-between gap-2">
+						<p class="truncate">pk: {sessionStore.identity?.userPubkey ?? '—'}</p>
+						{#if sessionStore.identity?.userPubkey}
+							<button
+								type="button"
+								onclick={copyPublicKey}
+								aria-label="Copy public key"
+								class="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+							>
+								<Copy class="h-3 w-3" />
+							</button>
+						{/if}
+					</div>
 					<p class="truncate">x25519: {sessionStore.identity?.x25519Pubkey ?? '—'}</p>
 					<p class="truncate">endpoint: {sessionStore.relayStatus?.endpointId || 'disconnected'}</p>
+					<p>mode: {sessionStore.relayStatus?.source ?? 'none'}</p>
 					<p class="truncate">root_pk: {sessionStore.relayStatus?.rootPubkey || '—'}</p>
 					<p>live_sync: {ledgerStore.isLiveSyncActive ? 'active' : 'paused'}</p>
 				</div>

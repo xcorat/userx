@@ -1,5 +1,16 @@
 import { browser } from '$app/environment';
-import { RELAY_BASE_URL } from '$lib/config/genesis.config';
+import {
+	clearManualRelayOverride,
+	extractEndpointId,
+	getConfiguredEndpointIds,
+	getConfiguredRelayUrls,
+	getConfiguredRootPubkey,
+	getDefaultRelayHttpUrl,
+	loadManualRelayOverride,
+	parsePeerList,
+	parseUrlList,
+	saveManualRelayOverride
+} from '$lib/config/genesis.config';
 import { araliyaService } from '$lib/services/araliya.service';
 import {
 	clearQuickUnlockSession,
@@ -151,19 +162,34 @@ class SessionStore {
 	async refreshRelayStatus(): Promise<RelayStatusInfo> {
 		this.isConnectingRelay = true;
 		try {
-			const status = await araliyaService.getRelayStatus();
+			const status = await araliyaService.resolveRelayStatus();
 			this.relayStatus = status;
 			return status;
 		} catch (err) {
+			const manual = loadManualRelayOverride();
+			const envPeers = getConfiguredEndpointIds();
+			const httpUrl = getDefaultRelayHttpUrl();
+			const manualPeers = manual ? parsePeerList(manual.endpointId) : [];
+			const fallbackPeer = manualPeers[0] ?? envPeers[0] ?? '';
+			const fallbackSource =
+				manualPeers.length > 0
+					? 'iroh-manual'
+					: envPeers.length > 0
+						? 'iroh-env'
+						: httpUrl
+							? 'http'
+							: 'none';
 			const fallback: RelayStatusInfo = {
 				connected: false,
-				baseUrl: RELAY_BASE_URL,
-				endpointId: '',
-				dialPeerAddress: '',
-				relayUrls: [],
-				rootPubkey: '',
+				source: fallbackSource,
+				httpAvailable: false,
+				baseUrl: httpUrl,
+				endpointId: fallbackPeer ? extractEndpointId(fallbackPeer) : '',
+				dialPeerAddress: fallbackPeer,
+				relayUrls: manual?.relayUrls.length ? manual.relayUrls : getConfiguredRelayUrls(),
+				rootPubkey: manual?.rootPubkey || getConfiguredRootPubkey(),
 				alpns: [],
-				localOnly: true,
+				localOnly: false,
 				devWriteEnabled: false,
 				genesisMode: false,
 				admissionPolicy: 'vouch',
@@ -174,6 +200,30 @@ class SessionStore {
 		} finally {
 			this.isConnectingRelay = false;
 		}
+	}
+
+	async setManualRelayOverride(
+		endpointId: string,
+		relayUrlsRaw = '',
+		rootPubkey = ''
+	): Promise<RelayStatusInfo> {
+		const cleaned = endpointId.trim();
+		if (!cleaned) {
+			return await this.clearManualRelayOverride();
+		}
+		saveManualRelayOverride({
+			endpointId: cleaned,
+			relayUrls: parseUrlList(relayUrlsRaw),
+			rootPubkey: rootPubkey.trim()
+		});
+		await araliyaService.resetConnection();
+		return await this.refreshRelayStatus();
+	}
+
+	async clearManualRelayOverride(): Promise<RelayStatusInfo> {
+		clearManualRelayOverride();
+		await araliyaService.resetConnection();
+		return await this.refreshRelayStatus();
 	}
 
 	async createAccount(
@@ -189,14 +239,11 @@ class SessionStore {
 			const kp = await araliyaService.generateKeypair();
 
 			let vouchToken: string | null = peerVouchToken?.trim() || null;
-			if (!vouchToken) {
-				if (status.genesisMode) {
-					vouchToken = await araliyaService.requestGenesisVouch(kp.publicKey);
-				} else if (status.admissionPolicy !== 'open') {
-					throw new Error(
-						'This relay requires an invite vouch token (paste one or start relay with --genesis).'
-					);
-				}
+			if (!vouchToken && status.httpAvailable && status.genesisMode) {
+				vouchToken = await araliyaService.requestGenesisVouch(
+					kp.publicKey,
+					status.baseUrl
+				);
 			}
 
 			const vaultJson = await araliyaService.createVaultJson(kp.secretKey, password);
@@ -219,8 +266,17 @@ class SessionStore {
 		}
 	}
 
-	async continueAfterCreation(): Promise<void> {
+	setPendingVouchToken(token: string | null): void {
+		const cleaned = token?.trim() || null;
+		this.pendingVouchToken = cleaned;
+		this.persistUiState();
+	}
+
+	async continueAfterCreation(vouchToken?: string): Promise<void> {
 		if (!this.identity) return;
+		if (vouchToken !== undefined && vouchToken.trim()) {
+			this.setPendingVouchToken(vouchToken);
+		}
 		this.newlyCreatedRecoveryKey = null;
 		this.isLoggedIn = true;
 		this.onboardingStep = 'manifesto';

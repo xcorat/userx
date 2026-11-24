@@ -6,12 +6,30 @@
 	import { Label } from '$lib/components/ui/label';
 	import PublicLedgerCheckbox from '$lib/components/ui/PublicLedgerCheckbox.svelte';
 	import { toast } from 'svelte-sonner';
-	import { ArrowLeft, ArrowRight, Info } from 'lucide-svelte';
+	import { ArrowLeft, ArrowRight, Copy, Info, Terminal } from 'lucide-svelte';
 
 	let username = $state(ledgerStore.profile.username.value);
 	let keepPublic = $state(ledgerStore.profile.username.visibility === 'public');
+	let vouchTokenInput = $state(sessionStore.pendingVouchToken ?? '');
 	let errorMessage = $state('');
 	let isSaving = $state(false);
+
+	let needsManualVouchUi = $derived(
+		!sessionStore.relayStatus?.httpAvailable || Boolean(sessionStore.pendingVouchToken)
+	);
+
+	function buildVouchCurlCommand(pubkey: string): string {
+		return `curl -s -X POST http://127.0.0.1:8080/genesis/vouch -H 'Content-Type: application/json' -d '{"subject_pubkey":"${pubkey}","ttl_secs":86400}'`;
+	}
+
+	async function copyText(label: string, value: string) {
+		try {
+			await navigator.clipboard.writeText(value);
+			toast.success(`Copied ${label}`);
+		} catch {
+			toast.error(`Could not copy ${label}`);
+		}
+	}
 
 	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
@@ -24,10 +42,12 @@
 		isSaving = true;
 		try {
 			if (!sessionStore.identity) throw new Error('Vault is locked');
+			const cleanedVouch = vouchTokenInput.trim() || null;
+			sessionStore.setPendingVouchToken(cleanedVouch);
 			const { usedVouch } = await ledgerStore.saveUsername(
 				cleaned,
 				keepPublic,
-				sessionStore.pendingVouchToken
+				cleanedVouch
 			);
 			if (usedVouch) {
 				sessionStore.clearPendingVouch();
@@ -96,6 +116,47 @@
 			<div class="pt-1">
 				<PublicLedgerCheckbox bind:checked={keepPublic} label="keep public" />
 			</div>
+
+			{#if needsManualVouchUi && sessionStore.identity}
+				<div class="space-y-2 rounded-xl border border-border/70 bg-card/70 p-3 text-xs">
+					<div class="flex items-center justify-between gap-2">
+						<span class="flex items-center gap-1.5 font-semibold text-foreground">
+							<Terminal class="h-3.5 w-3.5 text-primary" />
+							Vouch Card Token
+						</span>
+						<div class="flex items-center gap-2">
+							<button
+								type="button"
+								onclick={() => copyText('public key', sessionStore.identity?.userPubkey ?? '')}
+								class="inline-flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+							>
+								<Copy class="h-3 w-3" />
+								pk
+							</button>
+							<button
+								type="button"
+								onclick={() =>
+									copyText(
+										'curl command',
+										buildVouchCurlCommand(sessionStore.identity?.userPubkey ?? '')
+									)}
+								class="inline-flex cursor-pointer items-center gap-1 text-[10px] text-primary hover:underline"
+							>
+								<Copy class="h-3 w-3" />
+								curl
+							</button>
+						</div>
+					</div>
+					<Input
+						id="username-vouch-input"
+						bind:value={vouchTokenInput}
+						placeholder="araliya-vouch-card:v1:... (optional if open admission)"
+						autocapitalize="none"
+						autocomplete="off"
+						class="h-9 bg-background/80 font-mono text-[11px]"
+					/>
+				</div>
+			{/if}
 		</div>
 
 		<div class="flex items-start gap-2.5 rounded-xl border border-border/70 bg-card/70 p-3.5 text-xs leading-relaxed text-muted-foreground">

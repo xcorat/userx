@@ -34,8 +34,18 @@ export interface RecoveryPayload {
 	secretKey: string;
 }
 
+export type RelayBootstrapSource = 'http' | 'iroh-env' | 'iroh-manual' | 'none';
+
+export interface ManualRelayOverride {
+	endpointId: string;
+	relayUrls: string[];
+	rootPubkey: string;
+}
+
 export interface RelayStatusInfo {
 	connected: boolean;
+	source: RelayBootstrapSource;
+	httpAvailable: boolean;
 	baseUrl: string;
 	endpointId: string;
 	dialPeerAddress: string;

@@ -1,5 +1,13 @@
 import { browser } from '$app/environment';
-import { RELAY_BASE_URL } from '$lib/config/genesis.config';
+import {
+	extractEndpointId,
+	getConfiguredEndpointIds,
+	getConfiguredRelayUrls,
+	getConfiguredRootPubkey,
+	getDefaultRelayHttpUrl,
+	loadManualRelayOverride,
+	parsePeerList
+} from '$lib/config/genesis.config';
 import type {
 	FieldVisibility,
 	GeneratedKeypair,
@@ -13,6 +21,15 @@ import type {
 import type { AraliyaWasmApp, WasmEventPoller } from '$wasm/araliya_net_wasm';
 
 type WasmModule = typeof import('$wasm/araliya_net_wasm');
+
+const DEFAULT_ALPNS = [
+	'/araliya/doc/1',
+	'/araliya/blob/1',
+	'/araliya/table/1',
+	'/araliya/events/1'
+];
+
+const IROH_PROBE_TIMEOUT_MS = 10_000;
 
 interface WireQuestionDto {
 	cid: number[];
@@ -78,6 +95,22 @@ function errorMessage(err: unknown, fallback: string): string {
 	return fallback;
 }
 
+async function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+	let timer: ReturnType<typeof setTimeout> | null = null;
+	try {
+		return await Promise.race([
+			promise,
+			new Promise<never>((_, reject) => {
+				timer = setTimeout(() => reject(new Error(message)), ms);
+			})
+		]);
+	} finally {
+		if (timer !== null) {
+			clearTimeout(timer);
+		}
+	}
+}
+
 function parseJsonStringValue(valueJson: string): string {
 	try {
 		const parsed = JSON.parse(valueJson);
@@ -101,6 +134,8 @@ class AraliyaService {
 	private wasmPromise: Promise<WasmModule> | null = null;
 	private app: AraliyaWasmApp | null = null;
 	private connectedPeer: string | null = null;
+	private connectedRelayUrlsKey = '';
+	private activeStatus: RelayStatusInfo | null = null;
 	private connectInFlight: Promise<AraliyaWasmApp> | null = null;
 	private poller: WasmEventPoller | null = null;
 
@@ -121,8 +156,23 @@ class AraliyaService {
 		return this.wasmPromise;
 	}
 
-	async getRelayStatus(): Promise<RelayStatusInfo> {
-		const res = await fetch(`${RELAY_BASE_URL}/status`);
+	async resetConnection(): Promise<void> {
+		this.stopEventPoller();
+		this.activeStatus = null;
+		this.connectedPeer = null;
+		this.connectedRelayUrlsKey = '';
+		if (this.app) {
+			try {
+				this.app.free();
+			} catch {
+				// Ignore stale free
+			}
+			this.app = null;
+		}
+	}
+
+	private async fetchHttpRelayStatus(baseUrl: string): Promise<RelayStatusInfo> {
+		const res = await fetch(`${baseUrl}/status`);
 		if (!res.ok) {
 			throw new Error(`Relay status HTTP ${res.status}`);
 		}
@@ -132,11 +182,13 @@ class AraliyaService {
 		// that route only exists when the relay is started with `--genesis`, so
 		// probing it always logs a spurious 404 in a normal (non-genesis) relay.
 		const genesisMode = Boolean(data.genesis_mode);
-
 		const endpointId = String(data.endpoint_id ?? '');
+
 		return {
 			connected: data.status === 'ok',
-			baseUrl: RELAY_BASE_URL,
+			source: 'http',
+			httpAvailable: true,
+			baseUrl,
 			endpointId,
 			dialPeerAddress: String(data.dial_peer_address ?? endpointId),
 			relayUrls: Array.isArray(data.relay_urls) ? data.relay_urls.map(String) : [],
@@ -149,8 +201,203 @@ class AraliyaService {
 		};
 	}
 
-	async requestGenesisVouch(subjectPubkey: string): Promise<string> {
-		const res = await fetch(`${RELAY_BASE_URL}/genesis/vouch`, {
+	private async probeIrohPeer(
+		peer: string,
+		relayUrls: string[],
+		timeoutMs = IROH_PROBE_TIMEOUT_MS
+	): Promise<AraliyaWasmApp> {
+		const wasm = await this.ensureWasm();
+		const urlsKey = relayUrls.join(',');
+
+		if (this.app && this.connectedPeer === peer && this.connectedRelayUrlsKey === urlsKey) {
+			const existing = this.app;
+			try {
+				await withTimeout(
+					existing.eventHeadSeq([{ Domain: { domain: 'qna', channel: 'pub' } }]),
+					timeoutMs,
+					`Timed out reaching Iroh peer ${extractEndpointId(peer)}`
+				);
+				return existing;
+			} catch (err) {
+				this.stopEventPoller();
+				if (this.app === existing) {
+					this.app = null;
+					this.connectedPeer = null;
+					this.connectedRelayUrlsKey = '';
+				}
+				throw err;
+			}
+		}
+
+		const candidate = (await wasm.AraliyaWasmApp.connect({
+			relayPeer: peer,
+			relayUrls: relayUrls.length > 0 ? relayUrls : undefined,
+			localOnly: false,
+			onlineTimeoutMs: 5000
+		})) as AraliyaWasmApp;
+
+		const probePromise = candidate.eventHeadSeq([{ Domain: { domain: 'qna', channel: 'pub' } }]);
+		let installed = false;
+
+		try {
+			await withTimeout(
+				probePromise,
+				timeoutMs,
+				`Timed out reaching Iroh peer ${extractEndpointId(peer)}`
+			);
+
+			this.stopEventPoller();
+			if (this.app) {
+				try {
+					this.app.free();
+				} catch {
+					// Ignore stale free
+				}
+			}
+			this.app = candidate;
+			this.connectedPeer = peer;
+			this.connectedRelayUrlsKey = urlsKey;
+			installed = true;
+			return candidate;
+		} finally {
+			if (!installed) {
+				void probePromise.then(
+					() => {
+						try {
+							candidate.free();
+						} catch {
+							// Ignore stale free
+						}
+					},
+					() => {
+						try {
+							candidate.free();
+						} catch {
+							// Ignore stale free
+						}
+					}
+				);
+			}
+		}
+	}
+
+	private async probeIrohPeerList(
+		peers: string[],
+		relayUrls: string[],
+		rootPubkey: string,
+		source: 'iroh-env' | 'iroh-manual'
+	): Promise<RelayStatusInfo> {
+		let lastErr: unknown = null;
+		for (const peer of peers) {
+			try {
+				await this.probeIrohPeer(peer, relayUrls);
+				const status: RelayStatusInfo = {
+					connected: true,
+					source,
+					httpAvailable: false,
+					baseUrl: '',
+					endpointId: extractEndpointId(peer),
+					dialPeerAddress: peer,
+					relayUrls,
+					rootPubkey,
+					alpns: DEFAULT_ALPNS,
+					localOnly: false,
+					devWriteEnabled: false,
+					genesisMode: false,
+					admissionPolicy: 'vouch'
+				};
+				this.activeStatus = status;
+				return status;
+			} catch (err) {
+				lastErr = err;
+			}
+		}
+
+		const targetLabel = peers.length === 1 ? extractEndpointId(peers[0]) : `${peers.length} endpoints`;
+		throw new Error(
+			`Iroh relay unreachable (${targetLabel}): ${errorMessage(lastErr, 'connection failed')}`
+		);
+	}
+
+	/**
+	 * Resolve and check relay connectivity.
+	 *
+	 * Precedence:
+	 * 1. Explicit manual EndpointId override in localStorage (direct Iroh probe).
+	 * 2. HTTP `/status` when `PUBLIC_RELAY_HTTP_URL` is configured (or `/relay` in Vite dev).
+	 *    If HTTP fails and `PUBLIC_RELAY_ENDPOINT_ID` is also set, falls back to direct Iroh.
+	 * 3. Direct Iroh probe using `PUBLIC_RELAY_ENDPOINT_ID`.
+	 */
+	async resolveRelayStatus(): Promise<RelayStatusInfo> {
+		const envRelayUrls = getConfiguredRelayUrls();
+		const envRootPubkey = getConfiguredRootPubkey();
+
+		const manualOverride = loadManualRelayOverride();
+		if (manualOverride) {
+			const manualPeers = parsePeerList(manualOverride.endpointId);
+			if (manualPeers.length > 0) {
+				const relayUrls =
+					manualOverride.relayUrls.length > 0 ? manualOverride.relayUrls : envRelayUrls;
+				const rootPubkey = manualOverride.rootPubkey || envRootPubkey;
+				return await this.probeIrohPeerList(
+					manualPeers,
+					relayUrls,
+					rootPubkey,
+					'iroh-manual'
+				);
+			}
+		}
+
+		const httpUrl = getDefaultRelayHttpUrl();
+		const envPeers = getConfiguredEndpointIds();
+
+		if (httpUrl) {
+			try {
+				const status = await this.fetchHttpRelayStatus(httpUrl);
+				this.activeStatus = status;
+				return status;
+			} catch (httpErr) {
+				if (envPeers.length === 0) {
+					this.activeStatus = null;
+					throw httpErr;
+				}
+			}
+		}
+
+		if (envPeers.length > 0) {
+			return await this.probeIrohPeerList(envPeers, envRelayUrls, envRootPubkey, 'iroh-env');
+		}
+
+		this.activeStatus = null;
+		return {
+			connected: false,
+			source: 'none',
+			httpAvailable: false,
+			baseUrl: httpUrl,
+			endpointId: '',
+			dialPeerAddress: '',
+			relayUrls: envRelayUrls,
+			rootPubkey: envRootPubkey,
+			alpns: [],
+			localOnly: false,
+			devWriteEnabled: false,
+			genesisMode: false,
+			admissionPolicy: 'vouch',
+			error: 'No relay configured (set PUBLIC_RELAY_ENDPOINT_ID or configure an EndpointId)'
+		};
+	}
+
+	async requestGenesisVouch(subjectPubkey: string, baseUrl?: string): Promise<string> {
+		const resolvedBaseUrl = (baseUrl ?? this.activeStatus?.baseUrl ?? getDefaultRelayHttpUrl()).replace(
+			/\/+$/,
+			''
+		);
+		if (!resolvedBaseUrl) {
+			throw new Error(
+				'HTTP genesis vouch endpoint is unavailable; mint a vouch card via local curl.'
+			);
+		}
+		const res = await fetch(`${resolvedBaseUrl}/genesis/vouch`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ subject_pubkey: subjectPubkey, ttl_secs: 86400 })
@@ -171,7 +418,7 @@ class AraliyaService {
 	}
 
 	async ensureConnected(status?: RelayStatusInfo): Promise<AraliyaWasmApp> {
-		const resolved = status ?? (await this.getRelayStatus());
+		const resolved = status ?? this.activeStatus ?? (await this.resolveRelayStatus());
 		if (!resolved.connected) {
 			throw new Error(resolved.error ?? 'Relay offline');
 		}
@@ -179,7 +426,8 @@ class AraliyaService {
 		if (!targetPeer) {
 			throw new Error('Relay status did not provide a valid Iroh peer address');
 		}
-		if (this.app && this.connectedPeer === targetPeer) {
+		const urlsKey = resolved.relayUrls.join(',');
+		if (this.app && this.connectedPeer === targetPeer && this.connectedRelayUrlsKey === urlsKey) {
 			return this.app;
 		}
 		if (this.connectInFlight) {
@@ -197,6 +445,7 @@ class AraliyaService {
 				}
 				this.app = null;
 				this.connectedPeer = null;
+				this.connectedRelayUrlsKey = '';
 			}
 			try {
 				const app = (await wasm.AraliyaWasmApp.connect({
@@ -207,6 +456,7 @@ class AraliyaService {
 				})) as AraliyaWasmApp;
 				this.app = app;
 				this.connectedPeer = targetPeer;
+				this.connectedRelayUrlsKey = urlsKey;
 				return app;
 			} catch (err) {
 				const base = errorMessage(err, 'Failed to connect Iroh WASM client');

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { loadManualRelayOverride } from '$lib/config/genesis.config';
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
@@ -16,13 +17,21 @@
 		Lock,
 		RefreshCw,
 		RotateCcw,
+		Settings,
 		ShieldCheck,
+		Terminal,
 		UserPlus
 	} from 'lucide-svelte';
 
 	type EntryMode = 'unlock' | 'create' | 'recover';
 
+	const initialOverride = loadManualRelayOverride();
+
 	let mode = $state<EntryMode>(sessionStore.hasVault ? 'unlock' : 'create');
+	let showRelayConfig = $state(false);
+	let relayEndpointInput = $state(initialOverride?.endpointId ?? '');
+	let relayUrlsInput = $state(initialOverride?.relayUrls.join(', ') ?? '');
+	let rootPubkeyInput = $state(initialOverride?.rootPubkey ?? '');
 
 	let unlockPassword = $state('');
 	let showUnlockPassword = $state(false);
@@ -30,6 +39,7 @@
 	let createPassword = $state('');
 	let createConfirmPassword = $state('');
 	let peerVouchInput = $state('');
+	let postCreateVouchInput = $state('');
 	let showCreatePassword = $state(false);
 
 	let recoveryKeyInput = $state('');
@@ -44,6 +54,10 @@
 	function truncateKey(key: string): string {
 		if (!key || key.length <= 20) return key || '—';
 		return `${key.slice(0, 10)}…${key.slice(-8)}`;
+	}
+
+	function buildVouchCurlCommand(pubkey: string): string {
+		return `curl -s -X POST http://127.0.0.1:8080/genesis/vouch -H 'Content-Type: application/json' -d '{"subject_pubkey":"${pubkey}","ttl_secs":86400}'`;
 	}
 
 	async function handleUnlock(event: SubmitEvent) {
@@ -71,6 +85,8 @@
 			await sessionStore.createAccount(createPassword, peerVouchInput);
 			createPassword = '';
 			createConfirmPassword = '';
+			peerVouchInput = '';
+			postCreateVouchInput = '';
 			toast.success('Encrypted vault created — save your recovery key!');
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Failed to create account');
@@ -79,9 +95,39 @@
 
 	async function handleContinueAfterCreation() {
 		try {
-			await sessionStore.continueAfterCreation();
+			await sessionStore.continueAfterCreation(postCreateVouchInput);
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Failed to continue onboarding');
+		}
+	}
+
+	async function handleSaveRelayOverride(event: SubmitEvent) {
+		event.preventDefault();
+		const status = await sessionStore.setManualRelayOverride(
+			relayEndpointInput,
+			relayUrlsInput,
+			rootPubkeyInput
+		);
+		if (status.connected) {
+			showRelayConfig = false;
+			toast.success(`Connected via Iroh (${truncateKey(status.endpointId)})`);
+		} else {
+			toast.error(status.error ?? 'Failed to reach relay endpoint');
+		}
+	}
+
+	async function handleResetRelayOverride() {
+		relayEndpointInput = '';
+		relayUrlsInput = '';
+		rootPubkeyInput = '';
+		const status = await sessionStore.clearManualRelayOverride();
+		if (status.connected) {
+			showRelayConfig = false;
+			toast.success(
+				status.httpAvailable ? 'Connected via HTTP bootstrap' : 'Connected via default Iroh endpoint'
+			);
+		} else {
+			toast.info(status.error ?? 'Cleared manual relay override');
 		}
 	}
 
@@ -127,28 +173,50 @@
 				<span class="font-heading text-lg font-bold tracking-tight">userx</span>
 			</div>
 
-			<button
-				type="button"
-				onclick={() => sessionStore.refreshRelayStatus()}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card/80 px-2.5 py-1 font-mono text-[10px]"
-			>
-				<span
-					class={`h-2 w-2 rounded-full ${
-						relay?.connected ? 'bg-emerald-400' : 'bg-destructive'
+			<div class="flex items-center gap-1.5">
+				<button
+					type="button"
+					onclick={() => sessionStore.refreshRelayStatus()}
+					class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card/80 px-2.5 py-1 font-mono text-[10px]"
+				>
+					<span
+						class={`h-2 w-2 rounded-full ${
+							relay?.connected ? 'bg-emerald-400' : 'bg-destructive'
+						}`}
+					></span>
+					{relay?.connected
+						? relay.httpAvailable
+							? 'Relay Connected'
+							: 'Iroh Connected'
+						: 'Relay Offline'}
+					<RefreshCw
+						class={`h-3 w-3 text-muted-foreground ${
+							sessionStore.isConnectingRelay ? 'animate-spin' : ''
+						}`}
+					/>
+				</button>
+				<button
+					type="button"
+					onclick={() => (showRelayConfig = !showRelayConfig)}
+					aria-label="Configure Relay Endpoint"
+					title="Configure Relay Endpoint"
+					class={`inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-border bg-card/80 transition-colors ${
+						showRelayConfig
+							? 'border-primary/60 text-primary'
+							: 'text-muted-foreground hover:text-foreground'
 					}`}
-				></span>
-				{relay?.connected ? 'Relay Connected' : 'Relay Offline'}
-				<RefreshCw
-					class={`h-3 w-3 text-muted-foreground ${
-						sessionStore.isConnectingRelay ? 'animate-spin' : ''
-					}`}
-				/>
-			</button>
+				>
+					<Settings class="h-3.5 w-3.5" />
+				</button>
+			</div>
 		</div>
 
 		{#if relay?.connected}
 			<p class="truncate font-mono text-[10px] text-muted-foreground">
-				endpoint: {truncateKey(relay.endpointId)} · root: {truncateKey(relay.rootPubkey)}
+				endpoint: {truncateKey(relay.endpointId)} · {relay.httpAvailable ? 'HTTP + Iroh' : 'Direct Iroh'}
+				{#if relay.rootPubkey}
+					· root: {truncateKey(relay.rootPubkey)}
+				{/if}
 			</p>
 			{#if relay.localOnly}
 				<div class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-[11px] text-amber-200">
@@ -160,8 +228,83 @@
 			{/if}
 		{:else if relay?.error}
 			<p class="text-[11px] text-destructive">
-				{relay.error} — ensure araliya-net-relay is running
+				{relay.error}
 			</p>
+		{/if}
+
+		{#if showRelayConfig}
+			<form
+				onsubmit={handleSaveRelayOverride}
+				class="space-y-2 rounded-xl border border-border bg-card/90 p-3 text-xs backdrop-blur-md"
+			>
+				<div class="flex items-center justify-between">
+					<span class="font-semibold">Direct Iroh Relay Override</span>
+					<span class="font-mono text-[10px] text-muted-foreground">
+						mode: {relay?.source ?? 'none'}
+					</span>
+				</div>
+				<div class="space-y-1">
+					<Label for="relay-endpoint-input" class="text-[11px] text-muted-foreground">
+						EndpointId or EndpointAddr JSON
+					</Label>
+					<Input
+						id="relay-endpoint-input"
+						bind:value={relayEndpointInput}
+						placeholder={'EndpointId or {"id":"..."}'}
+						autocapitalize="none"
+						autocomplete="off"
+						class="h-8 bg-background/70 font-mono text-[11px]"
+					/>
+				</div>
+				<div class="grid grid-cols-2 gap-2">
+					<div class="space-y-1">
+						<Label for="relay-urls-input" class="text-[11px] text-muted-foreground">
+							Iroh Relay URLs (optional)
+						</Label>
+						<Input
+							id="relay-urls-input"
+							bind:value={relayUrlsInput}
+							placeholder="https://..."
+							autocapitalize="none"
+							autocomplete="off"
+							class="h-8 bg-background/70 font-mono text-[11px]"
+						/>
+					</div>
+					<div class="space-y-1">
+						<Label for="relay-root-input" class="text-[11px] text-muted-foreground">
+							Root Pubkey (optional)
+						</Label>
+						<Input
+							id="relay-root-input"
+							bind:value={rootPubkeyInput}
+							placeholder="hex or base64url"
+							autocapitalize="none"
+							autocomplete="off"
+							class="h-8 bg-background/70 font-mono text-[11px]"
+						/>
+					</div>
+				</div>
+				<div class="flex gap-2 pt-0.5">
+					<Button
+						type="submit"
+						size="sm"
+						disabled={sessionStore.isConnectingRelay}
+						class="h-7 flex-1 cursor-pointer text-[11px]"
+					>
+						{sessionStore.isConnectingRelay ? 'Probing Iroh...' : 'Save & Connect'}
+					</Button>
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						onclick={handleResetRelayOverride}
+						disabled={sessionStore.isConnectingRelay}
+						class="h-7 cursor-pointer text-[11px]"
+					>
+						Reset
+					</Button>
+				</div>
+			</form>
 		{/if}
 	</header>
 
@@ -331,22 +474,24 @@
 								/>
 							</div>
 
-							<div class="space-y-1.5">
-								<Label for="vouch-token-input" class="text-xs">
-									Invite Vouch Token
-									<span class="font-normal text-muted-foreground">
-										{relay?.genesisMode ? '(optional — auto genesis vouch)' : '(paste araliya-vouch-card:v1:...)'}
-									</span>
-								</Label>
-								<Input
-									id="vouch-token-input"
-									bind:value={peerVouchInput}
-									placeholder="araliya-vouch-card:v1:..."
-									autocapitalize="none"
-									autocomplete="off"
-									class="h-10 bg-background/70 font-mono text-xs"
-								/>
-							</div>
+							{#if relay?.httpAvailable}
+								<div class="space-y-1.5">
+									<Label for="vouch-token-input" class="text-xs">
+										Invite Vouch Token
+										<span class="font-normal text-muted-foreground">
+											{relay?.genesisMode ? '(optional — auto genesis vouch)' : '(paste araliya-vouch-card:v1:...)'}
+										</span>
+									</Label>
+									<Input
+										id="vouch-token-input"
+										bind:value={peerVouchInput}
+										placeholder="araliya-vouch-card:v1:..."
+										autocapitalize="none"
+										autocomplete="off"
+										class="h-10 bg-background/70 font-mono text-xs"
+									/>
+								</div>
+							{/if}
 
 							<Button
 								type="submit"
@@ -405,6 +550,38 @@
 									>
 										<Copy class="h-3.5 w-3.5" />
 									</button>
+								</div>
+							{:else}
+								<div class="space-y-2 border-t border-border/60 pt-2">
+									<div class="flex items-center justify-between gap-2">
+										<span class="flex items-center gap-1 font-sans text-[11px] font-semibold text-foreground">
+											<Terminal class="h-3 w-3 text-primary" />
+											Manual Vouch Card (for vouch relays)
+										</span>
+										<button
+											type="button"
+											onclick={() =>
+												copyText(
+													'curl command',
+													buildVouchCurlCommand(createdIdentity.userPubkey)
+												)}
+											class="inline-flex shrink-0 cursor-pointer items-center gap-1 font-sans text-[10px] text-primary hover:underline"
+										>
+											<Copy class="h-3 w-3" />
+											Copy curl
+										</button>
+									</div>
+									<p class="font-sans text-[10px] leading-relaxed text-muted-foreground">
+										Run the copied <span class="font-mono">curl</span> against your local <span class="font-mono">--genesis</span> relay, then paste <span class="font-mono">vouch_card_token</span> below (leave blank if open admission):
+									</p>
+									<Input
+										id="post-create-vouch-input"
+										bind:value={postCreateVouchInput}
+										placeholder="araliya-vouch-card:v1:..."
+										autocapitalize="none"
+										autocomplete="off"
+										class="h-9 bg-background/80 font-mono text-[11px]"
+									/>
 								</div>
 							{/if}
 						</div>
