@@ -55,7 +55,9 @@ flowchart TD
     S7 -- "Explore Questions →" --> S8["Step 6 / 8: Public Question Demo — Locked Private (demo-public)"]
     S8 -- "Submit & View Results / Skip" --> S9["Step 7 / 8: Sponsored Question Demo +5 Tokens (demo-sponsored)"]
     S9 -- "Answer & Earn / Skip" --> S10["Step 8 / 8: Ask Your First Question (ask-first)"]
-    S10 -- "Publish Question & Enter App / Skip" --> Complete["sessionStore.completeOnboarding() → Feed"]
+    S10 -- "Publish Question" --> GenesisFollowup["Private Genesis contribution question"]
+    GenesisFollowup -- "Answer / Skip" --> Complete["sessionStore.completeOnboarding() → Feed"]
+    S10 -- "Skip" --> Complete
 ```
 
 ---
@@ -152,7 +154,9 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
 4. **Screen 10 — `Ask Your First Question` (Real Relay Publish):**
    - Question prompt input + dynamic answer choice list (minimum 2, up to 6 via `[+ Add another choice]`, client validation matching `answers_root`: >= 2 non-empty, unique trimmed choices).
    - Optional `Reference Link` input & pre-checked `[✓] Make this a sponsored question — ~~50 Tokens~~ FREE (First Question Credit)` (both held as onboarding walkthrough UI state; marks `firstQuestionCreditUsed = true` on publish).
-   - `[Publish Question & Enter App →]` calls `ledgerStore.createQuestion(text, answers)` (`araliyaService.createPublicQuestion` → `AraliyaWasmApp.qnaCreateQuestion`), reloads questions from the relay (`loadQuestionsFromRelay`), and completes onboarding (`sessionStore.completeOnboarding()`).
+   - `[Publish Question & Enter App →]` calls `ledgerStore.createQuestion(text, answers)` (`araliyaService.createPublicQuestion` → `AraliyaWasmApp.qnaCreateQuestion`) and reloads questions from the relay (`loadQuestionsFromRelay`).
+   - After a successful publish, Genesis asks **“We need help, would you contribute?”** with the choices **Provide feedback**, **Invest money ($5+)**, **Help Develop**, **Other**, and **No**. Choosing an answer submits it as a private Q&A response (`ledgerStore.submitAnswer(question, option.id, false)`); it does not contribute to public results. `[Skip]` bypasses the response, and either path completes onboarding.
+   - The Genesis follow-up must be included in the relay's `--seed-qna` file. For an existing relay, restart it with the updated seed file; relay Q&A seeding is idempotent.
    - Secondary `[Skip & Enter App →]` exits directly to the main feed without publishing.
 
 ---
@@ -173,7 +177,7 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
 | **Step 5 / 8** | `'details'` | `PersonalDetailsPreviewScreen.svelte` | Optional `Name`, `DoB`, `Pronouns` → `ledgerStore.saveIdentityDetails(...)`; live `/public` & `/private` tree; `themeStore.setTheme(...)` (`Forest Dark` default); `advanceOnboardingStep('demo-public')` | `← Back` → `'custody'` |
 | **Step 6 / 8** | `'demo-public'` | `PublicQuestionDemoScreen.svelte` | Locked `🔒 Private`; if question exists on relay, `ledgerStore.submitAnswer(..., false)` (`qnaSetAnswerVisibility`); reveal results + privacy note; `advanceOnboardingStep('demo-sponsored')` | `← Back` → `'details'`; `[Skip Question]` |
 | **Step 7 / 8** | `'demo-sponsored'` | `SponsoredQuestionDemoScreen.svelte` | Preview external link; `[Answer & Earn +5 Tokens →]` increments `demoTokenBalance` (`+5`); `advanceOnboardingStep('ask-first')` | `← Back` → `'demo-public'`; `[Skip]` |
-| **Step 8 / 8** | `'ask-first'` | `AskFirstQuestionScreen.svelte` | `ledgerStore.createQuestion(text, choices)` (`qnaCreateQuestion`); marks `firstQuestionCreditUsed`; `sessionStore.completeOnboarding()` → `'feed'` | `← Back` → `'demo-sponsored'`; `[Skip & Enter App →]` |
+| **Step 8 / 8** | `'ask-first'` | `AskFirstQuestionScreen.svelte` | `ledgerStore.createQuestion(text, choices)` (`qnaCreateQuestion`); marks `firstQuestionCreditUsed`; then optionally saves a private Genesis contribution response before `sessionStore.completeOnboarding()` → `'feed'` | `← Back` → `'demo-sponsored'`; `[Skip & Enter App →]` |
 
 ---
 
@@ -231,7 +235,7 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
 17. **`src/lib/components/onboarding/SponsoredQuestionDemoScreen.svelte` *(new — Screen 9)***
     - Renders `"We don't need nukes."` with `⚡ Sponsored (+5 Tokens)`, `🔗 External Context` reader drawer/link, `[Skip]`, and `[Answer & Earn +5 Tokens →]`.
 18. **`src/lib/components/onboarding/AskFirstQuestionScreen.svelte` *(new — Screen 10)***
-    - Question input, dynamic 2–6 choice builder, optional Reference Link (walkthrough UI), pre-checked `FREE (First Question Credit)` sponsorship toggle (walkthrough UI), `[Publish Question & Enter App →]` (real `qnaCreateQuestion`), and `[Skip & Enter App →]`.
+    - Question input, dynamic 2–6 choice builder, optional Reference Link (walkthrough UI), pre-checked `FREE (First Question Credit)` sponsorship toggle (walkthrough UI), `[Publish Question & Enter App →]` (real `qnaCreateQuestion`), private Genesis contribution prompt (optional private Q&A response), and `[Skip & Enter App →]`.
 19. **`src/routes/+page.svelte`, `src/routes/dashboard/+page.svelte`, `MobileViewport.svelte`, `PendingVouchBanner.svelte`, `VouchExpiredScreen.svelte`, & `UserDashboard.svelte`**
     - `+page.svelte` and `dashboard/+page.svelte` route/guard `'vouch-expired'` (`VouchExpiredScreen.svelte`) when the 72h pending window expires or is declined.
     - `MobileViewport.svelte` displays `PendingVouchBanner.svelte` above the read-only `QuestionFeed` / `UserDashboard` while `isPendingVouch`.

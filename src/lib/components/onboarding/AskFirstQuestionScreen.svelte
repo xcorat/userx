@@ -8,11 +8,23 @@
 	import { toast } from 'svelte-sonner';
 	import { ArrowRight, Coins, Plus, Sparkles, Trash2, Zap } from 'lucide-svelte';
 
+	const GENESIS_CONTRIBUTION_PROMPT = 'We need help, would you contribute?';
+
 	let questionText = $state('');
 	let choices = $state<string[]>(['', '']);
 	let referenceLink = $state('');
 	let makeSponsored = $state(true);
 	let isPublishing = $state(false);
+	let showGenesisContribution = $state(false);
+	let selectedContribution = $state('');
+
+	const contributionOptions = [
+		'Provide feedback',
+		'Invest money ($5+)',
+		'Help Develop',
+		'Other',
+		'No'
+	];
 
 	const MAX_CHOICES = 6;
 
@@ -63,12 +75,35 @@
 				sessionStore.markFirstQuestionCreditUsed();
 			}
 			toast.success('Question published to araliya-net!');
-			await sessionStore.completeOnboarding();
+			showGenesisContribution = true;
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Failed to publish question');
 		} finally {
 			isPublishing = false;
 		}
+	}
+
+	async function finishGenesisContribution(saveResponse = true) {
+		if (saveResponse && selectedContribution) {
+			const question = ledgerStore.questions.find(
+				(item) => item.ownerType === 'genesis' && item.text === GENESIS_CONTRIBUTION_PROMPT
+			);
+			const option = question?.options.find((item) => item.text === selectedContribution);
+			if (!question || !option) {
+				toast.error('Genesis’s private question is not available from the relay yet.');
+				return;
+			}
+
+			try {
+				await ledgerStore.submitAnswer(question, option.id, false);
+				toast.success('Your response was saved privately');
+			} catch (err) {
+				toast.error(err instanceof Error ? err.message : 'Failed to save your private response');
+				return;
+			}
+		}
+		showGenesisContribution = false;
+		await sessionStore.completeOnboarding();
 	}
 
 	async function handleSkipToApp() {
@@ -235,3 +270,72 @@
 		{/if}
 	</div>
 </form>
+
+{#if showGenesisContribution}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-5 py-6 backdrop-blur-sm"
+		role="presentation"
+	>
+		<div
+			role="dialog"
+			tabindex="-1"
+			aria-modal="true"
+			aria-labelledby="genesis-contribution-title"
+			class="w-full max-w-md space-y-5 rounded-2xl border border-primary/30 bg-card p-5 shadow-2xl"
+		>
+			<div class="space-y-1.5">
+				<p class="font-mono text-[11px] uppercase tracking-widest text-primary">
+					A private question from Genesis
+				</p>
+				<h2 id="genesis-contribution-title" class="font-heading text-xl font-bold">
+					{GENESIS_CONTRIBUTION_PROMPT}
+				</h2>
+				<p class="text-xs leading-relaxed text-muted-foreground">
+					Choose one. Your response will be saved privately and won’t appear on the public ledger.
+				</p>
+			</div>
+
+			<fieldset class="space-y-2">
+				<legend class="sr-only">Ways you would contribute</legend>
+				{#each contributionOptions as option (option)}
+					<label
+						class={`flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 text-sm transition-colors hover:border-primary/50 ${
+							selectedContribution === option
+								? 'border-primary bg-primary/5'
+								: 'border-border/80 bg-background/50'
+						}`}
+					>
+						<input
+							type="radio"
+							name="genesis-contribution"
+							value={option}
+							bind:group={selectedContribution}
+							class="h-4 w-4 accent-[var(--primary)]"
+						/>
+						<span>{option}</span>
+					</label>
+				{/each}
+			</fieldset>
+
+			<div class="flex gap-2">
+				<Button
+					type="button"
+					variant="outline"
+					onclick={() => finishGenesisContribution(false)}
+					class="h-11 flex-1 cursor-pointer"
+				>
+					Skip
+				</Button>
+				<Button
+					type="button"
+					onclick={() => finishGenesisContribution()}
+					disabled={!selectedContribution}
+					class="h-11 flex-1 cursor-pointer"
+				>
+					Continue
+					<ArrowRight class="ml-2 h-4 w-4" />
+				</Button>
+			</div>
+		</div>
+	</div>
+{/if}

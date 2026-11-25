@@ -8,5 +8,16 @@
     "text": "We don't need nukes.",
     "answers": ["Agree", "Disagree"],
     "multiple": false
+  },
+  {
+    "text": "We need help, would you contribute?",
+    "answers": [
+      "Provide feedback",
+      "Invest money ($5+)",
+      "Help Develop",
+      "Other",
+      "No"
+    ],
+    "multiple": false
   }
 ]

@@ -28,7 +28,7 @@ See [docs/plans/02-onboarding-flow.md](docs/plans/02-onboarding-flow.md) for the
 - **Returning User Gate (`UnlockRecoverScreen`):** Shown automatically when a local vault exists (`araliya_vault_v1`), or via `"Unlock"` on the hero intro bar, supporting password unlock as well as pasting an `araliya-recovery:v1:...` or base64 Ed25519 key for session-only or password-saved unlock.
 - **Full-Bleed Scroll-Up Hero Intro + Identity (`OnboardingHeroFlow`):** 3 vertical full-screen animated SVG hero slides (*Digital Commons*, *Peer-to-Peer Sovereignty*, and *Planting the Seeds*) driven by scroll/wheel, swipe-up, keyboard, or dot controls, stopping on Slide 4 (`KeypairCustodyScreen`, **Step 1 / 8**) for Ed25519 key generation with local password encryption or `"Store secret manually →"`.
 - **Human Vouch & Profile Setup (`Steps 2–5`):** Captures `?vouch=` tokens or `?voucher=<alice_pubkey>` peer invite links (auto-submitting a 72-hour `VouchRequest` to the inviter on the relay), checks for already-submitted relay vouches (`checkInitialVouch`), auto-requests `--genesis` vouches over HTTP when no peer link is present, or lets users **Continue Onboarding While Waiting (72h)** (`HumanVouchScreen`), staging their `@handle` (`ClaimHandleScreen`) and optional details (`PersonalDetailsPreviewScreen`) encrypted locally until the vouch arrives, and displaying `PendingVouchBanner` (during read-only Feed browsing) or `VouchExpiredScreen` if the 72h window expires or is declined.
-- **Interactive Q&A Walkthrough (`Steps 6–8`):** Locked-private public question demo (*"Pepsi or Coke?"*, `PublicQuestionDemoScreen`), sponsored walkthrough demo (*"We don't need nukes."*, `+5 Tokens` UI state, `SponsoredQuestionDemoScreen`), and publishing the user's first real public question to the relay via `qnaCreateQuestion` (or browsing the commons read-only while waiting for a vouch on `AskFirstQuestionScreen`).
+- **Interactive Q&A Walkthrough (`Steps 6–8`):** Locked-private public question demo (*"Pepsi or Coke?"*, `PublicQuestionDemoScreen`), sponsored walkthrough demo (*"We don't need nukes."*, `+5 Tokens` UI state, `SponsoredQuestionDemoScreen`), and publishing the user's first real public question to the relay via `qnaCreateQuestion`. After publishing, Genesis asks whether the user would contribute (feedback, invest $5+, help develop, other, or no); a chosen response is saved privately through Q&A, not added to public tallies. The prompt can be skipped. Pending-vouch users can browse read-only from `AskFirstQuestionScreen`.
 - **In-App Peer Invite & Vouch (`UserDashboard` → `Profile`):** Admitted members get a copyable `/?voucher=<pubkey>` onboarding link, a live **Pending Requests** queue (**Approve & Vouch** with `24h`/`72h`/`7d`/`None` validity, **Decline**, and copyable fallback `VouchCard` tokens/links), and a manual pubkey / offline `VouchCard` issuer.
 
 ---
@@ -69,7 +69,7 @@ cargo run -p araliya-net-relay -- \
 
 > **Note on `--local-only`:** `araliyaService.ensureConnected` propagates `local_only` from `GET /status` into `AraliyaWasmApp.connect({ relayPeer, relayUrls, localOnly, onlineTimeoutMs })`. When the relay is started with `--local-only`, `userx` sets `localOnly: true` (`RelayMode::Disabled`) so the browser never issues external Pkarr DNS lookups (`https://dns.iroh.link/...`). However, direct UDP sockets are unavailable in browsers, so `--local-only` relays cannot accept WASM QUIC connections; the relay status header displays a warning banner in `--local-only` mode.
 
-Included [seed-qna.json](seed-qna.json) matches Stage 4 Screens 8–9 (root onboarding questions omit `position`):
+Included [seed-qna.json](seed-qna.json) seeds the Stage 4 walkthrough questions and the Genesis contribution follow-up (root onboarding questions omit `position`):
 
 ```json
 [
@@ -82,9 +82,16 @@ Included [seed-qna.json](seed-qna.json) matches Stage 4 Screens 8–9 (root onbo
     "text": "We don't need nukes.",
     "answers": ["Agree", "Disagree"],
     "multiple": false
+  },
+  {
+    "text": "We need help, would you contribute?",
+    "answers": ["Provide feedback", "Invest money ($5+)", "Help Develop", "Other", "No"],
+    "multiple": false
   }
 ]
 ```
+
+The follow-up is seeded with the other Genesis questions. To make it available to existing relay data, start the relay with the updated seed file; startup seeding is idempotent. The user's selected option is stored as a private response and does not contribute to public results.
 
 ### 2. Rebuild WASM Package (when Rust workspace changes)
 
