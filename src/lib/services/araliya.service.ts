@@ -914,7 +914,7 @@ class AraliyaService {
 				options,
 				ownerType: isGenesis ? 'genesis' : 'community',
 				authorPubkeyHex,
-				authorHandle: isGenesis ? '@genesis' : `@${authorPubkeyHex.slice(0, 8)}`,
+				authorHandle: isGenesis ? '@araliya' : `@${authorPubkeyHex.slice(0, 8)}`,
 				scope: 'pub',
 				defaultPublic: true,
 				communityCounts: {}

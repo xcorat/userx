@@ -9,7 +9,7 @@
 	import RelayStatusPill from '$lib/components/onboarding/RelayStatusPill.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
-	import { ArrowRight, Check, Globe, Lock } from 'lucide-svelte';
+	import { ArrowRight, Check, Globe } from 'lucide-svelte';
 
 	let selectedOptionId = $state<string | null>(null);
 	let submitted = $state(false);
@@ -71,8 +71,8 @@
 		try {
 			if (relayQuestion && sessionStore.isAdmitted) {
 				await sessionStore.ensureUnlockedOnRelay();
-				await ledgerStore.submitAnswer(relayQuestion, selectedOptionId, false);
-				toast.success('Saved encrypted response to your private store');
+				await ledgerStore.submitAnswer(relayQuestion, selectedOptionId, true);
+				toast.success('Saved public response to the relay');
 			} else if (!sessionStore.isAdmitted) {
 				toast.success('Walkthrough choice previewed locally (waiting for vouch)');
 			} else {
@@ -156,23 +156,27 @@
 			{/each}
 		</div>
 
-		<!-- Locked Answer Mode Notice -->
+		<!-- Fixed Public Answer Mode -->
 		<div class="flex items-center justify-between gap-2 rounded-xl border border-border/80 bg-card/85 px-3.5 py-2.5 text-xs">
 			<div class="flex items-center gap-2">
 				<span class="font-medium text-muted-foreground">Answer Mode:</span>
-				<span class="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-semibold text-primary">
-					<Lock class="h-3 w-3" />
-					Private
-				</span>
+				<label class="inline-flex items-center gap-1.5 font-semibold text-primary">
+					<input
+						type="checkbox"
+						checked
+						disabled
+						aria-label="Public answer mode, fixed"
+						class="h-3.5 w-3.5 accent-[var(--primary)]"
+					/>
+					<Globe class="h-3 w-3" />
+					Public
+				</label>
 			</div>
-			<span class="font-mono text-[10px] text-muted-foreground">
-				[✓] Always selected (Locked)
-			</span>
 		</div>
 
 		{#if submitted}
 			<div class="rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs leading-relaxed text-foreground">
-				Your choice stayed encrypted inside your <span class="font-mono">/private</span> store. Public percentages above only count opted-in public votes.
+				Public is selected for this walkthrough, so eligible responses contribute to the percentages above.
 			</div>
 		{:else}
 			<p class="text-[11px] leading-relaxed text-muted-foreground">

@@ -42,7 +42,7 @@
 			? sessionStore.pendingVouchRequest?.voucherHandle
 				? `pending (@${sessionStore.pendingVouchRequest.voucherHandle})`
 				: 'pending'
-			: sessionStore.vouchedByHandle ?? sessionStore.pendingVouchInviter ?? 'genesis';
+			: sessionStore.vouchedByHandle ?? sessionStore.pendingVouchInviter ?? 'araliya';
 
 		const obj: Record<string, string> = {
 			username: publicHandle,
@@ -150,9 +150,9 @@
 				/>
 			</div>
 
-			<div class="grid grid-cols-2 gap-2.5">
+			<div class="space-y-2.5">
 				<div class="space-y-1">
-					<div class="flex items-center justify-between gap-1">
+					<div class="flex items-center justify-between gap-2">
 						<Label for="detail-dob" class="text-[11px] font-semibold">DoB</Label>
 						<PublicLedgerCheckbox bind:checked={dobPublic} compact />
 					</div>
@@ -165,7 +165,7 @@
 				</div>
 
 				<div class="space-y-1">
-					<div class="flex items-center justify-between gap-1">
+					<div class="flex items-center justify-between gap-2">
 						<Label for="detail-pronouns" class="text-[11px] font-semibold">Pronouns</Label>
 						<PublicLedgerCheckbox bind:checked={pronounsPublic} compact />
 					</div>

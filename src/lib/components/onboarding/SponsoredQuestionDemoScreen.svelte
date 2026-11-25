@@ -20,7 +20,7 @@
 	let displayOptions = $derived(
 		relayQuestion ? relayQuestion.options : DEFAULT_SPONSORED_DEMO_QUESTION.options
 	);
-	let rewardTokens = DEFAULT_SPONSORED_DEMO_QUESTION.sponsoredRewardTokens ?? 5;
+	let rewardTokens = DEFAULT_SPONSORED_DEMO_QUESTION.sponsoredRewardTokens ?? 1;
 
 	async function handleAnswerAndEarn() {
 		if (!selectedOptionId) {

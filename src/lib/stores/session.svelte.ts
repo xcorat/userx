@@ -105,6 +105,11 @@ function normalizeOnboardingStep(raw: unknown): OnboardingStep | null {
 	return VALID_STEPS.has(raw as OnboardingStep) ? (raw as OnboardingStep) : null;
 }
 
+function normalizeSystemHandle(raw: string): string {
+	const handle = raw.trim().replace(/^@+/, '');
+	return handle.toLowerCase() === 'genesis' ? 'araliya' : handle;
+}
+
 /**
  * Manages password-encrypted or manual local key custody, WebCrypto session quick-unlock,
  * relay connectivity, and the 10-screen onboarding/navigation state.
@@ -241,7 +246,7 @@ class SessionStore {
 				this.pendingVouchToken = parsed.pendingVouchToken.trim();
 			}
 			if (typeof parsed.pendingVouchInviter === 'string' && parsed.pendingVouchInviter.trim()) {
-				this.pendingVouchInviter = parsed.pendingVouchInviter.trim();
+				this.pendingVouchInviter = normalizeSystemHandle(parsed.pendingVouchInviter);
 			}
 			if (
 				typeof parsed.pendingVoucherPubkey === 'string' &&
@@ -264,7 +269,7 @@ class SessionStore {
 								: null,
 						voucherHandle:
 							typeof req.voucherHandle === 'string' && req.voucherHandle.trim()
-								? req.voucherHandle.trim()
+								? normalizeSystemHandle(req.voucherHandle)
 								: null,
 						createdAtMs: req.createdAtMs,
 						expiresAtMs: req.expiresAtMs,
@@ -274,7 +279,7 @@ class SessionStore {
 				}
 			}
 			if (typeof parsed.vouchedByHandle === 'string' && parsed.vouchedByHandle.trim()) {
-				this.vouchedByHandle = parsed.vouchedByHandle.trim();
+				this.vouchedByHandle = normalizeSystemHandle(parsed.vouchedByHandle);
 			}
 			if (typeof parsed.demoTokenBalance === 'number' && Number.isFinite(parsed.demoTokenBalance)) {
 				this.demoTokenBalance = Math.max(0, parsed.demoTokenBalance);
@@ -388,7 +393,7 @@ class SessionStore {
 		if (!voucherPubkey) return null;
 		const rootPk = this.relayStatus?.rootPubkey;
 		if (rootPk && pubkeyToHex(voucherPubkey) === pubkeyToHex(rootPk)) {
-			return 'genesis';
+			return 'araliya';
 		}
 		try {
 			const user = await araliyaService.getUserByPubkey(voucherPubkey);
@@ -995,7 +1000,7 @@ class SessionStore {
 	}
 
 	setVouchedByHandle(handle: string | null): void {
-		this.vouchedByHandle = handle?.trim().replace(/^@+/, '') || null;
+		this.vouchedByHandle = handle ? normalizeSystemHandle(handle) || null : null;
 		this.persistUiState();
 	}
 

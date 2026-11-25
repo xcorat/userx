@@ -96,7 +96,7 @@
 
 	async function resolveHandleForPk(voucherPk: string): Promise<string | null> {
 		if (relay?.rootPubkey && pubkeyToHex(voucherPk) === pubkeyToHex(relay.rootPubkey)) {
-			return 'genesis';
+			return 'araliya';
 		}
 		if (relay?.connected && araliyaService.hasUnlockedWasmSession()) {
 			try {
@@ -227,8 +227,8 @@
 		try {
 			const token = await araliyaService.requestGenesisVouch(pubkey, relay.baseUrl);
 			sessionStore.setPendingVouchToken(token);
-			sessionStore.setVouchedByHandle('genesis');
-			resolvedVoucherHandle = 'genesis';
+			sessionStore.setVouchedByHandle('araliya');
+			resolvedVoucherHandle = 'araliya';
 		} catch {
 			// Fall back to peer vouch / manual paste flow
 		} finally {

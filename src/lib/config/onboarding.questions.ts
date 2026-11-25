@@ -54,7 +54,7 @@ export const DEFAULT_SPONSORED_DEMO_QUESTION: OnboardingDemoQuestion = {
 		opt_1: 374
 	},
 	totalBaselineResponses: 892,
-	sponsoredRewardTokens: 5,
+	sponsoredRewardTokens: 1,
 	referenceUrl: 'https://www.icanw.org/nuclear_weapons_facts',
 	referenceSummary:
 		'Background context on global nuclear deterrence, disarmament treaties, and humanitarian risk.'
