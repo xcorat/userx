@@ -232,7 +232,11 @@ class SessionStore {
 			if (mappedStep) {
 				this.onboardingStep = mappedStep;
 			}
-			if (parsed.activeTab === 'feed' || parsed.activeTab === 'dashboard') {
+			if (
+				parsed.activeTab === 'feed' ||
+				parsed.activeTab === 'users' ||
+				parsed.activeTab === 'dashboard'
+			) {
 				this.activeTab = parsed.activeTab;
 			}
 			if (
@@ -1279,6 +1283,11 @@ class SessionStore {
 
 	markFirstQuestionCreditUsed(): void {
 		this.firstQuestionCreditUsed = true;
+		this.persistUiState();
+	}
+
+	setPreferredCustodyMode(mode: 'browser-encrypted' | 'manual-no-store'): void {
+		this.custodyMode = mode;
 		this.persistUiState();
 	}
 

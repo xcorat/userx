@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import UserDashboard from '$lib/components/dashboard/UserDashboard.svelte';
+	import { RefreshCw } from 'lucide-svelte';
 
-	onMount(() => {
+	$effect(() => {
+		if (!sessionStore.isInitialized) return;
 		if (!sessionStore.isLoggedIn || sessionStore.isVouchExpired) {
 			goto('/');
 			return;
@@ -13,6 +14,11 @@
 	});
 </script>
 
-{#if sessionStore.isLoggedIn && !sessionStore.isVouchExpired}
+{#if !sessionStore.isInitialized}
+	<div class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+		<RefreshCw class="h-6 w-6 animate-spin text-primary" />
+		<p class="font-mono text-xs text-muted-foreground">Restoring encrypted session…</p>
+	</div>
+{:else if sessionStore.isLoggedIn && !sessionStore.isVouchExpired}
 	<UserDashboard />
 {/if}

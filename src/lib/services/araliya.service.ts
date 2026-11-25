@@ -9,10 +9,12 @@ import {
 	parsePeerList
 } from '$lib/config/genesis.config';
 import type {
+	DirectoryUser,
 	FieldVisibility,
 	GeneratedKeypair,
 	IssuedVouchCard,
 	ProfileFieldKey,
+	PublicProfileField,
 	QuestionItem,
 	QuestionOption,
 	RecoveryPayload,
@@ -64,6 +66,12 @@ interface WireProfileFieldRow {
 	updated_at_ms: number;
 }
 
+interface WirePublicProfileFieldRow {
+	field_key: string;
+	value_json: string;
+	updated_at_ms: number;
+}
+
 interface WireOnboardingStateRow {
 	completed: boolean;
 	step_cursor: string;
@@ -71,8 +79,11 @@ interface WireOnboardingStateRow {
 }
 
 export interface WireUserRegistration {
+	user_pubkey?: number[] | Uint8Array | string;
+	x25519_pubkey?: number[] | null;
 	username: string;
 	display_name: string;
+	avatar_blob_cid?: number[] | null;
 	created_at_ms: number;
 	updated_at_ms: number;
 }
@@ -133,6 +144,26 @@ export function pubkeyToHex(pubkeyB64UrlOrHex: string): string {
 	} catch {
 		return trimmed.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 	}
+}
+
+function wirePubkeyToHex(pk: number[] | Uint8Array | string | null | undefined): string {
+	if (pk instanceof Uint8Array || Array.isArray(pk)) {
+		return bytesToHex(pk);
+	}
+	if (typeof pk === 'string') {
+		return pubkeyToHex(pk);
+	}
+	return '';
+}
+
+function mapWireUserToDirectoryUser(row: WireUserRegistration): DirectoryUser {
+	return {
+		userPubkeyHex: wirePubkeyToHex(row.user_pubkey),
+		username: (row.username ?? '').trim(),
+		displayName: (row.display_name ?? row.username ?? '').trim(),
+		createdAtMs: Number(row.created_at_ms ?? 0),
+		updatedAtMs: Number(row.updated_at_ms ?? 0)
+	};
 }
 
 function errorMessage(err: unknown, fallback: string): string {
@@ -737,6 +768,41 @@ class AraliyaService {
 			username
 		)) as WireUserRegistration | null;
 		return res ?? null;
+	}
+
+	async listUsers(
+		limit = 50,
+		cursor: string | null = null
+	): Promise<{ items: DirectoryUser[]; nextCursor: string | null }> {
+		const app = await this.ensureConnected();
+		const res = (await app.listUsers(limit, cursor ?? null)) as {
+			items?: WireUserRegistration[];
+			nextCursor?: string | null;
+		};
+		return {
+			items: (res?.items ?? []).map(mapWireUserToDirectoryUser),
+			nextCursor: res?.nextCursor ?? null
+		};
+	}
+
+	async lookupDirectoryUserByUsername(username: string): Promise<DirectoryUser | null> {
+		const cleaned = username.trim().replace(/^@+/, '');
+		if (!cleaned) return null;
+		const app = await this.ensureConnected();
+		const res = (await app.getUserByUsername(cleaned)) as WireUserRegistration | null;
+		return res ? mapWireUserToDirectoryUser(res) : null;
+	}
+
+	async getPublicProfileFields(userPubkey: string): Promise<PublicProfileField[]> {
+		const app = await this.ensureConnected();
+		const rows = (await app.getPublicProfileFields(
+			userPubkey
+		)) as WirePublicProfileFieldRow[];
+		return (rows ?? []).map((row) => ({
+			key: row.field_key,
+			value: parseJsonStringValue(row.value_json),
+			updatedAt: new Date(row.updated_at_ms).toISOString()
+		}));
 	}
 
 	async checkInitialVouch(): Promise<VouchCertInfo | null> {

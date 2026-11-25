@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { loadManualRelayOverride } from '$lib/config/genesis.config';
 	import { pubkeyToHex } from '$lib/services/araliya.service';
 	import { sessionStore } from '$lib/stores/session.svelte';
@@ -8,10 +8,21 @@
 
 	interface Props {
 		onReplayIntro?: () => void;
+		onBackToTools?: () => void;
 		isActive?: boolean;
+		preferredCustodyMode?: 'browser-encrypted' | 'manual-no-store';
+		custodyChosenInIntro?: boolean;
+		onChangeCustodyMode?: (mode: 'browser-encrypted' | 'manual-no-store') => void;
 	}
 
-	let { onReplayIntro, isActive = true }: Props = $props();
+	let {
+		onReplayIntro,
+		onBackToTools,
+		isActive = true,
+		preferredCustodyMode,
+		custodyChosenInIntro = false,
+		onChangeCustodyMode
+	}: Props = $props();
 
 	let publicKey = $state('');
 	let recoveryKey = $state('');
@@ -19,8 +30,25 @@
 	let initError = $state<string | null>(null);
 
 	let revealPrivate = $state(false);
-	let manualMode = $state(sessionStore.custodyMode === 'manual-no-store');
+	let manualMode = $state(
+		untrack(() => (preferredCustodyMode ?? sessionStore.custodyMode) === 'manual-no-store')
+	);
 	let manualConfirmed = $state(false);
+
+	$effect(() => {
+		if (preferredCustodyMode) {
+			manualMode = preferredCustodyMode === 'manual-no-store';
+		}
+	});
+
+	function switchCustodyMode(mode: 'browser-encrypted' | 'manual-no-store') {
+		manualMode = mode === 'manual-no-store';
+		if (onChangeCustodyMode) {
+			onChangeCustodyMode(mode);
+		} else {
+			sessionStore.setPreferredCustodyMode(mode);
+		}
+	}
 
 	let password = $state('');
 	let showPassword = $state(false);
@@ -184,6 +212,16 @@
 					<Settings class="h-3 w-3" />
 				</button>
 
+				{#if onBackToTools}
+					<button
+						type="button"
+						onclick={onBackToTools}
+						class="cursor-pointer text-xs text-[#a7f3d0]/80 transition hover:text-[#a7f3d0]"
+					>
+						← Tools
+					</button>
+				{/if}
+
 				{#if onReplayIntro}
 					<button
 						type="button"
@@ -339,6 +377,16 @@
 			</div>
 		</div>
 
+		{#if custodyChosenInIntro}
+			<div class="mt-4 flex items-center justify-between gap-2 rounded-xl border border-[#6ee7b7]/20 bg-[#182b23]/70 px-3 py-2 text-[11px] text-[#a7f3d0]">
+				<span>
+					From PKI setup: {manualMode
+						? 'Store secret manually'
+						: 'Encrypt in browser with local password'}
+				</span>
+			</div>
+		{/if}
+
 		<!-- Local Password or Manual Custody Form -->
 		<form onsubmit={handleSubmit} class="mt-5 space-y-4">
 			{#if !manualMode}
@@ -374,7 +422,7 @@
 					<div class="flex justify-end">
 						<button
 							type="button"
-							onclick={() => (manualMode = true)}
+							onclick={() => switchCustodyMode('manual-no-store')}
 							class="cursor-pointer text-[11px] font-medium text-[#a7f3d0]/85 hover:text-[#6ee7b7] hover:underline"
 						>
 							Store secret manually →
@@ -412,7 +460,7 @@
 
 						<button
 							type="button"
-							onclick={() => (manualMode = false)}
+							onclick={() => switchCustodyMode('browser-encrypted')}
 							class="cursor-pointer text-[11px] font-medium text-[#a7f3d0] hover:underline"
 						>
 							← Encrypt with password instead

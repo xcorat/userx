@@ -11,6 +11,7 @@
 	import SponsoredQuestionDemoScreen from '$lib/components/onboarding/SponsoredQuestionDemoScreen.svelte';
 	import AskFirstQuestionScreen from '$lib/components/onboarding/AskFirstQuestionScreen.svelte';
 	import QuestionFeed from '$lib/components/feed/QuestionFeed.svelte';
+	import UsersDirectory from '$lib/components/users/UsersDirectory.svelte';
 	import UserDashboard from '$lib/components/dashboard/UserDashboard.svelte';
 	import { RefreshCw } from 'lucide-svelte';
 
@@ -41,7 +42,7 @@
 {:else if step === 'unlock'}
 	<UnlockRecoverScreen />
 {:else if step === 'welcome' || step === 'keypair'}
-	<OnboardingHeroFlow initialSlide={step === 'keypair' ? 3 : 0} />
+	<OnboardingHeroFlow initialSlide={step === 'keypair' ? 4 : 0} />
 {:else if step === 'vouch'}
 	<HumanVouchScreen />
 {:else if step === 'vouch-expired'}
@@ -58,6 +59,8 @@
 	<SponsoredQuestionDemoScreen />
 {:else if step === 'ask-first'}
 	<AskFirstQuestionScreen />
+{:else if sessionStore.activeTab === 'users'}
+	<UsersDirectory />
 {:else if sessionStore.activeTab === 'dashboard'}
 	<UserDashboard />
 {:else}

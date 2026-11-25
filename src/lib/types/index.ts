@@ -69,7 +69,21 @@ export type KeyCustodyMode =
 	| 'password-vault-wiped'
 	| 'manual-no-store';
 
-export type AppTab = 'feed' | 'dashboard';
+export type AppTab = 'feed' | 'users' | 'dashboard';
+
+export interface DirectoryUser {
+	userPubkeyHex: string;
+	username: string;
+	displayName: string;
+	createdAtMs: number;
+	updatedAtMs: number;
+}
+
+export interface PublicProfileField {
+	key: string;
+	value: string;
+	updatedAt: string;
+}
 
 export type ProfileFieldKey = 'username' | 'realName' | 'dateOfBirth' | 'pronouns';
 

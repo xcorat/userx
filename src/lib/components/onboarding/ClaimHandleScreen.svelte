@@ -118,7 +118,7 @@
 				Claim Your Handle
 			</h1>
 			<p class="text-xs leading-relaxed text-muted-foreground">
-				Stored in your public namespace so peers can find and verify you—or kept strictly private in your encrypted vault.
+				Public handle is searchable, private handle keeps the account hidden.
 			</p>
 		</div>
 
@@ -175,12 +175,13 @@
 			<Info class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
 			{#if keepPublic}
 				<p>
-					Your <span class="font-semibold text-foreground">@handle</span> will be saved in your public namespace so peers can recognize and verify your public answers.
+					<span class="font-semibold text-foreground">Public handle is searchable</span> — your
+					<span class="font-semibold text-foreground">@handle</span> appears in the public Users directory so peers can find you and verify your public answers.
 				</p>
 			{:else}
 				<p>
-					Your chosen handle stays encrypted inside <span class="font-mono text-foreground">/private</span>. The public relay directory only sees the pseudonymous alias
-					<span class="font-mono text-primary">@{pseudonymousPreview}</span>.
+					<span class="font-semibold text-foreground">Private handle keeps the account hidden</span> — your chosen handle stays encrypted inside <span class="font-mono text-foreground">/private</span> and is excluded from the public Users directory (relay alias
+					<span class="font-mono text-primary">@{pseudonymousPreview}</span>).
 				</p>
 			{/if}
 		</div>

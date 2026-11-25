@@ -5,7 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import PendingVouchBanner from '$lib/components/onboarding/PendingVouchBanner.svelte';
-	import { Flame, LayoutDashboard } from 'lucide-svelte';
+	import { Flame, LayoutDashboard, Users } from 'lucide-svelte';
 
 	interface Props {
 		children: Snippet;
@@ -22,10 +22,12 @@
 	);
 	let showPendingBanner = $derived(showMainNav && sessionStore.isPendingVouch);
 
-	let activeNav = $derived<'feed' | 'dashboard'>(
-		page.url.pathname.startsWith('/dashboard') || sessionStore.activeTab === 'dashboard'
+	let activeNav = $derived<'feed' | 'users' | 'dashboard'>(
+		page.url.pathname.startsWith('/dashboard')
 			? 'dashboard'
-			: 'feed'
+			: page.url.pathname.startsWith('/users')
+				? 'users'
+				: sessionStore.activeTab
 	);
 
 	function openFeed() {
@@ -35,9 +37,16 @@
 		}
 	}
 
+	function openUsers() {
+		sessionStore.setActiveTab('users');
+		if (page.url.pathname !== '/users') {
+			goto('/users');
+		}
+	}
+
 	function openDashboard() {
 		sessionStore.setActiveTab('dashboard');
-		if (page.url.pathname !== '/') {
+		if (page.url.pathname !== '/dashboard') {
 			goto('/dashboard');
 		}
 	}
@@ -79,7 +88,7 @@
 		{#if showMainNav}
 			<nav
 				aria-label="Primary navigation"
-				class="grid h-14 shrink-0 grid-cols-2 border-t border-border/80 bg-card/90 backdrop-blur-md"
+				class="grid h-14 shrink-0 grid-cols-3 border-t border-border/80 bg-card/90 backdrop-blur-md"
 			>
 				<button
 					type="button"
@@ -92,6 +101,18 @@
 				>
 					<Flame class="h-4 w-4" />
 					Feed
+				</button>
+				<button
+					type="button"
+					onclick={openUsers}
+					class={`flex cursor-pointer items-center justify-center gap-2 text-xs font-semibold transition-colors ${
+						activeNav === 'users'
+							? 'text-primary'
+							: 'text-muted-foreground hover:text-foreground'
+					}`}
+				>
+					<Users class="h-4 w-4" />
+					Users
 				</button>
 				<button
 					type="button"

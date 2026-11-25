@@ -1,21 +1,130 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
+	import { flip } from 'svelte/animate';
+	import { cubicOut } from 'svelte/easing';
+	import type { TransitionConfig } from 'svelte/transition';
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import KeypairCustodyScreen from '$lib/components/onboarding/KeypairCustodyScreen.svelte';
+	import OnboardingExplainerDeck, {
+		type ExplainerTopic
+	} from '$lib/components/onboarding/OnboardingExplainerDeck.svelte';
+	import { Check } from 'lucide-svelte';
 
 	interface Props {
-		initialSlide?: 0 | 3;
+		initialSlide?: 0 | 4;
 	}
 
 	let { initialSlide = 0 }: Props = $props();
 
-	const LAST_SLIDE = 3;
+	const LAST_SLIDE = 4;
 	let currentIndex = $state<number>(untrack(() => initialSlide));
 	let ready = $state(untrack(() => initialSlide === LAST_SLIDE));
 	let isTransitioning = $state(false);
 	let transitionTimer: ReturnType<typeof setTimeout> | null = null;
 	let touchStartY = 0;
-	let slide3Container = $state<HTMLDivElement | null>(null);
+	let slide4Container = $state<HTMLDivElement | null>(null);
+
+	let screen3Stage = $state<0 | 1 | 2 | 3>(0);
+	let activeExplainer = $state<ExplainerTopic | null>(null);
+	let visitedExplainers = $state<Record<ExplainerTopic, boolean>>({
+		pki: false,
+		storage: false,
+		value: false
+	});
+	let selectedCustodyMode = $state<'browser-encrypted' | 'manual-no-store'>(
+		sessionStore.custodyMode === 'manual-no-store' ? 'manual-no-store' : 'browser-encrypted'
+	);
+	let custodyChosenInIntro = $state(false);
+
+	let isExtractiveScreen = $derived(currentIndex === 1 && activeExplainer === null);
+
+	const COMMONS_POINTS = [
+		{
+			id: 'own-data',
+			prefix: 'where ',
+			highlight: 'YOU',
+			suffix: ' own your data,',
+			highlightClass: 'text-[#f5b841]'
+		},
+		{
+			id: 'collective-infra',
+			prefix: 'where we manage infrastructure ',
+			highlight: 'collectively,',
+			suffix: '',
+			highlightClass: 'text-[#6ee7b7]'
+		},
+		{
+			id: 'democratic-value',
+			prefix: 'And ',
+			highlight: 'democratically',
+			suffix: ' manage the value we create',
+			highlightClass: 'text-[#f5b841]'
+		}
+	] as const;
+
+	let activeScreen3Point = $derived(
+		screen3Stage !== 3 ? COMMONS_POINTS[screen3Stage] : null
+	);
+
+	function createUniformCrossfade(duration = 440) {
+		const toReceive = new Map<string, DOMRect>();
+		const toSend = new Map<string, DOMRect>();
+
+		function morphFrom(from: DOMRect, node: Element): TransitionConfig {
+			const style = getComputedStyle(node);
+			const transform = style.transform === 'none' ? '' : style.transform;
+			const opacity = +style.opacity;
+			const to = node.getBoundingClientRect();
+			const dx = from.left + from.width / 2 - (to.left + to.width / 2);
+			const dy = from.top + from.height / 2 - (to.top + to.height / 2);
+			const rawScale = to.height > 0 ? from.height / to.height : 1;
+			const scale = Math.max(0.45, Math.min(2.2, rawScale));
+
+			return {
+				duration,
+				easing: cubicOut,
+				css: (_t, u) => `
+					opacity: ${opacity};
+					transform-origin: center center;
+					transform: ${transform} translate(${u * dx}px, ${u * dy}px) scale(${1 + (scale - 1) * u});
+				`
+			};
+		}
+
+		function makeTransition(
+			items: Map<string, DOMRect>,
+			counterparts: Map<string, DOMRect>,
+			intro: boolean
+		) {
+			return (node: Element, params: { key: string }): (() => TransitionConfig) => {
+				items.set(params.key, node.getBoundingClientRect());
+				return () => {
+					const other = counterparts.get(params.key);
+					if (other) {
+						counterparts.delete(params.key);
+						if (!intro) {
+							return { duration: 0, css: () => 'opacity: 0;' };
+						}
+						return morphFrom(other, node);
+					}
+					items.delete(params.key);
+					return {
+						duration: 240,
+						easing: cubicOut,
+						css: (t, u) =>
+							`opacity: ${t}; transform: translateY(${(intro ? 1 : -1) * u * 12}px);`
+					};
+				};
+			};
+		}
+
+		return [
+			makeTransition(toSend, toReceive, false),
+			makeTransition(toReceive, toSend, true)
+		] as const;
+	}
+
+	const [sendPoint, receivePoint] = createUniformCrossfade(440);
 
 	onMount(() => {
 		if (!ready) {
@@ -40,7 +149,11 @@
 		const clamped = Math.max(0, Math.min(LAST_SLIDE, index));
 		if (clamped === currentIndex) return;
 
+		const prevIndex = currentIndex;
 		currentIndex = clamped;
+		if (clamped === 2) {
+			screen3Stage = prevIndex > 2 ? 3 : 0;
+		}
 		isTransitioning = true;
 		sessionStore.setOnboardingStep(clamped === LAST_SLIDE ? 'keypair' : 'welcome');
 
@@ -51,50 +164,70 @@
 	}
 
 	function nextSlide() {
+		if (currentIndex === 2 && screen3Stage < 3) {
+			screen3Stage = (screen3Stage + 1) as 0 | 1 | 2 | 3;
+			isTransitioning = true;
+			if (transitionTimer) clearTimeout(transitionTimer);
+			transitionTimer = setTimeout(() => {
+				isTransitioning = false;
+			}, 420);
+			return;
+		}
 		if (currentIndex < LAST_SLIDE) {
 			goToSlide(currentIndex + 1);
 		}
 	}
 
 	function prevSlide() {
+		if (currentIndex === 2 && screen3Stage > 0) {
+			screen3Stage = (screen3Stage - 1) as 0 | 1 | 2 | 3;
+			isTransitioning = true;
+			if (transitionTimer) clearTimeout(transitionTimer);
+			transitionTimer = setTimeout(() => {
+				isTransitioning = false;
+			}, 420);
+			return;
+		}
 		if (currentIndex > 0) {
 			goToSlide(currentIndex - 1);
 		}
 	}
 
-	function canScrollBackFromSlide3(): boolean {
-		return currentIndex < LAST_SLIDE || (slide3Container?.scrollTop ?? 0) <= 2;
+	function canScrollBackFromLastSlide(): boolean {
+		return currentIndex < LAST_SLIDE || (slide4Container?.scrollTop ?? 0) <= 2;
 	}
 
 	function handleWheel(event: WheelEvent) {
-		if (isTransitioning) return;
+		if (activeExplainer !== null || isTransitioning) return;
 		if (Math.abs(event.deltaY) < 25) return;
 		if (event.deltaY > 0) {
 			nextSlide();
-		} else if (canScrollBackFromSlide3()) {
+		} else if (canScrollBackFromLastSlide()) {
 			prevSlide();
 		}
 	}
 
 	function handleTouchStart(event: TouchEvent) {
+		if (activeExplainer !== null) return;
 		if (event.touches.length === 1) {
 			touchStartY = event.touches[0].clientY;
 		}
 	}
 
 	function handleTouchEnd(event: TouchEvent) {
-		if (isTransitioning || event.changedTouches.length !== 1) return;
+		if (activeExplainer !== null || isTransitioning || event.changedTouches.length !== 1) return;
 		const deltaY = touchStartY - event.changedTouches[0].clientY;
 		if (Math.abs(deltaY) > 45) {
 			if (deltaY > 0) {
 				nextSlide();
-			} else if (canScrollBackFromSlide3()) {
+			} else if (canScrollBackFromLastSlide()) {
 				prevSlide();
 			}
 		}
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {
+		if (activeExplainer !== null) return;
 		const target = event.target as HTMLElement | null;
 		const tag = target?.tagName ?? '';
 		if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
@@ -106,31 +239,59 @@
 				nextSlide();
 			}
 		} else if (event.key === 'ArrowUp' || event.key === 'PageUp') {
-			if (currentIndex > 0 && canScrollBackFromSlide3()) {
+			if (currentIndex > 0 && canScrollBackFromLastSlide()) {
 				event.preventDefault();
 				prevSlide();
 			}
 		}
 	}
 
+	function openExplainer(topic: ExplainerTopic) {
+		activeExplainer = topic;
+		visitedExplainers[topic] = true;
+	}
+
+	function handleSelectCustody(mode: 'browser-encrypted' | 'manual-no-store') {
+		selectedCustodyMode = mode;
+		custodyChosenInIntro = true;
+		sessionStore.setPreferredCustodyMode(mode);
+	}
+
+	function handleGenerateFromExplainer() {
+		activeExplainer = null;
+		goToSlide(LAST_SLIDE);
+	}
+
 	const SLIDE_LABELS = [
 		'Screen 1: Digital Commons',
-		'Screen 2: Owned Data & Collective Infrastructure',
-		'Screen 3: Tend the Garden',
-		'Screen 4: Create Identity Form'
+		'Screen 2: Extractive Internet',
+		'Screen 3: Digital Public Commons',
+		'Screen 4: Planting the Seeds & Tools',
+		'Screen 5: Create Identity Form'
 	];
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />
 
 <div
-	class="hero-root relative h-dvh w-full overflow-hidden bg-[#0b120f] text-[#f4f1ea] select-none"
+	class={`hero-root relative h-dvh w-full overflow-hidden text-[#f4f1ea] select-none transition-colors duration-700 ${
+		isExtractiveScreen ? 'bg-[#080c1d]' : 'bg-[#0b120f]'
+	}`}
 	onwheel={handleWheel}
 	ontouchstart={handleTouchStart}
 	ontouchend={handleTouchEnd}
 >
-	<!-- Ambient Sage + Amberleaf Background Glow -->
-	<div class="bg-glow pointer-events-none fixed inset-0 z-0"></div>
+	<!-- Ambient Background Glows (Forest Sage vs Screen 2 Blue/Indigo) -->
+	<div
+		class={`bg-glow pointer-events-none fixed inset-0 z-0 transition-opacity duration-700 ${
+			isExtractiveScreen ? 'opacity-0' : 'opacity-100'
+		}`}
+	></div>
+	<div
+		class={`bg-glow-indigo pointer-events-none fixed inset-0 z-0 transition-opacity duration-700 ${
+			isExtractiveScreen ? 'opacity-100' : 'opacity-0'
+		}`}
+	></div>
 
 	<!-- Top Minimal Navigation Bar -->
 	<header class="pointer-events-none fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-5 py-4 sm:px-8">
@@ -140,7 +301,14 @@
 			class="pointer-events-auto flex cursor-pointer items-center gap-2.5 text-left"
 		>
 			<svg class="h-7 w-7" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-				<circle cx="16" cy="16" r="14" stroke="#34d399" stroke-opacity="0.35" stroke-width="1.5" />
+				<circle
+					cx="16"
+					cy="16"
+					r="14"
+					stroke={isExtractiveScreen ? '#818cf8' : '#34d399'}
+					stroke-opacity="0.4"
+					stroke-width="1.5"
+				/>
 				<path d="M16 7C18.5 10.5 18.5 14 16 16C13.5 14 13.5 10.5 16 7Z" fill="#f5b841" />
 				<path d="M24.5 13C21.8 16.2 18.5 17 16 16C17.2 13.4 20.6 11.7 24.5 13Z" fill="#6ee7b7" />
 				<path d="M21.2 23.2C17.5 21.8 15.8 18.8 16 16C18.8 16.4 21.2 19.2 21.2 23.2Z" fill="#34d399" />
@@ -156,7 +324,11 @@
 				<button
 					type="button"
 					onclick={() => sessionStore.openUnlockScreen()}
-					class="cursor-pointer rounded-full border border-emerald-400/25 bg-[#101c17]/75 px-3.5 py-1.5 text-xs font-medium text-[#a7f3d0] transition hover:bg-[#182b23]"
+					class={`cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+						isExtractiveScreen
+							? 'border-indigo-400/35 bg-[#111836]/80 text-[#c7d2fe] hover:bg-[#1a2550]'
+							: 'border-emerald-400/25 bg-[#101c17]/75 text-[#a7f3d0] hover:bg-[#182b23]'
+					}`}
 				>
 					Unlock
 				</button>
@@ -164,7 +336,11 @@
 				<button
 					type="button"
 					onclick={() => sessionStore.setOnboardingStep('feed')}
-					class="cursor-pointer rounded-full border border-emerald-400/25 bg-[#101c17]/75 px-3.5 py-1.5 text-xs font-medium text-[#a7f3d0] transition hover:bg-[#182b23]"
+					class={`cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+						isExtractiveScreen
+							? 'border-indigo-400/35 bg-[#111836]/80 text-[#c7d2fe] hover:bg-[#1a2550]'
+							: 'border-emerald-400/25 bg-[#101c17]/75 text-[#a7f3d0] hover:bg-[#182b23]'
+					}`}
 				>
 					Feed →
 				</button>
@@ -195,7 +371,9 @@
 				aria-current={currentIndex === idx ? 'step' : undefined}
 				class={`cursor-pointer rounded-full transition-all duration-300 ${
 					currentIndex === idx
-						? 'h-6 w-2.5 bg-[#6ee7b7]'
+						? isExtractiveScreen
+							? 'h-6 w-2.5 bg-[#818cf8]'
+							: 'h-6 w-2.5 bg-[#6ee7b7]'
 						: 'h-2.5 w-2.5 bg-white/25 hover:bg-white/50'
 				}`}
 			></button>
@@ -397,18 +575,143 @@
 		</section>
 
 		<!-- ===================================================================
-		     SLIDE 1: You own the data you share / Together we build the infrastructure!
+		     SLIDE 1 (Screen 2): From centralized, gated and extractive internet
 		     =================================================================== -->
 		<section
 			class="screen"
 			class:is-active={ready && currentIndex === 1}
-			aria-label="Data Ownership and Collective Infrastructure"
+			aria-label="Centralized and Extractive Internet"
 		>
 			<div class="flex w-full max-w-4xl flex-col items-center px-4 text-center">
-				<div class="mb-5 w-full max-w-[320px] sm:mb-7 sm:max-w-[440px]">
+				<div class="mb-5 w-full max-w-[300px] sm:mb-7 sm:max-w-[400px]">
 					<svg
 						viewBox="0 0 400 280"
-						class="h-auto max-h-[36dvh] w-full overflow-visible"
+						class="h-auto max-h-[33dvh] w-full overflow-visible"
+						role="img"
+						aria-label="Illustration of a centralized gated corporate silo extracting data and attention from users"
+					>
+						<defs>
+							<radialGradient id="indigoCoreGlow" cx="50%" cy="46%" r="50%">
+								<stop offset="0%" stop-color="#6366f1" stop-opacity="0.38" />
+								<stop offset="65%" stop-color="#38bdf8" stop-opacity="0.12" />
+								<stop offset="100%" stop-color="#080c1d" stop-opacity="0" />
+							</radialGradient>
+						</defs>
+
+						<circle cx="200" cy="135" r="115" fill="url(#indigoCoreGlow)" class="halo-pulse" />
+						<circle
+							cx="200"
+							cy="135"
+							r="96"
+							fill="none"
+							stroke="#818cf8"
+							stroke-opacity="0.28"
+							stroke-width="1"
+							stroke-dasharray="4 7"
+							class="spin-slow"
+						/>
+
+						<!-- Inward Extraction Streams -->
+						<g stroke-linecap="round" fill="none">
+							<line x1="68" y1="110" x2="156" y2="118" stroke="#38bdf8" stroke-opacity="0.55" stroke-width="2" class="mesh-flow" />
+							<line x1="332" y1="110" x2="244" y2="118" stroke="#818cf8" stroke-opacity="0.55" stroke-width="2" class="mesh-flow" />
+							<line x1="96" y1="215" x2="162" y2="170" stroke="#6366f1" stroke-opacity="0.5" stroke-width="2" class="mesh-flow" />
+							<line x1="304" y1="215" x2="238" y2="170" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="2" class="mesh-flow" />
+						</g>
+
+						<!-- Outer Users Outside the Gate -->
+						<g class="human-bob-1" transform="translate(56, 108)">
+							<circle r="16" fill="#0f1736" stroke="#38bdf8" stroke-opacity="0.7" stroke-width="1.6" />
+							<circle cx="0" cy="-3" r="4.5" fill="#93c5fd" />
+							<path d="M-7 8 C-7 2, 7 2, 7 8" fill="#93c5fd" />
+						</g>
+						<g class="human-bob-2" transform="translate(344, 108)">
+							<circle r="16" fill="#0f1736" stroke="#818cf8" stroke-opacity="0.7" stroke-width="1.6" />
+							<circle cx="0" cy="-3" r="4.5" fill="#c7d2fe" />
+							<path d="M-7 8 C-7 2, 7 2, 7 8" fill="#c7d2fe" />
+						</g>
+						<g class="human-bob-3" transform="translate(88, 220)">
+							<circle r="14" fill="#0f1736" stroke="#6366f1" stroke-opacity="0.65" stroke-width="1.5" />
+							<circle cx="0" cy="-2.5" r="4" fill="#a5b4fc" />
+							<path d="M-6 7 C-6 2, 6 2, 6 7" fill="#a5b4fc" />
+						</g>
+						<g class="human-bob-1" transform="translate(312, 220)">
+							<circle r="14" fill="#0f1736" stroke="#38bdf8" stroke-opacity="0.65" stroke-width="1.5" />
+							<circle cx="0" cy="-2.5" r="4" fill="#7dd3fc" />
+							<path d="M-6 7 C-6 2, 6 2, 6 7" fill="#7dd3fc" />
+						</g>
+
+						<!-- Central Gated Corporate Silo -->
+						<rect
+							x="156"
+							y="48"
+							width="88"
+							height="156"
+							rx="14"
+							fill="#0f1736"
+							stroke="#6366f1"
+							stroke-width="2"
+						/>
+						<!-- Rack Bars -->
+						<rect x="172" y="68" width="56" height="9" rx="3" fill="#1e2b5c" stroke="#818cf8" stroke-opacity="0.45" />
+						<rect x="172" y="85" width="56" height="9" rx="3" fill="#1e2b5c" stroke="#818cf8" stroke-opacity="0.45" />
+						<rect x="172" y="102" width="56" height="9" rx="3" fill="#1e2b5c" stroke="#38bdf8" stroke-opacity="0.45" />
+
+						<!-- Locked Gate Emblem -->
+						<g transform="translate(200, 154)">
+							<circle r="22" fill="#080c1d" stroke="#38bdf8" stroke-opacity="0.7" stroke-width="1.75" />
+							<rect x="-8" y="-2" width="16" height="12" rx="2.5" fill="#818cf8" />
+							<path
+								d="M-4.5 -2 V-6.5 A4.5 4.5 0 0 1 4.5 -6.5 V-2"
+								fill="none"
+								stroke="#818cf8"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
+							<circle cx="0" cy="4" r="1.7" fill="#080c1d" />
+						</g>
+
+						<!-- Gate Barrier Line -->
+						<line x1="142" y1="204" x2="258" y2="204" stroke="#818cf8" stroke-opacity="0.55" stroke-width="2" />
+					</svg>
+				</div>
+
+				<p class="reveal-item delay-1 mb-3 text-xs font-medium tracking-[0.24em] text-[#93c5fd]/85 uppercase sm:text-sm">
+					The Internet Today
+				</p>
+				<h2 class="reveal-item delay-2 font-serif-hero text-[clamp(2.1rem,6vw,4.5rem)] leading-[1.08] font-semibold tracking-tight text-[#eef2ff]">
+					From centralized, gated and extractive internet.
+				</h2>
+				<p class="reveal-item delay-3 mt-3 max-w-2xl text-[clamp(1.1rem,2.7vw,1.75rem)] font-light text-[#c7d2fe]/90 sm:mt-4">
+					where companies own your data, and profit off of your attention,
+				</p>
+
+				<button
+					type="button"
+					onclick={nextSlide}
+					class="reveal-item delay-3 mt-8 inline-flex cursor-pointer items-center gap-2 rounded-full border border-indigo-400/35 bg-[#121a3a]/90 px-6 py-3 text-sm font-medium text-[#eef2ff] shadow-lg shadow-black/35 transition hover:bg-[#1c2856] sm:mt-10"
+				>
+					<span>Continue</span>
+					<svg class="chevron-bounce h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</button>
+			</div>
+		</section>
+
+		<!-- ===================================================================
+		     SLIDE 2 (Screen 3): Towards a digital public commons (Staged Bullets)
+		     =================================================================== -->
+		<section
+			class="screen"
+			class:is-active={ready && currentIndex === 2}
+			aria-label="Towards a Digital Public Commons"
+		>
+			<div class="flex w-full max-w-4xl flex-col items-center px-4 text-center">
+				<div class="mb-3 w-full max-w-[240px] sm:mb-5 sm:max-w-[320px]">
+					<svg
+						viewBox="0 0 400 280"
+						class="h-auto max-h-[20dvh] w-full overflow-visible sm:max-h-[25dvh]"
 						role="img"
 						aria-label="Illustration of peer-to-peer nodes with personal cryptographic keys forming a resilient mesh"
 					>
@@ -463,22 +766,72 @@
 					</svg>
 				</div>
 
-				<p class="reveal-item delay-1 mb-3 text-xs font-medium tracking-[0.24em] text-[#6ee7b7]/85 uppercase sm:text-sm">
+				<p class="reveal-item delay-1 mb-2 text-xs font-medium tracking-[0.24em] text-[#6ee7b7]/85 uppercase sm:text-sm">
 					Peer-to-Peer Sovereignty
 				</p>
-				<h2 class="reveal-item delay-2 font-serif-hero text-[clamp(2.35rem,6.8vw,5rem)] leading-[1.08] font-semibold tracking-tight text-[#f4f1ea]">
-					You own the data you share,
+				<h2 class="reveal-item delay-2 font-serif-hero text-[clamp(1.75rem,4.8vw,3.35rem)] leading-[1.1] font-semibold tracking-tight text-[#f4f1ea]">
+					Towards a digital public commons
 				</h2>
-				<p class="reveal-item delay-3 mt-3 text-[clamp(1.25rem,3vw,2.15rem)] font-light text-[#a7f3d0] sm:mt-4">
-					Together we build the infrastructure!
-				</p>
+
+				<!-- Settled Compact Bullet List -->
+				{#if screen3Stage > 0}
+					<ul class="mt-4 flex w-full max-w-xl flex-col items-start gap-2 rounded-2xl border border-[#6ee7b7]/20 bg-[#101c17]/75 px-4 py-3 text-left sm:px-5 sm:py-3.5">
+						{#each COMMONS_POINTS.slice(0, screen3Stage) as pt (pt.id)}
+							<li
+								in:receivePoint={{ key: pt.id }}
+								out:sendPoint={{ key: pt.id }}
+								animate:flip={{ duration: 420 }}
+								class="flex items-start gap-2.5 text-sm leading-snug text-[#d1fae5]/90 sm:text-base"
+							>
+								<span class="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#6ee7b7]"></span>
+								<span>
+									{pt.prefix}<strong class={`font-semibold ${pt.highlightClass}`}>{pt.highlight}</strong>{pt.suffix}
+								</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+
+				<!-- Active Large Hero Focus Point -->
+				<div class="relative mt-3 flex min-h-[4.75rem] w-full max-w-2xl items-center justify-center sm:min-h-[5.5rem]">
+					{#if activeScreen3Point}
+						{#key activeScreen3Point.id}
+							<div class="absolute inset-0 flex items-center justify-center px-2">
+								<p
+									in:receivePoint={{ key: activeScreen3Point.id }}
+									out:sendPoint={{ key: activeScreen3Point.id }}
+									class="font-serif-hero text-[clamp(1.35rem,3.6vw,2.35rem)] leading-snug font-medium text-[#f4f1ea]"
+								>
+									{activeScreen3Point.prefix}<span class={activeScreen3Point.highlightClass}>{activeScreen3Point.highlight}</span>{activeScreen3Point.suffix}
+								</p>
+							</div>
+						{/key}
+					{/if}
+				</div>
+
+				<!-- Stage Dots -->
+				<div class="mt-2 flex items-center gap-2" aria-hidden="true">
+					{#each COMMONS_POINTS as pt, idx (pt.id)}
+						<span
+							class={`h-1.5 rounded-full transition-all duration-300 ${
+								idx < screen3Stage
+									? 'w-5 bg-[#6ee7b7]'
+									: idx === screen3Stage
+										? 'w-6 bg-[#f5b841]'
+										: 'w-2 bg-white/20'
+							}`}
+						></span>
+					{/each}
+				</div>
 
 				<button
 					type="button"
 					onclick={nextSlide}
-					class="reveal-item delay-3 mt-8 inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#6ee7b7]/30 bg-[#182b23]/90 px-6 py-3 text-sm font-medium text-[#f4f1ea] shadow-lg shadow-black/30 transition hover:bg-[#244034] sm:mt-10"
+					class="reveal-item delay-3 mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#6ee7b7]/30 bg-[#182b23]/90 px-6 py-2.5 text-sm font-medium text-[#f4f1ea] shadow-lg shadow-black/30 transition hover:bg-[#244034] sm:mt-6 sm:py-3"
 				>
-					<span>Continue</span>
+					<span>
+						{screen3Stage < 3 ? `Swipe up · Next (${screen3Stage + 1}/3)` : 'Continue'}
+					</span>
 					<svg class="chevron-bounce h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
 					</svg>
@@ -487,18 +840,18 @@
 		</section>
 
 		<!-- ===================================================================
-		     SLIDE 2: Tools are here / We are just planting the seeds / Let's tend the garden!
+		     SLIDE 3 (Screen 4): Planting the seeds & Tools Hub
 		     =================================================================== -->
 		<section
 			class="screen"
-			class:is-active={ready && currentIndex === 2}
-			aria-label="Planting the Seeds"
+			class:is-active={ready && currentIndex === 3}
+			aria-label="Planting the Seeds and Tools"
 		>
-			<div class="flex w-full max-w-4xl flex-col items-center px-4 text-center">
-				<div class="mb-5 w-full max-w-[320px] sm:mb-7 sm:max-w-[440px]">
+			<div class="flex max-h-full w-full max-w-4xl flex-col items-center overflow-y-auto px-4 py-1 text-center">
+				<div class="mb-3 w-full max-w-[230px] sm:mb-4 sm:max-w-[300px]">
 					<svg
 						viewBox="0 0 400 280"
-						class="h-auto max-h-[36dvh] w-full overflow-visible"
+						class="h-auto max-h-[19dvh] w-full overflow-visible sm:max-h-[23dvh]"
 						role="img"
 						aria-label="Illustration of seeds dropping into soil and growing into a blooming garden"
 					>
@@ -573,22 +926,93 @@
 					</svg>
 				</div>
 
-				<p class="reveal-item delay-1 text-[clamp(1.15rem,2.4vw,1.65rem)] font-light text-[#f4f1ea]/75">
-					Tools are here,
-				</p>
-				<h2 class="reveal-item delay-2 mt-1.5 font-serif-hero text-[clamp(2.35rem,6.8vw,5rem)] leading-[1.08] font-semibold tracking-tight text-[#f4f1ea]">
-					We are just planting the seeds,
+				<h2 class="reveal-item delay-1 font-serif-hero text-[clamp(1.85rem,5vw,3.35rem)] leading-[1.08] font-semibold tracking-tight text-[#f4f1ea]">
+					We are planting the seeds,
 				</h2>
-				<p class="reveal-item delay-3 mt-3 font-serif-hero text-[clamp(1.65rem,4vw,2.85rem)] text-[#f5b841] sm:mt-4">
-					Let's tend the garden!
+				<p class="reveal-item delay-2 mt-1.5 font-serif-hero text-[clamp(1.2rem,3vw,1.95rem)] text-[#f5b841]">
+					Tools are here:
 				</p>
+
+				<!-- Explainer Topic Triggers -->
+				<div class="reveal-item delay-2 mt-4 w-full max-w-md space-y-2 text-left sm:mt-5 sm:space-y-2.5">
+					<button
+						type="button"
+						onclick={() => openExplainer('pki')}
+						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-[#6ee7b7]/25 bg-[#101c17]/85 px-4 py-3 transition hover:border-[#6ee7b7]/60 hover:bg-[#182b23]"
+					>
+						<div class="min-w-0">
+							<p class="text-sm font-semibold text-[#f4f1ea]">
+								Explain PKI (Public Key Infrastructure)
+							</p>
+							<p class="text-xs text-[#f4f1ea]/65">
+								Keys, local signing &amp; secret storage choice
+							</p>
+						</div>
+						<div class="flex shrink-0 items-center gap-2">
+							{#if custodyChosenInIntro}
+								<span class="rounded-full bg-[#6ee7b7]/15 px-2 py-0.5 font-mono text-[10px] text-[#a7f3d0]">
+									{selectedCustodyMode === 'manual-no-store' ? 'Manual Key' : 'Browser Password'}
+								</span>
+							{/if}
+							{#if visitedExplainers.pki}
+								<Check class="h-4 w-4 text-[#6ee7b7]" />
+							{:else}
+								<span class="text-sm text-[#a7f3d0]">→</span>
+							{/if}
+						</div>
+					</button>
+
+					<button
+						type="button"
+						onclick={() => openExplainer('storage')}
+						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-[#6ee7b7]/25 bg-[#101c17]/85 px-4 py-3 transition hover:border-[#6ee7b7]/60 hover:bg-[#182b23]"
+					>
+						<div class="min-w-0">
+							<p class="text-sm font-semibold text-[#f4f1ea]">
+								Explain decentralized storage
+							</p>
+							<p class="text-xs text-[#f4f1ea]/65">
+								Araliya net &amp; encrypted relays
+							</p>
+						</div>
+						<div class="shrink-0">
+							{#if visitedExplainers.storage}
+								<Check class="h-4 w-4 text-[#6ee7b7]" />
+							{:else}
+								<span class="text-sm text-[#a7f3d0]">→</span>
+							{/if}
+						</div>
+					</button>
+
+					<button
+						type="button"
+						onclick={() => openExplainer('value')}
+						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-[#f5b841]/25 bg-[#101c17]/85 px-4 py-3 transition hover:border-[#f5b841]/60 hover:bg-[#182b23]"
+					>
+						<div class="min-w-0">
+							<p class="text-sm font-semibold text-[#f4f1ea]">
+								Explain Choice-centered value creation
+							</p>
+							<p class="text-xs text-[#f4f1ea]/65">
+								Question–answer model vs. plain ads
+							</p>
+						</div>
+						<div class="shrink-0">
+							{#if visitedExplainers.value}
+								<Check class="h-4 w-4 text-[#f5b841]" />
+							{:else}
+								<span class="text-sm text-[#f5b841]">→</span>
+							{/if}
+						</div>
+					</button>
+				</div>
 
 				<button
 					type="button"
-					onclick={nextSlide}
-					class="reveal-item delay-3 mt-8 inline-flex cursor-pointer items-center gap-2.5 rounded-full bg-[#6ee7b7] px-7 py-3.5 text-sm font-semibold text-[#0b120f] shadow-xl shadow-emerald-950/50 transition hover:bg-[#a7f3d0] sm:mt-10 sm:text-base"
+					onclick={() => goToSlide(LAST_SLIDE)}
+					class="reveal-item delay-3 mt-5 inline-flex cursor-pointer items-center gap-2.5 rounded-full bg-[#6ee7b7] px-7 py-3 text-sm font-semibold text-[#0b120f] shadow-xl shadow-emerald-950/50 transition hover:bg-[#a7f3d0] sm:mt-6 sm:py-3.5 sm:text-base"
 				>
-					<span>Create Your Identity</span>
+					<span>Generate Identity</span>
 					<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
 						<path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" />
 					</svg>
@@ -597,24 +1021,38 @@
 		</section>
 
 		<!-- ===================================================================
-		     SLIDE 3 (STOPS HERE): First Form Page — Create Your Identity
+		     SLIDE 4 (Screen 5 · STOPS HERE): Create Identity Form
 		     =================================================================== -->
 		<section
 			class="screen"
-			class:is-active={ready && currentIndex === 3}
+			class:is-active={ready && currentIndex === LAST_SLIDE}
 			aria-label="Create Your Identity Form"
 		>
 			<div
-				bind:this={slide3Container}
+				bind:this={slide4Container}
 				class="reveal-item delay-1 flex max-h-dvh w-full items-start justify-center overflow-y-auto px-4 pt-16 pb-8 sm:items-center"
 			>
 				<KeypairCustodyScreen
-					isActive={currentIndex === 3}
+					isActive={currentIndex === LAST_SLIDE}
+					preferredCustodyMode={selectedCustodyMode}
+					custodyChosenInIntro={custodyChosenInIntro}
+					onChangeCustodyMode={handleSelectCustody}
+					onBackToTools={() => goToSlide(3)}
 					onReplayIntro={() => goToSlide(0)}
 				/>
 			</div>
 		</section>
 	</div>
+
+	{#if activeExplainer !== null}
+		<OnboardingExplainerDeck
+			topic={activeExplainer}
+			custodyMode={selectedCustodyMode}
+			onSelectCustody={handleSelectCustody}
+			onClose={() => (activeExplainer = null)}
+			onGenerateIdentity={handleGenerateFromExplainer}
+		/>
+	{/if}
 </div>
 
 <style>
@@ -642,6 +1080,12 @@
 		background:
 			radial-gradient(circle at 20% 20%, rgba(52, 211, 153, 0.09), transparent 45%),
 			radial-gradient(circle at 80% 75%, rgba(245, 184, 65, 0.08), transparent 45%);
+	}
+
+	.bg-glow-indigo {
+		background:
+			radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.14), transparent 46%),
+			radial-gradient(circle at 82% 76%, rgba(99, 102, 241, 0.2), transparent 48%);
 	}
 
 	.reveal-item {

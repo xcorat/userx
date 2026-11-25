@@ -49,6 +49,22 @@ export function buildPseudonymousHandle(pubkeyB64UrlOrHex: string, chars = 8): s
 	return `gardener_${hex.slice(0, chars)}`;
 }
 
+/**
+ * Returns true if `username` is the deterministic pseudonymous relay alias
+ * (`gardener_<pk8>` or `gardener_<pk12>`) generated for accounts with a private handle.
+ */
+export function isPseudonymousHandle(username: string, userPubkey: string): boolean {
+	const cleaned = username.trim().replace(/^@+/, '').toLowerCase();
+	if (!cleaned) return true;
+	const hex = pubkeyToHex(userPubkey);
+	if (hex.length >= 8) {
+		if (cleaned === `gardener_${hex.slice(0, 8)}`) return true;
+		if (hex.length >= 12 && cleaned === `gardener_${hex.slice(0, 12)}`) return true;
+	}
+	if (cleaned === 'gardener_anon0000' || cleaned === 'gardener_anon00000000') return true;
+	return false;
+}
+
 function createInitialProfile(): ProfileFieldMap {
 	const now = new Date().toISOString();
 	return {
@@ -256,30 +272,51 @@ class LedgerStore {
 	private resolvePublicDirectoryIdentity(
 		userPubkey?: string,
 		pseudonymLen = 8
-	): { directoryHandle: string; publicDisplayName: string } {
+	): { directoryHandle: string; publicDisplayName: string; isPrivateHandle: boolean } {
+		const pk = userPubkey || this.activeUserPubkey;
 		const usernamePublic =
 			this.profile.username.visibility === 'public' &&
 			this.profile.username.value.trim().length > 0;
 		const directoryHandle = usernamePublic
 			? this.profile.username.value.trim()
-			: buildPseudonymousHandle(userPubkey ?? '', pseudonymLen);
+			: buildPseudonymousHandle(pk, pseudonymLen);
 
 		const namePublic =
+			usernamePublic &&
 			this.profile.realName.visibility === 'public' &&
 			this.profile.realName.value.trim().length > 0;
 		const publicDisplayName = namePublic
 			? this.profile.realName.value.trim()
 			: directoryHandle;
 
-		return { directoryHandle, publicDisplayName };
+		return { directoryHandle, publicDisplayName, isPrivateHandle: !usernamePublic };
 	}
 
 	private async syncPublicDirectoryRegistration(userPubkey?: string): Promise<void> {
-		if (!this.profile.username.value.trim() && !userPubkey) return;
-		const { directoryHandle, publicDisplayName } = this.resolvePublicDirectoryIdentity(userPubkey);
-		await araliyaService
-			.ensureRegisteredAndUpdateProfile(directoryHandle, publicDisplayName)
-			.catch(() => {});
+		const pk = userPubkey || this.activeUserPubkey;
+		if (!this.profile.username.value.trim() && !pk) return;
+		const { directoryHandle, publicDisplayName, isPrivateHandle } =
+			this.resolvePublicDirectoryIdentity(pk, 8);
+		try {
+			await araliyaService.ensureRegisteredAndUpdateProfile(
+				directoryHandle,
+				publicDisplayName
+			);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message.toLowerCase() : '';
+			if (
+				isPrivateHandle &&
+				(msg.includes('conflict') || msg.includes('already') || msg.includes('taken'))
+			) {
+				const fallback = this.resolvePublicDirectoryIdentity(pk, 12);
+				await araliyaService
+					.ensureRegisteredAndUpdateProfile(
+						fallback.directoryHandle,
+						fallback.publicDisplayName
+					)
+					.catch(() => {});
+			}
+		}
 	}
 
 	async saveUsername(

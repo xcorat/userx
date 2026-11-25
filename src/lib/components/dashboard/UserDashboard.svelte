@@ -862,6 +862,11 @@
 								)}
 							class="h-9 bg-background/60 text-xs"
 						/>
+						{#if field.key === 'username'}
+							<p class="text-[11px] leading-relaxed text-muted-foreground">
+								Public handle is searchable in the Users directory; private handle keeps the account hidden.
+							</p>
+						{/if}
 					</div>
 				{/each}
 			</div>
