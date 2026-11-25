@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { araliyaService } from '$lib/services/araliya.service';
 	import { buildPseudonymousHandle, ledgerStore } from '$lib/stores/ledger.svelte';
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import RelayStatusPill from '$lib/components/onboarding/RelayStatusPill.svelte';
@@ -37,14 +38,53 @@
 		isSaving = true;
 		try {
 			await sessionStore.ensureUnlockedOnRelay();
+
+			const hasReadyVouch = Boolean(
+				sessionStore.pendingVouchToken ||
+					sessionStore.detectedRelayVouch ||
+					sessionStore.relayStatus?.admissionPolicy === 'open'
+			);
+
+			if (!sessionStore.isAdmitted && !hasReadyVouch) {
+				if (keepPublic) {
+					const existing = await araliyaService
+						.getUserByUsername(cleaned)
+						.catch(() => null);
+					if (existing) {
+						errorMessage = `@${cleaned} is already taken on this relay.`;
+						return;
+					}
+				}
+				if (!sessionStore.isPendingVouch) {
+					await sessionStore.startPendingVouchWindow(
+						sessionStore.pendingVoucherPubkey,
+						null,
+						keepPublic ? cleaned : null
+					);
+				} else {
+					await sessionStore.syncRequestedHandleToVoucher(keepPublic ? cleaned : null);
+				}
+				await ledgerStore.stageUsernameDraft(cleaned, keepPublic);
+				toast.success(
+					keepPublic
+						? `@${cleaned} staged locally — will register once vouched`
+						: 'Private handle staged locally — waiting for vouch'
+				);
+				await sessionStore.advanceOnboardingStep('custody');
+				return;
+			}
+
+			const useSubmittedVouch =
+				!sessionStore.pendingVouchToken && Boolean(sessionStore.detectedRelayVouch);
 			const { usedVouch, directoryHandle } = await ledgerStore.saveUsername(
 				cleaned,
 				keepPublic,
 				sessionStore.pendingVouchToken,
-				sessionStore.identity?.userPubkey
+				sessionStore.identity?.userPubkey,
+				useSubmittedVouch
 			);
 			if (usedVouch) {
-				sessionStore.clearPendingVouch();
+				sessionStore.markAdmittedAfterRegistration(sessionStore.vouchedByHandle);
 			}
 			toast.success(
 				keepPublic
@@ -65,7 +105,7 @@
 	class="flex h-full flex-col justify-between gap-4 overflow-y-auto px-5 py-6"
 >
 	<RelayStatusPill
-		stepLabel="05 / 10"
+		stepLabel="Step 3 / 8"
 		onBack={() => sessionStore.setOnboardingStep('vouch')}
 	/>
 

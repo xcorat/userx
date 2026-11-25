@@ -50,6 +50,10 @@
 			return;
 		}
 
+		if (!sessionStore.isAdmitted) {
+			toast.info('Publishing questions unlocks as soon as your vouch is approved.');
+			return;
+		}
 		isPublishing = true;
 		try {
 			await sessionStore.ensureUnlockedOnRelay();
@@ -77,7 +81,7 @@
 	class="flex h-full flex-col justify-between gap-3 overflow-y-auto px-5 py-6"
 >
 	<RelayStatusPill
-		stepLabel="10 / 10"
+		stepLabel="Step 8 / 8"
 		onBack={() => sessionStore.setOnboardingStep('demo-sponsored')}
 	/>
 
@@ -195,24 +199,39 @@
 	</div>
 
 	<div class="space-y-2 pb-2">
-		<Button
-			type="submit"
-			disabled={isPublishing}
-			size="lg"
-			class="h-12 w-full cursor-pointer font-semibold"
-		>
-			<Sparkles class="mr-2 h-4 w-4" />
-			{isPublishing ? 'Publishing Question...' : 'Publish Question & Enter App'}
-			<ArrowRight class="ml-2 h-4 w-4" />
-		</Button>
-		<div class="text-center">
-			<button
+		{#if !sessionStore.isAdmitted}
+			<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-[11px] leading-relaxed text-amber-200">
+				Your vouch is still pending — you can browse the commons read-only right now, and ask questions once vouched.
+			</div>
+			<Button
 				type="button"
 				onclick={handleSkipToApp}
-				class="cursor-pointer text-xs text-muted-foreground hover:text-foreground hover:underline"
+				size="lg"
+				class="h-12 w-full cursor-pointer font-semibold"
 			>
-				Skip for now &amp; Enter App →
-			</button>
-		</div>
+				Explore Commons While Waiting
+				<ArrowRight class="ml-2 h-4 w-4" />
+			</Button>
+		{:else}
+			<Button
+				type="submit"
+				disabled={isPublishing}
+				size="lg"
+				class="h-12 w-full cursor-pointer font-semibold"
+			>
+				<Sparkles class="mr-2 h-4 w-4" />
+				{isPublishing ? 'Publishing Question...' : 'Publish Question & Enter App'}
+				<ArrowRight class="ml-2 h-4 w-4" />
+			</Button>
+			<div class="text-center">
+				<button
+					type="button"
+					onclick={handleSkipToApp}
+					class="cursor-pointer text-xs text-muted-foreground hover:text-foreground hover:underline"
+				>
+					Skip for now &amp; Enter App →
+				</button>
+			</div>
+		{/if}
 	</div>
 </form>

@@ -69,10 +69,12 @@
 		}
 		isSubmitting = true;
 		try {
-			if (relayQuestion) {
+			if (relayQuestion && sessionStore.isAdmitted) {
 				await sessionStore.ensureUnlockedOnRelay();
 				await ledgerStore.submitAnswer(relayQuestion, selectedOptionId, false);
 				toast.success('Saved encrypted response to your private store');
+			} else if (!sessionStore.isAdmitted) {
+				toast.success('Walkthrough choice previewed locally (waiting for vouch)');
 			} else {
 				toast.success('Walkthrough choice recorded privately');
 			}
@@ -91,7 +93,7 @@
 
 <div class="flex h-full flex-col justify-between gap-4 overflow-y-auto px-5 py-6">
 	<RelayStatusPill
-		stepLabel="08 / 10"
+		stepLabel="Step 6 / 8"
 		onBack={() => sessionStore.setOnboardingStep('details')}
 	/>
 

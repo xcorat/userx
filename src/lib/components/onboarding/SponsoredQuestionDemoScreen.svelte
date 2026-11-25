@@ -29,7 +29,7 @@
 		}
 		isSubmitting = true;
 		try {
-			if (relayQuestion) {
+			if (relayQuestion && sessionStore.isAdmitted) {
 				await sessionStore.ensureUnlockedOnRelay().catch(() => {});
 				await ledgerStore.submitAnswer(relayQuestion, selectedOptionId, false).catch(() => {});
 			}
@@ -50,7 +50,7 @@
 
 <div class="flex h-full flex-col justify-between gap-4 overflow-y-auto px-5 py-6">
 	<RelayStatusPill
-		stepLabel="09 / 10"
+		stepLabel="Step 7 / 8"
 		onBack={() => sessionStore.setOnboardingStep('demo-public')}
 	/>
 

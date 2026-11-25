@@ -4,13 +4,21 @@ import {
 	pubkeyToHex,
 	type QnaEventBatch
 } from '$lib/services/araliya.service';
+import { deleteSealedDraft, loadSealedDraft, saveSealedDraft } from '$lib/services/vault.storage';
 import type {
 	AnsweredQuestionRecord,
 	FieldVisibility,
 	ProfileField,
 	ProfileFieldKey,
-	QuestionItem
+	QuestionItem,
+	StagedOnboardingDraft
 } from '$lib/types';
+
+export interface UserEventHandlers {
+	onVouchIssued?: () => void;
+	onVouchRequested?: () => void;
+	onVouchRequestDismissed?: () => void;
+}
 
 type ProfileFieldMap = Record<ProfileFieldKey, ProfileField>;
 
@@ -94,6 +102,12 @@ class LedgerStore {
 
 	private rawPrivateResponses: RawPrivateResponse[] = [];
 	private activeRootPubkey = '';
+	private activeUserPubkey = '';
+	private userEventHandlers: UserEventHandlers = {};
+
+	setUserEventHandlers(handlers: UserEventHandlers): void {
+		this.userEventHandlers = handlers;
+	}
 
 	answeredCids = $derived(new Set(this.answers.map((a) => a.questionCid)));
 
@@ -155,10 +169,26 @@ class LedgerStore {
 			.sort((a, b) => b.answeredAt.localeCompare(a.answeredAt));
 	}
 
-	async hydrateAfterUnlock(rootPubkeyHex: string): Promise<void> {
+	async hydrateAfterUnlock(
+		rootPubkeyHex: string,
+		options?: { isAdmitted?: boolean; userPubkey?: string }
+	): Promise<void> {
 		this.isHydrating = true;
 		this.activeRootPubkey = rootPubkeyHex;
+		this.activeUserPubkey = options?.userPubkey ?? '';
+		const isAdmitted = options?.isAdmitted ?? true;
 		try {
+			if (!isAdmitted) {
+				await Promise.allSettled([
+					this.loadQuestionsFromRelay(rootPubkeyHex),
+					this.restoreSealedDraftIfAny()
+				]);
+				this.rawPrivateResponses = [];
+				this.rebuildAnswers();
+				await this.startLiveSync(rootPubkeyHex, options?.userPubkey);
+				return;
+			}
+
 			const [, fieldsResult, responsesResult] = await Promise.allSettled([
 				this.loadQuestionsFromRelay(rootPubkeyHex),
 				araliyaService.getPrivateProfileFields(),
@@ -186,7 +216,7 @@ class LedgerStore {
 			}
 			this.rebuildAnswers();
 
-			await this.startLiveSync(rootPubkeyHex);
+			await this.startLiveSync(rootPubkeyHex, options?.userPubkey);
 		} finally {
 			this.isHydrating = false;
 		}
@@ -256,7 +286,8 @@ class LedgerStore {
 		username: string,
 		keepPublic: boolean,
 		pendingVouchToken?: string | null,
-		userPubkey?: string
+		userPubkey?: string,
+		useSubmittedVouch = false
 	): Promise<{ usedVouch: boolean; directoryHandle: string }> {
 		const cleaned = username.trim().replace(/^@+/, '');
 		let directoryHandle = keepPublic ? cleaned : buildPseudonymousHandle(userPubkey ?? '', 8);
@@ -272,7 +303,8 @@ class LedgerStore {
 			admission = await araliyaService.ensureRegisteredAndUpdateProfile(
 				directoryHandle,
 				publicDisplayName,
-				pendingVouchToken
+				pendingVouchToken,
+				useSubmittedVouch
 			);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message.toLowerCase() : '';
@@ -282,7 +314,8 @@ class LedgerStore {
 				admission = await araliyaService.ensureRegisteredAndUpdateProfile(
 					directoryHandle,
 					publicDisplayName,
-					pendingVouchToken
+					pendingVouchToken,
+					useSubmittedVouch
 				);
 			} else {
 				throw err;
@@ -301,6 +334,179 @@ class LedgerStore {
 			}
 		};
 		return { usedVouch: admission.usedVouch, directoryHandle };
+	}
+
+	async persistSealedDraft(): Promise<void> {
+		const draft: StagedOnboardingDraft = {
+			username: this.profile.username.value,
+			usernamePublic: this.profile.username.visibility === 'public',
+			realName: this.profile.realName.value,
+			realNamePublic: this.profile.realName.visibility === 'public',
+			dateOfBirth: this.profile.dateOfBirth.value,
+			dateOfBirthPublic: this.profile.dateOfBirth.visibility === 'public',
+			pronouns: this.profile.pronouns.value,
+			pronounsPublic: this.profile.pronouns.visibility === 'public'
+		};
+		const sealed = await araliyaService.sealLocalDraft(JSON.stringify(draft));
+		saveSealedDraft(sealed);
+	}
+
+	async restoreSealedDraftIfAny(): Promise<boolean> {
+		const sealed = loadSealedDraft();
+		if (!sealed) return false;
+		try {
+			const raw = await araliyaService.unsealLocalDraft(sealed);
+			const draft = JSON.parse(raw) as Partial<StagedOnboardingDraft>;
+			const now = new Date().toISOString();
+			const next = createInitialProfile();
+			if (typeof draft.username === 'string') {
+				next.username = {
+					...next.username,
+					value: draft.username,
+					visibility: draft.usernamePublic === false ? 'private' : 'public',
+					updatedAt: now
+				};
+			}
+			if (typeof draft.realName === 'string') {
+				next.realName = {
+					...next.realName,
+					value: draft.realName,
+					visibility: draft.realNamePublic ? 'public' : 'private',
+					updatedAt: now
+				};
+			}
+			if (typeof draft.dateOfBirth === 'string') {
+				next.dateOfBirth = {
+					...next.dateOfBirth,
+					value: draft.dateOfBirth,
+					visibility: draft.dateOfBirthPublic ? 'public' : 'private',
+					updatedAt: now
+				};
+			}
+			if (typeof draft.pronouns === 'string') {
+				next.pronouns = {
+					...next.pronouns,
+					value: draft.pronouns,
+					visibility: draft.pronounsPublic ? 'public' : 'private',
+					updatedAt: now
+				};
+			}
+			this.profile = next;
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	async stageUsernameDraft(username: string, keepPublic: boolean): Promise<void> {
+		const cleaned = username.trim().replace(/^@+/, '');
+		this.profile = {
+			...this.profile,
+			username: {
+				...this.profile.username,
+				value: cleaned,
+				visibility: keepPublic ? 'public' : 'private',
+				updatedAt: new Date().toISOString()
+			}
+		};
+		await this.persistSealedDraft();
+	}
+
+	async stageIdentityDetailsDraft(details: {
+		realName: string;
+		realNamePublic: boolean;
+		dob: string;
+		dobPublic: boolean;
+		pronouns: string;
+		pronounsPublic: boolean;
+	}): Promise<void> {
+		const now = new Date().toISOString();
+		this.profile = {
+			...this.profile,
+			realName: {
+				...this.profile.realName,
+				value: details.realName.trim(),
+				visibility: details.realNamePublic ? 'public' : 'private',
+				updatedAt: now
+			},
+			dateOfBirth: {
+				...this.profile.dateOfBirth,
+				value: details.dob.trim(),
+				visibility: details.dobPublic ? 'public' : 'private',
+				updatedAt: now
+			},
+			pronouns: {
+				...this.profile.pronouns,
+				value: details.pronouns.trim(),
+				visibility: details.pronounsPublic ? 'public' : 'private',
+				updatedAt: now
+			}
+		};
+		await this.persistSealedDraft();
+	}
+
+	async stageProfileFieldValue(key: ProfileFieldKey, value: string): Promise<void> {
+		const current = this.profile[key];
+		const cleaned = key === 'username' ? value.trim().replace(/^@+/, '') : value.trim();
+		this.profile = {
+			...this.profile,
+			[key]: {
+				...current,
+				value: cleaned,
+				updatedAt: new Date().toISOString()
+			}
+		};
+		await this.persistSealedDraft();
+	}
+
+	async stageToggleProfileFieldVisibility(key: ProfileFieldKey): Promise<void> {
+		const current = this.profile[key];
+		const nextVisibility: FieldVisibility =
+			current.visibility === 'public' ? 'private' : 'public';
+		this.profile = {
+			...this.profile,
+			[key]: {
+				...current,
+				visibility: nextVisibility,
+				updatedAt: new Date().toISOString()
+			}
+		};
+		await this.persistSealedDraft();
+	}
+
+	async flushStagedOnboardingToRelay(
+		userPubkey: string,
+		explicitVouchToken?: string | null
+	): Promise<{ directoryHandle: string }> {
+		const usernameVal = this.profile.username.value.trim();
+		if (!usernameVal) {
+			throw new Error('Choose a username to finish registration.');
+		}
+		const usernamePublic = this.profile.username.visibility === 'public';
+		const { directoryHandle } = await this.saveUsername(
+			usernameVal,
+			usernamePublic,
+			explicitVouchToken,
+			userPubkey,
+			!explicitVouchToken
+		);
+
+		const optionalFields: Array<[ProfileFieldKey, ProfileField]> = [
+			['realName', this.profile.realName],
+			['dateOfBirth', this.profile.dateOfBirth],
+			['pronouns', this.profile.pronouns]
+		];
+		const writes = optionalFields
+			.filter(([, f]) => f.value.trim().length > 0 || f.visibility === 'public')
+			.map(([key, f]) =>
+				araliyaService.setProfileField(key, f.value.trim(), f.visibility === 'public')
+			);
+		if (writes.length > 0) {
+			await Promise.all(writes);
+			await this.syncPublicDirectoryRegistration(userPubkey);
+		}
+		deleteSealedDraft();
+		return { directoryHandle };
 	}
 
 	async saveIdentityDetails(
@@ -471,14 +677,19 @@ class LedgerStore {
 		void this.refreshQuestionResults(questionCid);
 	}
 
-	async startLiveSync(rootPubkeyHex: string): Promise<void> {
+	async startLiveSync(rootPubkeyHex: string, userPubkey?: string): Promise<void> {
 		this.activeRootPubkey = rootPubkeyHex;
+		if (userPubkey !== undefined) {
+			this.activeUserPubkey = userPubkey;
+		}
 		try {
 			await araliyaService.startPublicQnaPoller(
 				(batch) => this.handleEventBatch(batch),
 				(err) => {
 					console.warn('Event poller warning:', err);
-				}
+				},
+				3000,
+				this.activeUserPubkey || undefined
 			);
 			this.isLiveSyncActive = true;
 		} catch (err) {
@@ -493,6 +704,19 @@ class LedgerStore {
 	}
 
 	private handleEventBatch(batch: QnaEventBatch): void {
+		const rawEvents = batch?.events ?? [];
+		for (const ev of rawEvents) {
+			const kind = ev?.kind;
+			if (!kind || typeof kind !== 'object') continue;
+			if ('VouchIssued' in kind) {
+				this.userEventHandlers.onVouchIssued?.();
+			} else if ('VouchRequested' in kind) {
+				this.userEventHandlers.onVouchRequested?.();
+			} else if ('VouchRequestDismissed' in kind) {
+				this.userEventHandlers.onVouchRequestDismissed?.();
+			}
+		}
+
 		const events = batch?.domain_events ?? [];
 		if (events.length === 0) return;
 
@@ -520,6 +744,7 @@ class LedgerStore {
 
 	clearInMemoryState(): void {
 		this.stopLiveSync();
+		this.activeUserPubkey = '';
 		this.profile = createInitialProfile();
 		this.answers = [];
 		this.questions = [];

@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import UnlockRecoverScreen from '$lib/components/onboarding/UnlockRecoverScreen.svelte';
-	import WelcomeCommonsScreen from '$lib/components/onboarding/WelcomeCommonsScreen.svelte';
-	import PoweredByAraliyaScreen from '$lib/components/onboarding/PoweredByAraliyaScreen.svelte';
-	import KeypairCustodyScreen from '$lib/components/onboarding/KeypairCustodyScreen.svelte';
+	import OnboardingHeroFlow from '$lib/components/onboarding/OnboardingHeroFlow.svelte';
 	import HumanVouchScreen from '$lib/components/onboarding/HumanVouchScreen.svelte';
+	import VouchExpiredScreen from '$lib/components/onboarding/VouchExpiredScreen.svelte';
 	import ClaimHandleScreen from '$lib/components/onboarding/ClaimHandleScreen.svelte';
 	import StorageCustodyScreen from '$lib/components/onboarding/StorageCustodyScreen.svelte';
 	import PersonalDetailsPreviewScreen from '$lib/components/onboarding/PersonalDetailsPreviewScreen.svelte';
@@ -20,13 +19,15 @@
 			if (
 				sessionStore.wantsUnlockScreen ||
 				(sessionStore.hasVault &&
-					!['welcome', 'network', 'keypair'].includes(sessionStore.onboardingStep))
+					!['welcome', 'keypair'].includes(sessionStore.onboardingStep))
 			) {
 				return 'unlock';
 			}
-			if (sessionStore.onboardingStep === 'network') return 'network';
 			if (sessionStore.onboardingStep === 'keypair') return 'keypair';
 			return 'welcome';
+		}
+		if (sessionStore.isVouchExpired) {
+			return 'vouch-expired';
 		}
 		return sessionStore.onboardingStep;
 	});
@@ -39,14 +40,12 @@
 	</div>
 {:else if step === 'unlock'}
 	<UnlockRecoverScreen />
-{:else if step === 'welcome'}
-	<WelcomeCommonsScreen />
-{:else if step === 'network'}
-	<PoweredByAraliyaScreen />
-{:else if step === 'keypair'}
-	<KeypairCustodyScreen />
+{:else if step === 'welcome' || step === 'keypair'}
+	<OnboardingHeroFlow initialSlide={step === 'keypair' ? 3 : 0} />
 {:else if step === 'vouch'}
 	<HumanVouchScreen />
+{:else if step === 'vouch-expired'}
+	<VouchExpiredScreen />
 {:else if step === 'handle'}
 	<ClaimHandleScreen />
 {:else if step === 'custody'}

@@ -81,7 +81,7 @@
 	class="flex h-full flex-col justify-between gap-4 overflow-y-auto px-5 py-6"
 >
 	<RelayStatusPill
-		stepLabel="06 / 10"
+		stepLabel="Step 4 / 8"
 		onBack={() => sessionStore.setOnboardingStep('handle')}
 	/>
 

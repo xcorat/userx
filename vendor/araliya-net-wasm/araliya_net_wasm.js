@@ -539,42 +539,65 @@ export function generateSecretKey() {
     }
 }
 
+/**
+ * Decode an `araliya-vouch-card:v1:...` token, `VouchCard` JSON, or `VouchCert` JSON and inspect validity.
+ * @param {string} vouch_token_or_json
+ * @returns {any}
+ */
+export function decodeVouchCard(vouch_token_or_json) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(vouch_token_or_json, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.decodeVouchCard(retptr, ptr0, len0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        if (r2) {
+            throw takeObject(r1);
+        }
+        return takeObject(r0);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
 function passArray8ToWasm0(arg, malloc) {
     const ptr = malloc(arg.length * 1, 1) >>> 0;
     getUint8ArrayMemory0().set(arg, ptr / 1);
     WASM_VECTOR_LEN = arg.length;
     return ptr;
 }
-function __wasm_bindgen_func_elem_8593(arg0, arg1) {
-    wasm.__wasm_bindgen_func_elem_8593(arg0, arg1);
+function __wasm_bindgen_func_elem_8033(arg0, arg1, arg2) {
+    wasm.__wasm_bindgen_func_elem_8033(arg0, arg1, addHeapObject(arg2));
 }
 
-function __wasm_bindgen_func_elem_13951(arg0, arg1, arg2) {
-    wasm.__wasm_bindgen_func_elem_13951(arg0, arg1, addHeapObject(arg2));
+function __wasm_bindgen_func_elem_14118(arg0, arg1) {
+    wasm.__wasm_bindgen_func_elem_14118(arg0, arg1);
 }
 
-function __wasm_bindgen_func_elem_7804(arg0, arg1, arg2) {
-    wasm.__wasm_bindgen_func_elem_7804(arg0, arg1, addHeapObject(arg2));
+function __wasm_bindgen_func_elem_8822(arg0, arg1) {
+    wasm.__wasm_bindgen_func_elem_8822(arg0, arg1);
 }
 
-function __wasm_bindgen_func_elem_3961(arg0, arg1, arg2) {
-    wasm.__wasm_bindgen_func_elem_3961(arg0, arg1, addHeapObject(arg2));
+function __wasm_bindgen_func_elem_14180(arg0, arg1, arg2) {
+    wasm.__wasm_bindgen_func_elem_14180(arg0, arg1, addHeapObject(arg2));
 }
 
-function __wasm_bindgen_func_elem_13889(arg0, arg1) {
-    wasm.__wasm_bindgen_func_elem_13889(arg0, arg1);
+function __wasm_bindgen_func_elem_7115(arg0, arg1) {
+    wasm.__wasm_bindgen_func_elem_7115(arg0, arg1);
 }
 
-function __wasm_bindgen_func_elem_7017(arg0, arg1) {
-    wasm.__wasm_bindgen_func_elem_7017(arg0, arg1);
+function __wasm_bindgen_func_elem_7246(arg0, arg1) {
+    wasm.__wasm_bindgen_func_elem_7246(arg0, arg1);
 }
 
-function __wasm_bindgen_func_elem_6886(arg0, arg1) {
-    wasm.__wasm_bindgen_func_elem_6886(arg0, arg1);
+function __wasm_bindgen_func_elem_4190(arg0, arg1, arg2) {
+    wasm.__wasm_bindgen_func_elem_4190(arg0, arg1, addHeapObject(arg2));
 }
 
-function __wasm_bindgen_func_elem_17095(arg0, arg1, arg2, arg3) {
-    wasm.__wasm_bindgen_func_elem_17095(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
+function __wasm_bindgen_func_elem_17348(arg0, arg1, arg2, arg3) {
+    wasm.__wasm_bindgen_func_elem_17348(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
 const __wbindgen_enum_BinaryType = ["blob", "arraybuffer"];
@@ -739,6 +762,36 @@ export class AraliyaWasmApp {
      * @param {string} display_name
      * @returns {Promise<any>}
      */
+    registerWithSubmittedVouch(username, display_name) {
+        const ptr0 = passStringToWasm0(username, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(display_name, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.araliyawasmapp_registerWithSubmittedVouch(this.__wbg_ptr, ptr0, len0, ptr1, len1);
+        return takeObject(ret);
+    }
+    /**
+     * @param {string} subject_pubkey
+     * @returns {Promise<any>}
+     */
+    listVouches(subject_pubkey) {
+        const ptr0 = passStringToWasm0(subject_pubkey, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.araliyawasmapp_listVouches(this.__wbg_ptr, ptr0, len0);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Promise<any>}
+     */
+    checkInitialVouch() {
+        const ret = wasm.araliyawasmapp_checkInitialVouch(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @param {string} username
+     * @param {string} display_name
+     * @returns {Promise<any>}
+     */
     registerUser(username, display_name) {
         const ptr0 = passStringToWasm0(username, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         const len0 = WASM_VECTOR_LEN;
@@ -786,6 +839,110 @@ export class AraliyaWasmApp {
         const ptr1 = passStringToWasm0(role, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         const len1 = WASM_VECTOR_LEN;
         const ret = wasm.araliyawasmapp_submitVouch(this.__wbg_ptr, ptr0, len0, ptr1, len1, !isLikeNone(expires_at_ms), isLikeNone(expires_at_ms) ? 0 : expires_at_ms);
+        return takeObject(ret);
+    }
+    /**
+     * @param {string} subject_pubkey
+     * @param {string} role
+     * @param {string | null} [root_pubkey]
+     * @param {string | null} [relay_endpoint_id]
+     * @param {string | null} [relay_peer_address]
+     * @param {number | null} [expires_at_ms]
+     * @returns {Promise<any>}
+     */
+    issueVouchCard(subject_pubkey, role, root_pubkey, relay_endpoint_id, relay_peer_address, expires_at_ms) {
+        const ptr0 = passStringToWasm0(subject_pubkey, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(role, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        var ptr2 = isLikeNone(root_pubkey) ? 0 : passStringToWasm0(root_pubkey, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        var len2 = WASM_VECTOR_LEN;
+        var ptr3 = isLikeNone(relay_endpoint_id) ? 0 : passStringToWasm0(relay_endpoint_id, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        var len3 = WASM_VECTOR_LEN;
+        var ptr4 = isLikeNone(relay_peer_address) ? 0 : passStringToWasm0(relay_peer_address, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        var len4 = WASM_VECTOR_LEN;
+        const ret = wasm.araliyawasmapp_issueVouchCard(this.__wbg_ptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, ptr4, len4, !isLikeNone(expires_at_ms), isLikeNone(expires_at_ms) ? 0 : expires_at_ms);
+        return takeObject(ret);
+    }
+    /**
+     * @param {string} subject_pubkey
+     * @param {string} role
+     * @param {string | null} [root_pubkey]
+     * @param {string | null} [relay_endpoint_id]
+     * @param {string | null} [relay_peer_address]
+     * @param {number | null} [expires_at_ms]
+     * @returns {Promise<any>}
+     */
+    submitVouchCard(subject_pubkey, role, root_pubkey, relay_endpoint_id, relay_peer_address, expires_at_ms) {
+        const ptr0 = passStringToWasm0(subject_pubkey, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(role, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        var ptr2 = isLikeNone(root_pubkey) ? 0 : passStringToWasm0(root_pubkey, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        var len2 = WASM_VECTOR_LEN;
+        var ptr3 = isLikeNone(relay_endpoint_id) ? 0 : passStringToWasm0(relay_endpoint_id, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        var len3 = WASM_VECTOR_LEN;
+        var ptr4 = isLikeNone(relay_peer_address) ? 0 : passStringToWasm0(relay_peer_address, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        var len4 = WASM_VECTOR_LEN;
+        const ret = wasm.araliyawasmapp_submitVouchCard(this.__wbg_ptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, ptr4, len4, !isLikeNone(expires_at_ms), isLikeNone(expires_at_ms) ? 0 : expires_at_ms);
+        return takeObject(ret);
+    }
+    /**
+     * @param {string} voucher_pubkey
+     * @param {string | null | undefined} requested_handle
+     * @param {number} expires_at_ms
+     * @returns {Promise<any>}
+     */
+    submitVouchRequest(voucher_pubkey, requested_handle, expires_at_ms) {
+        const ptr0 = passStringToWasm0(voucher_pubkey, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        var ptr1 = isLikeNone(requested_handle) ? 0 : passStringToWasm0(requested_handle, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        var len1 = WASM_VECTOR_LEN;
+        const ret = wasm.araliyawasmapp_submitVouchRequest(this.__wbg_ptr, ptr0, len0, ptr1, len1, expires_at_ms);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Promise<any>}
+     */
+    listIncomingVouchRequests() {
+        const ret = wasm.araliyawasmapp_listIncomingVouchRequests(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {Promise<any>}
+     */
+    listMyVouchRequests() {
+        const ret = wasm.araliyawasmapp_listMyVouchRequests(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @param {string} subject_pubkey
+     * @returns {Promise<any>}
+     */
+    dismissVouchRequest(subject_pubkey) {
+        const ptr0 = passStringToWasm0(subject_pubkey, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.araliyawasmapp_dismissVouchRequest(this.__wbg_ptr, ptr0, len0);
+        return takeObject(ret);
+    }
+    /**
+     * @param {string} plaintext_json
+     * @returns {Promise<any>}
+     */
+    sealLocalDraft(plaintext_json) {
+        const ptr0 = passStringToWasm0(plaintext_json, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.araliyawasmapp_sealLocalDraft(this.__wbg_ptr, ptr0, len0);
+        return takeObject(ret);
+    }
+    /**
+     * @param {string} sealed_b64
+     * @returns {Promise<any>}
+     */
+    unsealLocalDraft(sealed_b64) {
+        const ptr0 = passStringToWasm0(sealed_b64, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.araliyawasmapp_unsealLocalDraft(this.__wbg_ptr, ptr0, len0);
         return takeObject(ret);
     }
     /**
@@ -2034,7 +2191,7 @@ function __wbg_get_imports() {
                 const a = state0.a;
                 state0.a = 0;
                 try {
-                    return __wasm_bindgen_func_elem_17095(a, state0.b, arg0, arg1);
+                    return __wasm_bindgen_func_elem_17348(a, state0.b, arg0, arg1);
                 } finally {
                     state0.a = a;
                 }
@@ -2325,21 +2482,6 @@ function __wbg_get_imports() {
         const ret = WasmEventPoller.__wrap(arg0);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_cast_0919ff9582c72124 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 1809, function: Function { arguments: [], shim_idx: 1810, ret: Unit, inner_ret: Some(Unit) }, mutable: false }) -> Externref`.
-        const ret = makeClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_6997, __wasm_bindgen_func_elem_7017);
-        return addHeapObject(ret);
-    };
-    imports.wbg.__wbindgen_cast_09e779a1d6e45084 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 2102, function: Function { arguments: [NamedExternref("MessageEvent")], shim_idx: 2103, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_7780, __wasm_bindgen_func_elem_7804);
-        return addHeapObject(ret);
-    };
-    imports.wbg.__wbindgen_cast_0a8d47d068e2a211 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 3162, function: Function { arguments: [Externref], shim_idx: 3163, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_13935, __wasm_bindgen_func_elem_13951);
-        return addHeapObject(ret);
-    };
     imports.wbg.__wbindgen_cast_2241b6af4c4b2941 = function(arg0, arg1) {
         // Cast intrinsic for `Ref(String) -> Externref`.
         const ret = getStringFromWasm0(arg0, arg1);
@@ -2350,24 +2492,39 @@ function __wbg_get_imports() {
         const ret = BigInt.asUintN(64, arg0);
         return addHeapObject(ret);
     };
+    imports.wbg.__wbindgen_cast_4e5eb6497537c6dc = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 1853, function: Function { arguments: [], shim_idx: 1854, ret: Unit, inner_ret: Some(Unit) }, mutable: false }) -> Externref`.
+        const ret = makeClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_7226, __wasm_bindgen_func_elem_7246);
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbindgen_cast_6c6149b8c6058eb9 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 3198, function: Function { arguments: [], shim_idx: 3199, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_14101, __wasm_bindgen_func_elem_14118);
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbindgen_cast_73f889981cf973dd = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 703, function: Function { arguments: [NamedExternref("CloseEvent")], shim_idx: 704, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_3791, __wasm_bindgen_func_elem_4190);
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbindgen_cast_77028afeba0f6822 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 1842, function: Function { arguments: [], shim_idx: 1843, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_7102, __wasm_bindgen_func_elem_7115);
+        return addHeapObject(ret);
+    };
     imports.wbg.__wbindgen_cast_9ae0607507abb057 = function(arg0) {
         // Cast intrinsic for `I64 -> Externref`.
         const ret = arg0;
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_cast_9eec4d943e8efed9 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 659, function: Function { arguments: [NamedExternref("CloseEvent")], shim_idx: 660, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_3562, __wasm_bindgen_func_elem_3961);
+    imports.wbg.__wbindgen_cast_b43ce9b1ca588b05 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 3206, function: Function { arguments: [Externref], shim_idx: 3207, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_14164, __wasm_bindgen_func_elem_14180);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_cast_a8471e9338e810fc = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 3154, function: Function { arguments: [], shim_idx: 3155, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_13872, __wasm_bindgen_func_elem_13889);
-        return addHeapObject(ret);
-    };
-    imports.wbg.__wbindgen_cast_c682c34c809e2589 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 1798, function: Function { arguments: [], shim_idx: 1799, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_6873, __wasm_bindgen_func_elem_6886);
+    imports.wbg.__wbindgen_cast_baac472c94262111 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 2222, function: Function { arguments: [], shim_idx: 2223, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_8813, __wasm_bindgen_func_elem_8822);
         return addHeapObject(ret);
     };
     imports.wbg.__wbindgen_cast_cb9088102bce6b30 = function(arg0, arg1) {
@@ -2380,9 +2537,9 @@ function __wbg_get_imports() {
         const ret = arg0;
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_cast_dd694e0df41d7e46 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 2178, function: Function { arguments: [], shim_idx: 2179, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_8584, __wasm_bindgen_func_elem_8593);
+    imports.wbg.__wbindgen_cast_d9a6d98bf3a5ac88 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 2146, function: Function { arguments: [NamedExternref("MessageEvent")], shim_idx: 2147, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, wasm.__wasm_bindgen_func_elem_8009, __wasm_bindgen_func_elem_8033);
         return addHeapObject(ret);
     };
     imports.wbg.__wbindgen_object_clone_ref = function(arg0) {

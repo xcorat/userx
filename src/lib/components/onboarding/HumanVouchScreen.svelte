@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { araliyaService, pubkeyToHex } from '$lib/services/araliya.service';
 	import { sessionStore } from '$lib/stores/session.svelte';
+	import type { VouchCertInfo } from '$lib/types';
 	import RelayStatusPill from '$lib/components/onboarding/RelayStatusPill.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -10,7 +11,9 @@
 	import {
 		ArrowRight,
 		CheckCircle2,
+		Clock,
 		Copy,
+		RefreshCw,
 		Send,
 		ShieldCheck,
 		Terminal,
@@ -19,24 +22,59 @@
 
 	let vouchPasteInput = $state('');
 	let isRequestingGenesis = $state(false);
+	let isSubmittingRequest = $state(false);
+	let isCheckingRelay = $state(false);
 	let showMaintainerRequest = $state(false);
+	let showTokenPaste = $state(false);
 	let resolvedVoucherHandle = $state<string | null>(null);
+	let resolvedRelayVouch = $state<VouchCertInfo | null>(sessionStore.detectedRelayVouch);
 	let mismatchWarning = $state<string | null>(null);
+	let requestError = $state<string | null>(null);
+	let requestSubmittedForKey = $state<string | null>(null);
+	let nowMs = $state(Date.now());
 
 	let relay = $derived(sessionStore.relayStatus);
 	let pubkey = $derived(sessionStore.identity?.userPubkey ?? '');
 	let stagedToken = $derived(sessionStore.pendingVouchToken);
+	let targetVoucherPk = $derived(
+		sessionStore.pendingVoucherPubkey ?? sessionStore.pendingVouchRequest?.voucherPubkey ?? null
+	);
+	let activeRequest = $derived(sessionStore.pendingVouchRequest);
+
+	let hasVouchReady = $derived(Boolean(stagedToken || resolvedRelayVouch));
 
 	let displayVoucherHandle = $derived(
 		resolvedVoucherHandle ??
 			sessionStore.vouchedByHandle ??
 			sessionStore.pendingVouchInviter ??
+			activeRequest?.voucherHandle ??
 			'user-x'
 	);
 
 	function truncateToken(val: string): string {
 		if (!val || val.length <= 28) return val;
 		return `${val.slice(0, 22)}…${val.slice(-6)}`;
+	}
+
+	function truncatePk(val: string): string {
+		if (!val || val.length <= 18) return val;
+		return `${val.slice(0, 10)}…${val.slice(-6)}`;
+	}
+
+	function formatTimeRemaining(expiresAtMs: number): string {
+		const diff = Math.max(0, expiresAtMs - nowMs);
+		if (diff <= 0) return 'Expired';
+		const totalMins = Math.floor(diff / 60_000);
+		const hours = Math.floor(totalMins / 60);
+		const mins = totalMins % 60;
+		if (hours >= 24) {
+			const days = Math.floor(hours / 24);
+			const remHours = hours % 24;
+			return `${days}d ${remHours}h ${mins}m`;
+		}
+		if (hours > 0) return `${hours}h ${mins}m`;
+		const secs = Math.floor((diff % 60_000) / 1000);
+		return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 	}
 
 	function buildVouchRequestPayload(pk: string): string {
@@ -56,9 +94,24 @@
 		return `curl -s -X POST http://127.0.0.1:8080/genesis/vouch -H 'Content-Type: application/json' -d '{"subject_pubkey":"${pk}","ttl_secs":86400}'`;
 	}
 
+	async function resolveHandleForPk(voucherPk: string): Promise<string | null> {
+		if (relay?.rootPubkey && pubkeyToHex(voucherPk) === pubkeyToHex(relay.rootPubkey)) {
+			return 'genesis';
+		}
+		if (relay?.connected && araliyaService.hasUnlockedWasmSession()) {
+			try {
+				const user = await araliyaService.getUserByPubkey(voucherPk);
+				if (user?.username) return user.username;
+			} catch {
+				// Keep fallback
+			}
+		}
+		return null;
+	}
+
 	async function inspectAndResolveVoucher(token: string) {
 		mismatchWarning = null;
-		const info = araliyaService.inspectVouchToken(token);
+		const info = await araliyaService.inspectVouchTokenAsync(token);
 		if (!info.validFormat) return;
 
 		if (
@@ -68,35 +121,100 @@
 		) {
 			mismatchWarning =
 				'Warning: this vouch token targets a different public key than your active identity.';
+		} else if (info.isExpired) {
+			mismatchWarning = 'Warning: this vouch token has expired.';
 		}
 
 		if (info.voucherPubkey) {
-			if (
-				relay?.rootPubkey &&
-				pubkeyToHex(info.voucherPubkey) === pubkeyToHex(relay.rootPubkey)
-			) {
-				resolvedVoucherHandle = 'genesis';
-				sessionStore.setVouchedByHandle('genesis');
-				return;
+			const handle = await resolveHandleForPk(info.voucherPubkey);
+			if (handle) {
+				resolvedVoucherHandle = handle;
+				sessionStore.setVouchedByHandle(handle);
 			}
-			if (relay?.connected && araliyaService.hasUnlockedWasmSession()) {
-				try {
-					const user = await araliyaService.getUserByPubkey(info.voucherPubkey);
-					if (user?.username) {
-						resolvedVoucherHandle = user.username;
-						sessionStore.setVouchedByHandle(user.username);
-						return;
-					}
-				} catch {
-					// Keep fallback handle
+		}
+	}
+
+	async function checkRelayForVouch(silent = true): Promise<boolean> {
+		if (!relay?.connected || !pubkey) return false;
+		isCheckingRelay = true;
+		try {
+			await sessionStore.ensureUnlockedOnRelay();
+			const cert = await araliyaService.checkInitialVouch();
+			if (cert) {
+				resolvedRelayVouch = cert;
+				sessionStore.detectedRelayVouch = cert;
+				const handle = await resolveHandleForPk(cert.voucherPubkey);
+				if (handle) {
+					resolvedVoucherHandle = handle;
+					sessionStore.setVouchedByHandle(handle);
 				}
+				if (!silent) {
+					toast.success(
+						handle
+							? `Vouch from @${handle} found on relay!`
+							: 'Valid vouch found on relay!'
+					);
+				}
+				return true;
 			}
+			if (!silent) {
+				toast.info('No vouch received yet — still waiting.');
+			}
+			return false;
+		} catch {
+			return false;
+		} finally {
+			isCheckingRelay = false;
+		}
+	}
+
+	async function ensureTargetVoucherRequestSent(voucherPk: string) {
+		if (
+			!pubkey ||
+			!relay?.connected ||
+			isSubmittingRequest ||
+			requestSubmittedForKey === `${pubkey}:${voucherPk}`
+		) {
+			return;
+		}
+		// Already have an active local request targeting this exact voucher?
+		if (
+			activeRequest &&
+			activeRequest.voucherPubkey &&
+			pubkeyToHex(activeRequest.voucherPubkey) === pubkeyToHex(voucherPk) &&
+			activeRequest.expiresAtMs > Date.now() &&
+			activeRequest.reason !== 'declined'
+		) {
+			requestSubmittedForKey = `${pubkey}:${voucherPk}`;
+			if (!resolvedVoucherHandle && activeRequest.voucherHandle) {
+				resolvedVoucherHandle = activeRequest.voucherHandle;
+			}
+			return;
+		}
+
+		isSubmittingRequest = true;
+		requestError = null;
+		try {
+			await sessionStore.ensureUnlockedOnRelay();
+			const handle = await resolveHandleForPk(voucherPk);
+			if (handle) {
+				resolvedVoucherHandle = handle;
+			}
+			await sessionStore.startPendingVouchWindow(voucherPk, handle);
+			requestSubmittedForKey = `${pubkey}:${voucherPk}`;
+		} catch (err) {
+			requestError =
+				err instanceof Error ? err.message : 'Could not send vouch request to relay';
+		} finally {
+			isSubmittingRequest = false;
 		}
 	}
 
 	async function tryAutoGenesisVouch() {
 		if (
 			sessionStore.pendingVouchToken ||
+			resolvedRelayVouch ||
+			sessionStore.pendingVoucherPubkey ||
 			!relay?.connected ||
 			!relay.httpAvailable ||
 			!relay.genesisMode ||
@@ -112,37 +230,87 @@
 			sessionStore.setVouchedByHandle('genesis');
 			resolvedVoucherHandle = 'genesis';
 		} catch {
-			// Fall back to State B manual paste / request flow
+			// Fall back to peer vouch / manual paste flow
 		} finally {
 			isRequestingGenesis = false;
 		}
 	}
 
 	onMount(() => {
-		if (stagedToken) {
-			void inspectAndResolveVoucher(stagedToken);
-		} else {
-			void tryAutoGenesisVouch();
-		}
+		const timer = setInterval(() => {
+			nowMs = Date.now();
+		}, 15_000);
+
+		void (async () => {
+			if (stagedToken) {
+				await inspectAndResolveVoucher(stagedToken);
+				return;
+			}
+			const foundOnRelay = await checkRelayForVouch(true);
+			if (foundOnRelay) return;
+
+			if (targetVoucherPk) {
+				await ensureTargetVoucherRequestSent(targetVoucherPk);
+			} else {
+				await tryAutoGenesisVouch();
+			}
+		})();
+
+		return () => clearInterval(timer);
 	});
 
 	$effect(() => {
-		if (!stagedToken && relay?.connected && relay.httpAvailable && relay.genesisMode && pubkey) {
+		if (
+			!stagedToken &&
+			!resolvedRelayVouch &&
+			targetVoucherPk &&
+			relay?.connected &&
+			pubkey &&
+			requestSubmittedForKey !== `${pubkey}:${targetVoucherPk}` &&
+			!isSubmittingRequest
+		) {
+			void ensureTargetVoucherRequestSent(targetVoucherPk);
+		} else if (
+			!stagedToken &&
+			!resolvedRelayVouch &&
+			!sessionStore.pendingVoucherPubkey &&
+			relay?.connected &&
+			relay.httpAvailable &&
+			relay.genesisMode &&
+			pubkey
+		) {
 			void tryAutoGenesisVouch();
 		}
 	});
 
 	async function handleApplyVouch(event: SubmitEvent) {
 		event.preventDefault();
-		const info = araliyaService.inspectVouchToken(vouchPasteInput);
+		const info = await araliyaService.inspectVouchTokenAsync(vouchPasteInput);
 		if (!info.validFormat) {
 			toast.error(info.error ?? 'Invalid vouch token');
+			return;
+		}
+		if (info.isExpired) {
+			toast.error('This vouch token has expired');
 			return;
 		}
 		sessionStore.setPendingVouchToken(info.tokenOrJson);
 		vouchPasteInput = '';
 		await inspectAndResolveVoucher(info.tokenOrJson);
 		toast.success('Vouch token staged for registration');
+	}
+
+	async function handleContinueWhileWaiting() {
+		try {
+			if (targetVoucherPk) {
+				await ensureTargetVoucherRequestSent(targetVoucherPk);
+			} else if (!sessionStore.isPendingVouch) {
+				await sessionStore.startPendingVouchWindow(null, null);
+			}
+			sessionStore.setOnboardingStep('handle');
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Could not start pending vouch window');
+		}
 	}
 
 	async function handleSendVouchRequest() {
@@ -152,7 +320,7 @@
 			await navigator.clipboard.writeText(buildVouchRequestPayload(pubkey));
 			toast.success('Copied vouch request payload with your Public Key');
 		} catch {
-			toast.info('Share the vouch request payload below with a relay maintainer');
+			toast.info('Share the vouch request payload below with an existing member');
 		}
 	}
 
@@ -169,7 +337,7 @@
 
 <div class="flex h-full flex-col justify-between gap-4 overflow-y-auto px-5 py-6">
 	<RelayStatusPill
-		stepLabel="04 / 10"
+		stepLabel="Step 2 / 8"
 		onBack={() => sessionStore.setOnboardingStep('keypair')}
 	/>
 
@@ -186,42 +354,54 @@
 			</p>
 		</div>
 
-		{#if isRequestingGenesis}
+		{#if isRequestingGenesis || isSubmittingRequest}
 			<div class="rounded-2xl border border-primary/30 bg-card/85 p-4 text-center text-xs text-muted-foreground">
-				Requesting Genesis relay vouch for your public key…
+				{#if isSubmittingRequest}
+					Sending 72-hour vouch request to {resolvedVoucherHandle ? `@${resolvedVoucherHandle}` : 'your inviter'}…
+				{:else}
+					Requesting Genesis relay vouch for your public key…
+				{/if}
 			</div>
-		{:else if stagedToken}
-			<!-- State A — Arriving via Invite Link / Genesis Vouch -->
+		{:else if hasVouchReady}
+			<!-- State A — Vouch Token or Relay-Submitted Vouch Ready -->
 			<div class="space-y-3 rounded-2xl border border-primary/40 bg-primary/10 p-4">
 				<div class="flex items-start justify-between gap-2">
 					<div class="flex items-center gap-2">
 						<CheckCircle2 class="h-5 w-5 shrink-0 text-primary" />
 						<span class="text-xs font-semibold text-foreground">Vouch Ready</span>
 					</div>
-					<button
-						type="button"
-						onclick={() => {
-							sessionStore.clearPendingVouch();
-							resolvedVoucherHandle = null;
-							mismatchWarning = null;
-						}}
-						class="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground"
-					>
-						Use different token
-					</button>
+					{#if stagedToken}
+						<button
+							type="button"
+							onclick={() => {
+								sessionStore.clearPendingVouch();
+								resolvedVoucherHandle = null;
+								mismatchWarning = null;
+							}}
+							class="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground"
+						>
+							Use different token
+						</button>
+					{/if}
 				</div>
 
-				<div class="flex items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/70 px-3 py-2 font-mono text-[11px]">
-					<span class="truncate text-foreground">{truncateToken(stagedToken)}</span>
-					<button
-						type="button"
-						onclick={() => copyText('vouch token', stagedToken)}
-						aria-label="Copy vouch token"
-						class="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
-					>
-						<Copy class="h-3.5 w-3.5" />
-					</button>
-				</div>
+				{#if stagedToken}
+					<div class="flex items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/70 px-3 py-2 font-mono text-[11px]">
+						<span class="truncate text-foreground">{truncateToken(stagedToken)}</span>
+						<button
+							type="button"
+							onclick={() => copyText('vouch token', stagedToken)}
+							aria-label="Copy vouch token"
+							class="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+						>
+							<Copy class="h-3.5 w-3.5" />
+						</button>
+					</div>
+				{:else if resolvedRelayVouch}
+					<div class="rounded-lg border border-border/70 bg-background/70 px-3 py-2 font-mono text-[11px] text-foreground">
+						Recorded directly on relay by {truncatePk(resolvedRelayVouch.voucherPubkey)}
+					</div>
+				{/if}
 
 				<p class="text-xs leading-relaxed text-foreground">
 					<UserCheck class="mr-1 inline h-3.5 w-3.5 text-primary" />
@@ -235,11 +415,82 @@
 					</p>
 				{/if}
 			</div>
+		{:else if targetVoucherPk}
+			<!-- State B1 — Invited via ?voucher=<alice_pubkey> Onboarding Link -->
+			<div class="space-y-3.5 rounded-2xl border border-primary/35 bg-card/90 p-4">
+				<div class="flex items-center justify-between gap-2">
+					<span class="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
+						<Clock class="h-4 w-4 text-primary" />
+						Vouch Request Sent
+					</span>
+					{#if activeRequest}
+						<span class="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-primary">
+							{formatTimeRemaining(activeRequest.expiresAtMs)} left
+						</span>
+					{/if}
+				</div>
+
+				<p class="text-xs leading-relaxed text-muted-foreground">
+					Your request was automatically sent to
+					<span class="font-semibold text-foreground">
+						{resolvedVoucherHandle || activeRequest?.voucherHandle
+							? `@${resolvedVoucherHandle ?? activeRequest?.voucherHandle}`
+							: truncatePk(targetVoucherPk)}
+					</span>. You can finish setting up your profile and explore the commons while waiting — full access unlocks automatically once they approve (72h window).
+				</p>
+
+				{#if requestError}
+					<p class="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive">
+						{requestError}
+					</p>
+				{/if}
+
+				<div class="flex items-center gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={isCheckingRelay}
+						onclick={() => checkRelayForVouch(false)}
+						class="h-8 flex-1 cursor-pointer text-xs"
+					>
+						<RefreshCw class={`mr-1.5 h-3.5 w-3.5 ${isCheckingRelay ? 'animate-spin' : ''}`} />
+						{isCheckingRelay ? 'Checking…' : 'Check Approval Status'}
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						onclick={() => (showTokenPaste = !showTokenPaste)}
+						class="h-8 cursor-pointer text-[11px] text-muted-foreground"
+					>
+						{showTokenPaste ? 'Hide Token' : 'Paste Token'}
+					</Button>
+				</div>
+
+				{#if showTokenPaste}
+					<form onsubmit={handleApplyVouch} class="space-y-2 border-t border-border/60 pt-3">
+						<Label for="vouch-paste-invited" class="text-[11px]">Vouch Token or JSON</Label>
+						<Input
+							id="vouch-paste-invited"
+							bind:value={vouchPasteInput}
+							placeholder="araliya-vouch-card:v1:..."
+							autocapitalize="none"
+							autocomplete="off"
+							class="h-9 bg-background/70 font-mono text-xs"
+						/>
+						<Button type="submit" variant="secondary" size="sm" class="h-8 w-full cursor-pointer text-xs">
+							<ShieldCheck class="mr-1.5 h-3.5 w-3.5" />
+							Apply Vouch Token
+						</Button>
+					</form>
+				{/if}
+			</div>
 		{:else}
-			<!-- State B — No Invite Link Yet -->
+			<!-- State B2 — No Invite Link Yet -->
 			<div class="space-y-3 rounded-2xl border border-border/80 bg-card/85 p-4">
 				<p class="text-xs leading-relaxed text-muted-foreground">
-					Paste a vouch token if you have one, or send a vouch request to a relay maintainer:
+					Paste a vouch token if you have one, or share your public key with an existing member:
 				</p>
 
 				<form onsubmit={handleApplyVouch} class="space-y-2.5">
@@ -260,15 +511,24 @@
 					</Button>
 				</form>
 
-				<div class="border-t border-border/60 pt-2.5">
+				<div class="flex gap-2 border-t border-border/60 pt-2.5">
 					<Button
 						type="button"
 						variant="outline"
 						onclick={handleSendVouchRequest}
-						class="h-9 w-full cursor-pointer text-xs"
+						class="h-9 flex-1 cursor-pointer text-xs"
 					>
 						<Send class="mr-1.5 h-3.5 w-3.5 text-primary" />
-						Send Vouch Request to Relay Maintainer
+						Share Request Payload
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						disabled={isCheckingRelay}
+						onclick={() => checkRelayForVouch(false)}
+						class="h-9 cursor-pointer px-3 text-xs"
+					>
+						<RefreshCw class={`h-3.5 w-3.5 ${isCheckingRelay ? 'animate-spin' : ''}`} />
 					</Button>
 				</div>
 
@@ -289,7 +549,7 @@
 							</button>
 						</div>
 						<p class="text-[10px] text-muted-foreground">
-							Share your Public Key with a relay maintainer or existing member to mint your <span class="font-mono">araliya-vouch-card:v1</span>:
+							Share your Public Key with an existing member (or relay maintainer) to vouch for you on the relay or mint an <span class="font-mono">araliya-vouch-card:v1</span>:
 						</p>
 						<div class="flex items-center justify-between gap-2 rounded-md bg-card px-2 py-1.5 font-mono text-[10px]">
 							<span class="truncate text-foreground">{pubkey}</span>
@@ -308,7 +568,7 @@
 	</div>
 
 	<div class="space-y-2 pb-2">
-		{#if stagedToken}
+		{#if hasVouchReady}
 			<Button
 				onclick={() => sessionStore.setOnboardingStep('handle')}
 				size="lg"
@@ -328,13 +588,14 @@
 			</Button>
 		{:else}
 			<Button
-				onclick={() => sessionStore.setOnboardingStep('handle')}
-				variant="outline"
+				onclick={handleContinueWhileWaiting}
+				variant={targetVoucherPk ? 'default' : 'outline'}
 				size="lg"
-				class="h-11 w-full cursor-pointer text-xs font-semibold"
+				disabled={isSubmittingRequest}
+				class="h-12 w-full cursor-pointer text-xs font-semibold"
 			>
-				Continue Without Vouch (Open Relays Only)
-				<ArrowRight class="ml-2 h-3.5 w-3.5" />
+				Continue Onboarding While Waiting (72h)
+				<ArrowRight class="ml-2 h-4 w-4" />
 			</Button>
 		{/if}
 	</div>

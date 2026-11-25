@@ -11,13 +11,16 @@ import {
 import type {
 	FieldVisibility,
 	GeneratedKeypair,
+	IssuedVouchCard,
 	ProfileFieldKey,
 	QuestionItem,
 	QuestionOption,
 	RecoveryPayload,
 	RelayStatusInfo,
 	UserIdentity,
-	VouchInspection
+	VouchCertInfo,
+	VouchInspection,
+	VouchRequestItem
 } from '$lib/types';
 import type { AraliyaWasmApp, WasmEventPoller } from '$wasm/araliya_net_wasm';
 
@@ -81,13 +84,32 @@ export interface QnaDomainEventHint {
 	resource_id: number[];
 }
 
+export interface RelayEventItem {
+	seq: number;
+	topic: unknown;
+	kind: Record<string, unknown>;
+	ts_ms: number;
+}
+
 export interface QnaEventBatch {
 	cursor: number;
+	events?: RelayEventItem[];
+	updated_users?: number[][];
 	domain_events: QnaDomainEventHint[];
 }
 
 export function bytesToHex(bytes: number[] | Uint8Array): string {
 	return Array.from(bytes, (b) => (b & 0xff).toString(16).padStart(2, '0')).join('');
+}
+
+export function pubkeyToBytes(pubkeyB64UrlOrHex: string): number[] {
+	const hex = pubkeyToHex(pubkeyB64UrlOrHex);
+	if (hex.length !== 64) return [];
+	const out: number[] = [];
+	for (let i = 0; i < 64; i += 2) {
+		out.push(Number.parseInt(hex.slice(i, i + 2), 16));
+	}
+	return out;
 }
 
 /**
@@ -612,6 +634,44 @@ class AraliyaService {
 		};
 	}
 
+	async inspectVouchTokenAsync(rawInput: string): Promise<VouchInspection> {
+		const trimmed = rawInput.trim();
+		if (!trimmed) {
+			return {
+				validFormat: false,
+				format: 'invalid',
+				tokenOrJson: '',
+				error: 'Paste a vouch token or JSON payload.'
+			};
+		}
+		try {
+			const wasm = await this.ensureWasm();
+			const decoded = wasm.decodeVouchCard(trimmed) as {
+				rootPubkey?: string | null;
+				cert: VouchCertInfo;
+			};
+			return {
+				validFormat: true,
+				format: trimmed.startsWith('{') ? 'json' : 'token',
+				tokenOrJson: trimmed,
+				subjectPubkey: decoded.cert.subjectPubkey,
+				voucherPubkey: decoded.cert.voucherPubkey,
+				expiresAtMs: decoded.cert.expiresAtMs ?? null,
+				isValid: decoded.cert.isValid,
+				isExpired: decoded.cert.isExpired,
+				role: decoded.cert.role,
+				rootPubkey: decoded.rootPubkey ?? undefined
+			};
+		} catch (err) {
+			return {
+				validFormat: false,
+				format: 'invalid',
+				tokenOrJson: trimmed,
+				error: errorMessage(err, 'Invalid vouch token or JSON.')
+			};
+		}
+	}
+
 	async createVaultJson(secretKeyB64: string, password: string): Promise<string> {
 		const wasm = await this.ensureWasm();
 		return JSON.stringify(wasm.createKeyVault(secretKeyB64, password));
@@ -672,11 +732,102 @@ class AraliyaService {
 		return res ?? null;
 	}
 
+	async getUserByUsername(username: string): Promise<WireUserRegistration | null> {
+		const res = (await this.requireApp().getUserByUsername(
+			username
+		)) as WireUserRegistration | null;
+		return res ?? null;
+	}
+
+	async checkInitialVouch(): Promise<VouchCertInfo | null> {
+		const res = (await this.requireApp().checkInitialVouch()) as VouchCertInfo | null;
+		return res ?? null;
+	}
+
+	async registerWithSubmittedVouch(
+		username: string,
+		displayName: string
+	): Promise<{ user: WireUserRegistration; vouch: VouchCertInfo }> {
+		return (await this.requireApp().registerWithSubmittedVouch(username, displayName)) as {
+			user: WireUserRegistration;
+			vouch: VouchCertInfo;
+		};
+	}
+
+	async issueVouchCard(
+		subjectPubkey: string,
+		role: string,
+		rootPubkey?: string | null,
+		relayEndpointId?: string | null,
+		relayPeerAddress?: string | null,
+		expiresAtMs?: number | null
+	): Promise<IssuedVouchCard> {
+		return (await this.requireApp().issueVouchCard(
+			subjectPubkey,
+			role,
+			rootPubkey?.trim() ? rootPubkey.trim() : null,
+			relayEndpointId ?? null,
+			relayPeerAddress ?? null,
+			expiresAtMs ?? null
+		)) as IssuedVouchCard;
+	}
+
+	async submitVouchCard(
+		subjectPubkey: string,
+		role: string,
+		rootPubkey?: string | null,
+		relayEndpointId?: string | null,
+		relayPeerAddress?: string | null,
+		expiresAtMs?: number | null
+	): Promise<IssuedVouchCard> {
+		return (await this.requireApp().submitVouchCard(
+			subjectPubkey,
+			role,
+			rootPubkey?.trim() ? rootPubkey.trim() : null,
+			relayEndpointId ?? null,
+			relayPeerAddress ?? null,
+			expiresAtMs ?? null
+		)) as IssuedVouchCard;
+	}
+
+	async submitVouchRequest(
+		voucherPubkey: string,
+		requestedHandle: string | null,
+		expiresAtMs: number
+	): Promise<VouchRequestItem> {
+		return (await this.requireApp().submitVouchRequest(
+			voucherPubkey,
+			requestedHandle,
+			expiresAtMs
+		)) as VouchRequestItem;
+	}
+
+	async listIncomingVouchRequests(): Promise<VouchRequestItem[]> {
+		return (await this.requireApp().listIncomingVouchRequests()) as VouchRequestItem[];
+	}
+
+	async listMyVouchRequests(): Promise<VouchRequestItem[]> {
+		return (await this.requireApp().listMyVouchRequests()) as VouchRequestItem[];
+	}
+
+	async dismissVouchRequest(subjectPubkey: string): Promise<VouchRequestItem> {
+		return (await this.requireApp().dismissVouchRequest(subjectPubkey)) as VouchRequestItem;
+	}
+
+	async sealLocalDraft(plaintextJson: string): Promise<string> {
+		return await this.requireApp().sealLocalDraft(plaintextJson);
+	}
+
+	async unsealLocalDraft(sealedB64: string): Promise<string> {
+		return await this.requireApp().unsealLocalDraft(sealedB64);
+	}
+
 	async ensureRegisteredAndUpdateProfile(
 		username: string,
 		displayName: string,
-		vouchToken?: string | null
-	): Promise<{ usedVouch: boolean }> {
+		vouchToken?: string | null,
+		useSubmittedVouch = false
+	): Promise<{ usedVouch: boolean; usedSubmittedVouch: boolean }> {
 		const app = this.requireApp();
 		const id = app.identity() as UserIdentity | null;
 		if (!id) {
@@ -685,15 +836,19 @@ class AraliyaService {
 		const existing = await this.getUserByPubkey(id.userPubkey);
 		if (existing) {
 			await app.updateProfile(username, displayName);
-			return { usedVouch: false };
+			return { usedVouch: false, usedSubmittedVouch: false };
 		}
 		const cleanedVouch = vouchToken?.trim();
 		if (cleanedVouch) {
 			await app.registerWithVouchCard(username, displayName, cleanedVouch);
-			return { usedVouch: true };
+			return { usedVouch: true, usedSubmittedVouch: false };
+		}
+		if (useSubmittedVouch) {
+			await app.registerWithSubmittedVouch(username, displayName);
+			return { usedVouch: true, usedSubmittedVouch: true };
 		}
 		await app.registerUser(username, displayName);
-		return { usedVouch: false };
+		return { usedVouch: false, usedSubmittedVouch: false };
 	}
 
 	async setProfileField(
@@ -863,12 +1018,20 @@ class AraliyaService {
 	async startPublicQnaPoller(
 		onBatch: (batch: QnaEventBatch) => void,
 		onError?: (err: string) => void,
-		intervalMs = 3000
+		intervalMs = 3000,
+		userPubkey?: string
 	): Promise<void> {
 		const app = await this.ensureConnected();
 		this.stopEventPoller();
+		const topics: Array<Record<string, unknown>> = [{ Domain: { domain: 'qna', channel: 'pub' } }];
+		if (userPubkey) {
+			const bytes = pubkeyToBytes(userPubkey);
+			if (bytes.length === 32) {
+				topics.push({ User: bytes });
+			}
+		}
 		this.poller = (await app.startEventPoller(
-			[{ Domain: { domain: 'qna', channel: 'pub' } }],
+			topics,
 			intervalMs,
 			onBatch,
 			onError ?? null

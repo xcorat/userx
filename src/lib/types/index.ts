@@ -7,9 +7,9 @@ export type FieldVisibility = 'private' | 'public';
 export type OnboardingStep =
 	| 'unlock'
 	| 'welcome'
-	| 'network'
 	| 'keypair'
 	| 'vouch'
+	| 'vouch-expired'
 	| 'handle'
 	| 'custody'
 	| 'details'
@@ -17,6 +17,52 @@ export type OnboardingStep =
 	| 'demo-sponsored'
 	| 'ask-first'
 	| 'feed';
+
+export type AdmissionStatus = 'unknown' | 'admitted' | 'pending-vouch' | 'expired' | 'open';
+
+export interface PendingVouchRequest {
+	subjectPubkey: string;
+	voucherPubkey: string | null;
+	voucherHandle: string | null;
+	createdAtMs: number;
+	expiresAtMs: number;
+	reason?: 'expired' | 'declined' | null;
+}
+
+export interface StagedOnboardingDraft {
+	username: string;
+	usernamePublic: boolean;
+	realName: string;
+	realNamePublic: boolean;
+	dateOfBirth: string;
+	dateOfBirthPublic: boolean;
+	pronouns: string;
+	pronounsPublic: boolean;
+}
+
+export interface VouchCertInfo {
+	subjectPubkey: string;
+	voucherPubkey: string;
+	role: string;
+	issuedAtMs: number;
+	expiresAtMs: number | null;
+	isValid: boolean;
+	isExpired: boolean;
+}
+
+export interface IssuedVouchCard {
+	cert: VouchCertInfo;
+	vouchCardToken: string;
+}
+
+export interface VouchRequestItem {
+	subjectPubkey: string;
+	voucherPubkey: string;
+	requestedHandle: string | null;
+	createdAtMs: number;
+	expiresAtMs: number;
+	status: 'pending' | 'approved' | 'declined';
+}
 
 export type KeyCustodyMode =
 	| 'browser-encrypted'
@@ -126,6 +172,10 @@ export interface VouchInspection {
 	subjectPubkey?: string;
 	voucherPubkey?: string;
 	expiresAtMs?: number | null;
+	isValid?: boolean;
+	isExpired?: boolean;
+	role?: string;
+	rootPubkey?: string;
 	error?: string;
 }
 

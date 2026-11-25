@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 
 const VAULT_STORAGE_KEY = 'araliya_vault_v1';
+const PENDING_DRAFT_STORAGE_KEY = 'araliya_pending_draft_v1';
 const SESSION_TOKEN_KEY = 'araliya_session_token';
 const IDB_NAME = 'araliya_userx_keys';
 const IDB_STORE = 'session_keys';
@@ -93,6 +94,22 @@ export function saveStoredVault(vaultJson: string): void {
 export function deleteStoredVault(): void {
 	if (!browser) return;
 	localStorage.removeItem(VAULT_STORAGE_KEY);
+}
+
+export function loadSealedDraft(): string | null {
+	if (!browser) return null;
+	const raw = localStorage.getItem(PENDING_DRAFT_STORAGE_KEY);
+	return raw && raw.trim().length > 0 ? raw.trim() : null;
+}
+
+export function saveSealedDraft(sealedB64: string): void {
+	if (!browser) return;
+	localStorage.setItem(PENDING_DRAFT_STORAGE_KEY, sealedB64);
+}
+
+export function deleteSealedDraft(): void {
+	if (!browser) return;
+	localStorage.removeItem(PENDING_DRAFT_STORAGE_KEY);
 }
 
 /**

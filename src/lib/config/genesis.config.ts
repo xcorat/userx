@@ -6,6 +6,18 @@ import type { ManualRelayOverride } from '$lib/types';
 const staticEnv = staticPublicEnv as Record<string, string | undefined>;
 const MANUAL_RELAY_STORAGE_KEY = 'userx_relay_override_v1';
 
+export const DEFAULT_VOUCH_REQUEST_TTL_MS = 72 * 60 * 60 * 1000;
+
+export function getVouchRequestTtlMs(): number {
+	const raw = readPublicEnv('PUBLIC_VOUCH_REQUEST_TTL_MS');
+	if (!raw) return DEFAULT_VOUCH_REQUEST_TTL_MS;
+	const parsed = Number(raw);
+	if (Number.isFinite(parsed) && parsed >= 5_000) {
+		return Math.floor(parsed);
+	}
+	return DEFAULT_VOUCH_REQUEST_TTL_MS;
+}
+
 function readPublicEnv(key: `PUBLIC_${string}`): string {
 	return (dynamicPublicEnv[key] ?? staticEnv[key] ?? '').trim();
 }

@@ -19,13 +19,33 @@
 		UserCheck
 	} from 'lucide-svelte';
 
-	let currentQuestion = $derived(ledgerStore.currentFeedQuestion);
+	let currentQuestion = $derived.by(() => {
+		if (!sessionStore.isPendingVouch) {
+			return ledgerStore.currentFeedQuestion;
+		}
+		const all = [...ledgerStore.nextGenesisQuestions, ...ledgerStore.nextCommunityQuestions];
+		return all.find((q) => !skippedCids.has(q.cid)) ?? all[0] ?? null;
+	});
+	let skippedCids = $state<Set<string>>(new Set());
 	let keepPublic = $state(true);
 	let selectedOptionId = $state<string | null>(null);
 	let exitDirection = $state<'left' | 'right' | 'up' | null>(null);
 	let dragOffset = $state({ x: 0, y: 0 });
 	let isDragging = $state(false);
 	let isTransitioning = $state(false);
+
+	function skipQuestionReadOnly(question: QuestionItem) {
+		const next = new Set(skippedCids);
+		next.add(question.cid);
+		const totalAvailable =
+			ledgerStore.nextGenesisQuestions.length + ledgerStore.nextCommunityQuestions.length;
+		if (next.size >= totalAvailable) {
+			skippedCids = new Set();
+			toast.info('Looping back to the first public question.');
+		} else {
+			skippedCids = next;
+		}
+	}
 
 	onMount(async () => {
 		const status = sessionStore.relayStatus ?? (await sessionStore.refreshRelayStatus());
@@ -59,6 +79,11 @@
 		optionId: string,
 		direction: 'left' | 'right' | 'up' = 'up'
 	) {
+		if (sessionStore.isPendingVouch) {
+			dragOffset = { x: 0, y: 0 };
+			toast.info('Read-only while waiting for your vouch — answering unlocks once approved.');
+			return;
+		}
 		if (isTransitioning) return;
 		isTransitioning = true;
 		selectedOptionId = optionId;
@@ -135,7 +160,13 @@
 		<div class="flex items-center gap-2">
 			<button
 				type="button"
-				onclick={() => sessionStore.setOnboardingStep('ask-first')}
+				onclick={() => {
+					if (sessionStore.isPendingVouch) {
+						toast.info('Asking questions unlocks once your vouch is approved.');
+						return;
+					}
+					sessionStore.setOnboardingStep('ask-first');
+				}}
 				class="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20"
 			>
 				<Plus class="h-3 w-3" />
@@ -276,14 +307,25 @@
 
 				<!-- Card Footer -->
 				<div class="flex items-center justify-between gap-2 border-t border-border/60 pt-3">
-					<PublicLedgerCheckbox bind:checked={keepPublic} label="keep public" compact />
-					<span class="text-[11px] text-muted-foreground">
-						{#if isBinarySwipeable}
-							Tap or swipe card
-						{:else}
-							Select to advance
-						{/if}
-					</span>
+					{#if sessionStore.isPendingVouch}
+						<span class="font-mono text-[10px] text-amber-300">Read-only preview</span>
+						<button
+							type="button"
+							onclick={() => skipQuestionReadOnly(question)}
+							class="cursor-pointer rounded-md border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] font-semibold text-foreground hover:border-primary/50"
+						>
+							Next Question →
+						</button>
+					{:else}
+						<PublicLedgerCheckbox bind:checked={keepPublic} label="keep public" compact />
+						<span class="text-[11px] text-muted-foreground">
+							{#if isBinarySwipeable}
+								Tap or swipe card
+							{:else}
+								Select to advance
+							{/if}
+						</span>
+					{/if}
 				</div>
 			</div>
 		{:else}

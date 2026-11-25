@@ -4,6 +4,7 @@
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import PendingVouchBanner from '$lib/components/onboarding/PendingVouchBanner.svelte';
 	import { Flame, LayoutDashboard } from 'lucide-svelte';
 
 	interface Props {
@@ -13,9 +14,13 @@
 	let { children }: Props = $props();
 
 	let decoration = $derived(themeStore.currentTheme.decoration);
+	let fullBleed = $derived(page.url.pathname === '/' && sessionStore.isHeroOnboarding);
 	let showMainNav = $derived(
-		sessionStore.isLoggedIn && sessionStore.onboardingStep === 'feed'
+		sessionStore.isLoggedIn &&
+			sessionStore.onboardingStep === 'feed' &&
+			!sessionStore.isVouchExpired
 	);
+	let showPendingBanner = $derived(showMainNav && sessionStore.isPendingVouch);
 
 	let activeNav = $derived<'feed' | 'dashboard'>(
 		page.url.pathname.startsWith('/dashboard') || sessionStore.activeTab === 'dashboard'
@@ -51,14 +56,22 @@
 		<div class="theme-deco-editorial pointer-events-none absolute inset-0"></div>
 	{/if}
 
-	<!-- Mobile-First Fullscreen Column -->
+	<!-- Mobile-First Fullscreen Column (Full-bleed during hero intro) -->
 	<div
-		class={`relative z-10 flex h-full w-full max-w-[440px] flex-col overflow-hidden ${
-			decoration === 'editorial'
-				? 'sm:border-x sm:border-border/80'
-				: 'sm:border-x sm:border-border/40'
+		class={`relative z-10 flex h-full w-full flex-col overflow-hidden ${
+			fullBleed
+				? ''
+				: `max-w-[440px] ${
+						decoration === 'editorial'
+							? 'sm:border-x sm:border-border/80'
+							: 'sm:border-x sm:border-border/40'
+					}`
 		}`}
 	>
+		{#if showPendingBanner}
+			<PendingVouchBanner />
+		{/if}
+
 		<main class="min-h-0 flex-1 overflow-hidden">
 			{@render children()}
 		</main>

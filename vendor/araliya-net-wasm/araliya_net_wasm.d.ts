@@ -42,6 +42,10 @@ export function answerLeafHex(answer_text: string): string;
  */
 export function generateSecretKey(): string;
 /**
+ * Decode an `araliya-vouch-card:v1:...` token, `VouchCard` JSON, or `VouchCert` JSON and inspect validity.
+ */
+export function decodeVouchCard(vouch_token_or_json: string): any;
+/**
  * The `ReadableStreamType` enum.
  *
  * *This API requires the following crate features to be activated: `ReadableStreamType`*
@@ -95,10 +99,21 @@ export class AraliyaWasmApp {
    */
   exportRecoveryPayload(): Promise<any>;
   registerWithVouchCard(username: string, display_name: string, vouch_token_or_json: string): Promise<any>;
+  registerWithSubmittedVouch(username: string, display_name: string): Promise<any>;
+  listVouches(subject_pubkey: string): Promise<any>;
+  checkInitialVouch(): Promise<any>;
   registerUser(username: string, display_name: string): Promise<any>;
   updateProfile(username: string, display_name: string): Promise<any>;
   issueVouchCert(subject_pubkey: string, role: string, expires_at_ms?: number | null): Promise<any>;
   submitVouch(subject_pubkey: string, role: string, expires_at_ms?: number | null): Promise<any>;
+  issueVouchCard(subject_pubkey: string, role: string, root_pubkey?: string | null, relay_endpoint_id?: string | null, relay_peer_address?: string | null, expires_at_ms?: number | null): Promise<any>;
+  submitVouchCard(subject_pubkey: string, role: string, root_pubkey?: string | null, relay_endpoint_id?: string | null, relay_peer_address?: string | null, expires_at_ms?: number | null): Promise<any>;
+  submitVouchRequest(voucher_pubkey: string, requested_handle: string | null | undefined, expires_at_ms: number): Promise<any>;
+  listIncomingVouchRequests(): Promise<any>;
+  listMyVouchRequests(): Promise<any>;
+  dismissVouchRequest(subject_pubkey: string): Promise<any>;
+  sealLocalDraft(plaintext_json: string): Promise<any>;
+  unsealLocalDraft(sealed_b64: string): Promise<any>;
   getUserByPubkey(pubkey: string): Promise<any>;
   getUserByUsername(username: string): Promise<any>;
   listUsers(limit: number, cursor?: string | null): Promise<any>;
@@ -207,6 +222,7 @@ export interface InitOutput {
   readonly importRecoveryKey: (a: number, b: number, c: number) => void;
   readonly answerLeafHex: (a: number, b: number, c: number) => void;
   readonly generateSecretKey: (a: number) => void;
+  readonly decodeVouchCard: (a: number, b: number, c: number) => void;
   readonly __wbg_wasmeventpoller_free: (a: number, b: number) => void;
   readonly wasmeventpoller_stop: (a: number) => void;
   readonly wasmeventpoller_updateTopics: (a: number, b: number, c: number) => void;
@@ -223,10 +239,21 @@ export interface InitOutput {
   readonly araliyawasmapp_syncKeychain: (a: number) => number;
   readonly araliyawasmapp_exportRecoveryPayload: (a: number) => number;
   readonly araliyawasmapp_registerWithVouchCard: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
+  readonly araliyawasmapp_registerWithSubmittedVouch: (a: number, b: number, c: number, d: number, e: number) => number;
+  readonly araliyawasmapp_listVouches: (a: number, b: number, c: number) => number;
+  readonly araliyawasmapp_checkInitialVouch: (a: number) => number;
   readonly araliyawasmapp_registerUser: (a: number, b: number, c: number, d: number, e: number) => number;
   readonly araliyawasmapp_updateProfile: (a: number, b: number, c: number, d: number, e: number) => number;
   readonly araliyawasmapp_issueVouchCert: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
   readonly araliyawasmapp_submitVouch: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
+  readonly araliyawasmapp_issueVouchCard: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number) => number;
+  readonly araliyawasmapp_submitVouchCard: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number) => number;
+  readonly araliyawasmapp_submitVouchRequest: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
+  readonly araliyawasmapp_listIncomingVouchRequests: (a: number) => number;
+  readonly araliyawasmapp_listMyVouchRequests: (a: number) => number;
+  readonly araliyawasmapp_dismissVouchRequest: (a: number, b: number, c: number) => number;
+  readonly araliyawasmapp_sealLocalDraft: (a: number, b: number, c: number) => number;
+  readonly araliyawasmapp_unsealLocalDraft: (a: number, b: number, c: number) => number;
   readonly araliyawasmapp_getUserByPubkey: (a: number, b: number, c: number) => number;
   readonly araliyawasmapp_getUserByUsername: (a: number, b: number, c: number) => number;
   readonly araliyawasmapp_listUsers: (a: number, b: number, c: number, d: number) => number;
@@ -296,21 +323,21 @@ export interface InitOutput {
   readonly intounderlyingsink_close: (a: number) => number;
   readonly intounderlyingsink_abort: (a: number, b: number) => number;
   readonly ring_core_0_17_14__bn_mul_mont: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
-  readonly __wasm_bindgen_func_elem_8593: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_8584: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_13951: (a: number, b: number, c: number) => void;
-  readonly __wasm_bindgen_func_elem_13935: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_7804: (a: number, b: number, c: number) => void;
-  readonly __wasm_bindgen_func_elem_7780: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_3961: (a: number, b: number, c: number) => void;
-  readonly __wasm_bindgen_func_elem_3562: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_13889: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_13872: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_7017: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_6997: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_6886: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_6873: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_17095: (a: number, b: number, c: number, d: number) => void;
+  readonly __wasm_bindgen_func_elem_8033: (a: number, b: number, c: number) => void;
+  readonly __wasm_bindgen_func_elem_8009: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_14118: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_14101: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_8822: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_8813: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_14180: (a: number, b: number, c: number) => void;
+  readonly __wasm_bindgen_func_elem_14164: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_7115: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_7102: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_7246: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_7226: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_4190: (a: number, b: number, c: number) => void;
+  readonly __wasm_bindgen_func_elem_3791: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_17348: (a: number, b: number, c: number, d: number) => void;
   readonly __wbindgen_export: (a: number, b: number) => number;
   readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export3: (a: number) => void;

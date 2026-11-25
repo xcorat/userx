@@ -1,10 +1,13 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { araliyaService, pubkeyToHex } from '$lib/services/araliya.service';
 	import { ledgerStore } from '$lib/stores/ledger.svelte';
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import { themeStore } from '$lib/stores/theme.svelte';
-	import type { ProfileFieldKey, ThemeId } from '$lib/types';
+	import type { IssuedVouchCard, ProfileFieldKey, ThemeId } from '$lib/types';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -13,18 +16,25 @@
 	import {
 		Activity,
 		Check,
+		Clock,
 		Copy,
 		Database,
 		Globe,
 		HardDrive,
 		KeyRound,
+		Link2,
 		Lock,
 		LogOut,
 		Palette,
 		Plus,
+		RefreshCw,
 		RotateCcw,
 		Shield,
-		User
+		ShieldCheck,
+		User,
+		UserCheck,
+		UserPlus,
+		X
 	} from 'lucide-svelte';
 
 	type DashboardSection = 'activity' | 'profile' | 'settings';
@@ -32,10 +42,42 @@
 	let activeSection = $state<DashboardSection>('activity');
 	let exportedRecoveryKey = $state<string | null>(null);
 	let isExportingRecovery = $state(false);
+	let nowMs = $state(Date.now());
+
+	let vouchTtlHours = $state<number | null>(72);
+	let manualSubjectInput = $state('');
+	let showManualVouch = $state(false);
+	let isVouchingSubject = $state<string | null>(null);
+	let lastIssuedCard = $state<IssuedVouchCard | null>(null);
+	let pendingTokenPaste = $state('');
+	let isApplyingPendingToken = $state(false);
 
 	let profileFields = $derived(Object.values(ledgerStore.profile));
 	let publicProjection = $derived(ledgerStore.publicLedgerProjection);
 	let privateStore = $derived(ledgerStore.privateEncryptedStore);
+
+	let myInviteLink = $derived.by(() => {
+		const pk = sessionStore.identity?.userPubkey;
+		if (!browser || !pk) return '';
+		return `${window.location.origin}/?voucher=${encodeURIComponent(pk)}`;
+	});
+
+	let lastIssuedInviteLink = $derived.by(() => {
+		if (!browser || !lastIssuedCard) return '';
+		const by = ledgerStore.profile.username.value.trim();
+		const byParam = by ? `&by=${encodeURIComponent(by)}` : '';
+		return `${window.location.origin}/?vouch=${encodeURIComponent(lastIssuedCard.vouchCardToken)}${byParam}`;
+	});
+
+	onMount(() => {
+		if (sessionStore.isAdmitted) {
+			void sessionStore.refreshIncomingVouchRequests();
+		}
+		const timer = setInterval(() => {
+			nowMs = Date.now();
+		}, 15_000);
+		return () => clearInterval(timer);
+	});
 
 	let custodyLabel = $derived(
 		sessionStore.custodyMode === 'browser-encrypted'
@@ -50,11 +92,180 @@
 		if (section !== 'settings') {
 			exportedRecoveryKey = null;
 		}
+		if (section === 'profile' && sessionStore.isAdmitted) {
+			void sessionStore.refreshIncomingVouchRequests();
+		}
+	}
+
+	function truncatePk(pk: string): string {
+		if (!pk || pk.length <= 18) return pk;
+		return `${pk.slice(0, 10)}…${pk.slice(-6)}`;
+	}
+
+	function formatTimeRemaining(expiresAtMs: number): string {
+		const diff = Math.max(0, expiresAtMs - nowMs);
+		if (diff <= 0) return 'Expired';
+		const totalMins = Math.floor(diff / 60_000);
+		const hours = Math.floor(totalMins / 60);
+		const mins = totalMins % 60;
+		if (hours >= 24) {
+			const days = Math.floor(hours / 24);
+			return `${days}d ${hours % 24}h`;
+		}
+		if (hours > 0) return `${hours}h ${mins}m`;
+		const secs = Math.floor((diff % 60_000) / 1000);
+		return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+	}
+
+	function extractSubjectPubkey(rawInput: string): string {
+		const trimmed = rawInput.trim();
+		if (trimmed.startsWith('{')) {
+			try {
+				const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+				if (typeof parsed.subject_pubkey === 'string' && parsed.subject_pubkey.trim()) {
+					return parsed.subject_pubkey.trim();
+				}
+				if (
+					typeof parsed.subject_pubkey_hex === 'string' &&
+					parsed.subject_pubkey_hex.trim()
+				) {
+					return parsed.subject_pubkey_hex.trim();
+				}
+			} catch {
+				// Fall through to raw pubkey string
+			}
+		}
+		return trimmed;
+	}
+
+	async function copyLabelledText(label: string, text: string) {
+		if (!text) return;
+		try {
+			await navigator.clipboard.writeText(text);
+			toast.success(`Copied ${label}`);
+		} catch {
+			toast.error(`Could not copy ${label}`);
+		}
+	}
+
+	async function handleApproveRequest(subjectPubkey: string) {
+		isVouchingSubject = subjectPubkey;
+		try {
+			const card = await sessionStore.approveIncomingVouch(subjectPubkey, vouchTtlHours);
+			lastIssuedCard = card;
+			toast.success('Vouch submitted to relay — their app can now auto-complete!');
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Failed to submit vouch');
+		} finally {
+			isVouchingSubject = null;
+		}
+	}
+
+	async function handleDeclineRequest(subjectPubkey: string) {
+		isVouchingSubject = subjectPubkey;
+		try {
+			await sessionStore.declineIncomingVouch(subjectPubkey);
+			toast.info('Vouch request declined');
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Failed to decline request');
+		} finally {
+			isVouchingSubject = null;
+		}
+	}
+
+	async function handleManualVouch(submitToRelay: boolean) {
+		const pk = extractSubjectPubkey(manualSubjectInput);
+		if (!pk) {
+			toast.error('Paste a peer public key or vouch request payload');
+			return;
+		}
+		isVouchingSubject = 'manual';
+		try {
+			await sessionStore.ensureUnlockedOnRelay();
+			const expiresAtMs =
+				vouchTtlHours && vouchTtlHours > 0 ? Date.now() + vouchTtlHours * 3_600_000 : null;
+			const rootPk = sessionStore.relayStatus?.rootPubkey ?? null;
+			const epId = sessionStore.relayStatus?.endpointId ?? null;
+			const dialAddr = sessionStore.relayStatus?.dialPeerAddress ?? null;
+			const card = submitToRelay
+				? await araliyaService.submitVouchCard(
+						pk,
+						'initial_approval',
+						rootPk,
+						epId,
+						dialAddr,
+						expiresAtMs
+					)
+				: await araliyaService.issueVouchCard(
+						pk,
+						'initial_approval',
+						rootPk,
+						epId,
+						dialAddr,
+						expiresAtMs
+					);
+			lastIssuedCard = card;
+			manualSubjectInput = '';
+			toast.success(
+				submitToRelay
+					? 'Vouch submitted to relay & card ready'
+					: 'Offline VouchCard minted'
+			);
+			if (submitToRelay) {
+				void sessionStore.refreshIncomingVouchRequests();
+			}
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Failed to issue vouch');
+		} finally {
+			isVouchingSubject = null;
+		}
+	}
+
+	async function handleApplyPendingToken(event: SubmitEvent) {
+		event.preventDefault();
+		if (!pendingTokenPaste.trim()) return;
+		isApplyingPendingToken = true;
+		try {
+			const info = await araliyaService.inspectVouchTokenAsync(pendingTokenPaste);
+			if (!info.validFormat) {
+				toast.error(info.error ?? 'Invalid vouch token');
+				return;
+			}
+			if (info.isExpired) {
+				toast.error('This vouch token has expired.');
+				return;
+			}
+			if (
+				info.subjectPubkey &&
+				sessionStore.identity?.userPubkey &&
+				pubkeyToHex(info.subjectPubkey) !== pubkeyToHex(sessionStore.identity.userPubkey)
+			) {
+				toast.error('This vouch token targets a different public key.');
+				return;
+			}
+			sessionStore.setPendingVouchToken(info.tokenOrJson);
+			pendingTokenPaste = '';
+			await sessionStore.checkAndAutoCompleteVouch(info.tokenOrJson);
+		} finally {
+			isApplyingPendingToken = false;
+		}
 	}
 
 	async function handleUpdateFieldValue(key: ProfileFieldKey, value: string) {
 		try {
 			if (!sessionStore.identity) throw new Error('Vault is locked');
+			if (!sessionStore.isAdmitted) {
+				await ledgerStore.stageProfileFieldValue(key, value);
+				if (key === 'username') {
+					await sessionStore.syncRequestedHandleToVoucher(
+						ledgerStore.profile.username.visibility === 'public'
+							? ledgerStore.profile.username.value
+							: null
+					);
+				}
+				toast.success(`Staged ${ledgerStore.profile[key].label} locally`);
+				return;
+			}
 			await ledgerStore.updateProfileFieldValue(
 				key,
 				value,
@@ -69,6 +280,21 @@
 	async function handleToggleFieldVisibility(key: ProfileFieldKey) {
 		try {
 			if (!sessionStore.identity) throw new Error('Vault is locked');
+			if (!sessionStore.isAdmitted) {
+				await ledgerStore.stageToggleProfileFieldVisibility(key);
+				const updated = ledgerStore.profile[key];
+				if (key === 'username') {
+					await sessionStore.syncRequestedHandleToVoucher(
+						updated.visibility === 'public' ? updated.value : null
+					);
+				}
+				toast.success(
+					`${updated.label} staged as ${
+						updated.visibility === 'public' ? 'Public Ledger' : 'Private Only'
+					}`
+				);
+				return;
+			}
 			await ledgerStore.toggleProfileFieldVisibility(key, sessionStore.identity.userPubkey);
 			const updated = ledgerStore.profile[key];
 			toast.success(
@@ -105,6 +331,10 @@
 	}
 
 	function handleOpenAskQuestion() {
+		if (sessionStore.isPendingVouch) {
+			toast.info('Asking questions unlocks once your vouch is approved.');
+			return;
+		}
 		exportedRecoveryKey = null;
 		sessionStore.setOnboardingStep('ask-first');
 		if (page.url.pathname !== '/') {
@@ -206,6 +436,11 @@
 		>
 			<User class="h-3.5 w-3.5" />
 			Profile
+			{#if sessionStore.incomingVouchRequests.length > 0}
+				<span class="rounded-full bg-primary px-1.5 py-0.2 font-mono text-[10px] font-bold text-primary-foreground">
+					{sessionStore.incomingVouchRequests.length}
+				</span>
+			{/if}
 		</button>
 		<button
 			type="button"
@@ -295,6 +530,299 @@
 				</div>
 			{/if}
 		{:else if activeSection === 'profile'}
+			{#if sessionStore.isAdmitted}
+				<!-- Invite & Vouch Card (Admitted Members) -->
+				<div class="space-y-3 rounded-xl border border-primary/30 bg-card/90 p-3.5">
+					<div class="flex items-center justify-between gap-2">
+						<div class="flex items-center gap-2 text-xs font-semibold text-foreground">
+							<UserPlus class="h-4 w-4 text-primary" />
+							Invite &amp; Vouch
+						</div>
+						<button
+							type="button"
+							disabled={sessionStore.isLoadingIncomingVouches}
+							onclick={() => sessionStore.refreshIncomingVouchRequests()}
+							class="inline-flex cursor-pointer items-center gap-1 text-[11px] text-primary hover:underline"
+						>
+							<RefreshCw
+								class={`h-3 w-3 ${sessionStore.isLoadingIncomingVouches ? 'animate-spin' : ''}`}
+							/>
+							Refresh
+						</button>
+					</div>
+
+					<!-- Personal Onboarding Link -->
+					{#if myInviteLink}
+						<div class="space-y-1.5 rounded-lg border border-border/70 bg-background/60 p-2.5">
+							<div class="flex items-center justify-between gap-2">
+								<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground">
+									<Link2 class="h-3 w-3 text-primary" />
+									Your Onboarding Link
+								</span>
+								<button
+									type="button"
+									onclick={() => copyLabelledText('invite link', myInviteLink)}
+									class="inline-flex cursor-pointer items-center gap-1 text-[10px] font-semibold text-primary hover:underline"
+								>
+									<Copy class="h-3 w-3" />
+									Copy Link
+								</button>
+							</div>
+							<p class="truncate font-mono text-[10px] text-muted-foreground">
+								{myInviteLink}
+							</p>
+							<p class="text-[10px] leading-relaxed text-muted-foreground">
+								Share this link — anyone who opens it sends their 72-hour vouch request straight to you.
+							</p>
+						</div>
+					{/if}
+
+					<!-- Expiry Selector for Issued Vouches -->
+					<div class="flex items-center justify-between gap-2 text-[11px]">
+						<span class="text-muted-foreground">Vouch validity:</span>
+						<div class="flex items-center gap-1">
+							{#each [
+								{ label: '24h', hours: 24 },
+								{ label: '72h', hours: 72 },
+								{ label: '7d', hours: 168 },
+								{ label: 'None', hours: null }
+							] as opt (opt.label)}
+								<button
+									type="button"
+									onclick={() => (vouchTtlHours = opt.hours)}
+									class={`cursor-pointer rounded-md border px-2 py-0.5 font-mono text-[10px] transition-colors ${
+										vouchTtlHours === opt.hours
+											? 'border-primary bg-primary/15 font-semibold text-primary'
+											: 'border-border bg-background/60 text-muted-foreground hover:text-foreground'
+									}`}
+								>
+									{opt.label}
+								</button>
+							{/each}
+						</div>
+					</div>
+
+					<!-- Incoming Vouch Requests -->
+					<div class="space-y-2 border-t border-border/60 pt-2.5">
+						<p class="text-[11px] font-semibold text-foreground">
+							Pending Requests ({sessionStore.incomingVouchRequests.length})
+						</p>
+						{#if sessionStore.incomingVouchRequests.length === 0}
+							<p class="text-[11px] text-muted-foreground">
+								No incoming vouch requests right now.
+							</p>
+						{:else}
+							<div class="space-y-2">
+								{#each sessionStore.incomingVouchRequests as req (req.subjectPubkey)}
+									<div class="space-y-2 rounded-lg border border-border/70 bg-background/70 p-2.5">
+										<div class="flex items-center justify-between gap-2">
+											<div class="min-w-0">
+												<p class="truncate text-xs font-semibold text-foreground">
+													{req.requestedHandle ? `@${req.requestedHandle}` : 'Private handle'}
+												</p>
+												<p class="truncate font-mono text-[10px] text-muted-foreground">
+													{truncatePk(req.subjectPubkey)}
+												</p>
+											</div>
+											<span class="shrink-0 font-mono text-[10px] text-amber-300">
+												{formatTimeRemaining(req.expiresAtMs)} left
+											</span>
+										</div>
+										<div class="flex gap-2">
+											<Button
+												type="button"
+												size="sm"
+												disabled={isVouchingSubject === req.subjectPubkey}
+												onclick={() => handleApproveRequest(req.subjectPubkey)}
+												class="h-7 flex-1 cursor-pointer text-[11px] font-semibold"
+											>
+												<UserCheck class="mr-1 h-3 w-3" />
+												{isVouchingSubject === req.subjectPubkey
+													? 'Approving…'
+													: 'Approve & Vouch'}
+											</Button>
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												disabled={isVouchingSubject === req.subjectPubkey}
+												onclick={() => handleDeclineRequest(req.subjectPubkey)}
+												class="h-7 cursor-pointer px-2.5 text-[11px]"
+											>
+												<X class="h-3 w-3" />
+											</Button>
+										</div>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+
+					<!-- Manual / Offline Vouch Toggle -->
+					<div class="border-t border-border/60 pt-2">
+						<button
+							type="button"
+							onclick={() => (showManualVouch = !showManualVouch)}
+							class="cursor-pointer text-[11px] font-medium text-primary hover:underline"
+						>
+							{showManualVouch
+								? 'Hide manual pubkey vouch'
+								: 'Vouch manually by Public Key / Request JSON →'}
+						</button>
+
+						{#if showManualVouch}
+							<div class="mt-2.5 space-y-2">
+								<Input
+									bind:value={manualSubjectInput}
+									placeholder="Paste peer pubkey or araliya-vouch-request/v1 JSON"
+									autocapitalize="none"
+									autocomplete="off"
+									class="h-9 bg-background/70 font-mono text-[11px]"
+								/>
+								<div class="flex gap-2">
+									<Button
+										type="button"
+										size="sm"
+										disabled={isVouchingSubject === 'manual'}
+										onclick={() => handleManualVouch(true)}
+										class="h-8 flex-1 cursor-pointer text-[11px] font-semibold"
+									>
+										<ShieldCheck class="mr-1 h-3.5 w-3.5" />
+										Vouch on Relay
+									</Button>
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										disabled={isVouchingSubject === 'manual'}
+										onclick={() => handleManualVouch(false)}
+										class="h-8 cursor-pointer text-[11px]"
+									>
+										Offline Card
+									</Button>
+								</div>
+							</div>
+						{/if}
+					</div>
+
+					<!-- Fallback Copyable VouchCard after Issuing -->
+					{#if lastIssuedCard}
+						<div class="space-y-2 rounded-lg border border-primary/40 bg-primary/10 p-2.5 text-[11px]">
+							<div class="flex items-center justify-between gap-2">
+								<span class="font-semibold text-foreground">Fallback VouchCard Ready</span>
+								<button
+									type="button"
+									onclick={() => (lastIssuedCard = null)}
+									class="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground"
+								>
+									Dismiss
+								</button>
+							</div>
+							<p class="truncate font-mono text-[10px] text-muted-foreground">
+								{lastIssuedCard.vouchCardToken}
+							</p>
+							<div class="flex gap-2">
+								<Button
+									type="button"
+									size="sm"
+									variant="secondary"
+									onclick={() =>
+										copyLabelledText(
+											'vouch token',
+											lastIssuedCard?.vouchCardToken ?? ''
+										)}
+									class="h-7 flex-1 cursor-pointer text-[10px]"
+								>
+									<Copy class="mr-1 h-3 w-3" />
+									Copy Token
+								</Button>
+								{#if lastIssuedInviteLink}
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										onclick={() =>
+											copyLabelledText('offline vouch link', lastIssuedInviteLink)}
+										class="h-7 flex-1 cursor-pointer text-[10px]"
+									>
+										<Link2 class="mr-1 h-3 w-3" />
+										Copy Vouch Link
+									</Button>
+								{/if}
+							</div>
+						</div>
+					{/if}
+				</div>
+			{:else if sessionStore.isPendingVouch}
+				<!-- Pending Vouch Status Card (Bob's Profile while waiting) -->
+				<div class="space-y-3 rounded-xl border border-amber-500/35 bg-amber-500/10 p-3.5 text-xs">
+					<div class="flex items-center justify-between gap-2">
+						<span class="inline-flex items-center gap-1.5 font-semibold text-foreground">
+							<Clock class="h-4 w-4 text-amber-400" />
+							Waiting for Human Vouch
+						</span>
+						{#if sessionStore.pendingVouchRequest}
+							<span class="font-mono text-[10px] text-amber-300">
+								{formatTimeRemaining(sessionStore.pendingVouchRequest.expiresAtMs)} left
+							</span>
+						{/if}
+					</div>
+					<p class="text-[11px] leading-relaxed text-muted-foreground">
+						Profile edits below are encrypted locally on your device and will sync automatically as soon as
+						{sessionStore.pendingVouchRequest?.voucherHandle
+							? `@${sessionStore.pendingVouchRequest.voucherHandle}`
+							: 'a member'}
+						approves your vouch.
+					</p>
+					<div class="flex gap-2">
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							disabled={sessionStore.isCheckingVouch}
+							onclick={() => sessionStore.checkAndAutoCompleteVouch()}
+							class="h-8 flex-1 cursor-pointer text-[11px]"
+						>
+							<RefreshCw
+								class={`mr-1 h-3 w-3 ${sessionStore.isCheckingVouch ? 'animate-spin' : ''}`}
+							/>
+							Check Relay
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							onclick={() =>
+								copyLabelledText(
+									'public key',
+									sessionStore.identity?.userPubkey ?? ''
+								)}
+							class="h-8 cursor-pointer text-[11px]"
+						>
+							<Copy class="mr-1 h-3 w-3" />
+							Copy Pubkey
+						</Button>
+					</div>
+					<form onsubmit={handleApplyPendingToken} class="flex gap-2 border-t border-amber-500/20 pt-2">
+						<Input
+							bind:value={pendingTokenPaste}
+							placeholder="araliya-vouch-card:v1:..."
+							autocapitalize="none"
+							autocomplete="off"
+							class="h-8 flex-1 bg-background/70 font-mono text-[11px]"
+						/>
+						<Button
+							type="submit"
+							size="sm"
+							disabled={isApplyingPendingToken}
+							class="h-8 cursor-pointer text-[11px]"
+						>
+							Apply
+						</Button>
+					</form>
+				</div>
+			{/if}
+
 			<div class="space-y-2.5">
 				{#each profileFields as field (field.key)}
 					<div class="space-y-2 rounded-xl border border-border/75 bg-card/85 p-3.5">

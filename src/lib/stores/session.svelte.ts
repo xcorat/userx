@@ -6,14 +6,16 @@ import {
 	getConfiguredRelayUrls,
 	getConfiguredRootPubkey,
 	getDefaultRelayHttpUrl,
+	getVouchRequestTtlMs,
 	loadManualRelayOverride,
 	parsePeerList,
 	parseUrlList,
 	saveManualRelayOverride
 } from '$lib/config/genesis.config';
-import { araliyaService } from '$lib/services/araliya.service';
+import { araliyaService, pubkeyToHex } from '$lib/services/araliya.service';
 import {
 	clearQuickUnlockSession,
+	deleteSealedDraft,
 	deleteStoredVault,
 	hasStoredVault,
 	loadQuickUnlockSecretBytes,
@@ -23,13 +25,19 @@ import {
 	saveStoredVault
 } from '$lib/services/vault.storage';
 import { ledgerStore } from '$lib/stores/ledger.svelte';
+import { toast } from 'svelte-sonner';
 import type {
+	AdmissionStatus,
 	AppTab,
 	GeneratedKeypair,
+	IssuedVouchCard,
 	KeyCustodyMode,
 	OnboardingStep,
+	PendingVouchRequest,
 	RelayStatusInfo,
-	UserIdentity
+	UserIdentity,
+	VouchCertInfo,
+	VouchRequestItem
 } from '$lib/types';
 
 const UI_STATE_KEY = 'userx_ui_state_v2';
@@ -38,8 +46,28 @@ const LEGACY_UI_STATE_KEY = 'userx_ui_state_v1';
 const VALID_STEPS = new Set<OnboardingStep>([
 	'unlock',
 	'welcome',
-	'network',
 	'keypair',
+	'vouch',
+	'vouch-expired',
+	'handle',
+	'custody',
+	'details',
+	'demo-public',
+	'demo-sponsored',
+	'ask-first',
+	'feed'
+]);
+
+const PRE_AUTH_STEPS = new Set<OnboardingStep>(['welcome', 'keypair']);
+const POST_REGISTRATION_STEPS = new Set<OnboardingStep>([
+	'custody',
+	'details',
+	'demo-public',
+	'demo-sponsored',
+	'ask-first'
+]);
+const PRE_REGISTRATION_STEPS = new Set<OnboardingStep>(['vouch', 'vouch-expired', 'handle']);
+const PENDING_ALLOWED_STEPS = new Set<OnboardingStep>([
 	'vouch',
 	'handle',
 	'custody',
@@ -50,22 +78,14 @@ const VALID_STEPS = new Set<OnboardingStep>([
 	'feed'
 ]);
 
-const PRE_AUTH_STEPS = new Set<OnboardingStep>(['welcome', 'network', 'keypair']);
-const POST_REGISTRATION_STEPS = new Set<OnboardingStep>([
-	'custody',
-	'details',
-	'demo-public',
-	'demo-sponsored',
-	'ask-first'
-]);
-const PRE_REGISTRATION_STEPS = new Set<OnboardingStep>(['vouch', 'handle']);
-
 interface PersistedUiState {
 	onboardingStep: OnboardingStep;
 	activeTab: AppTab;
 	custodyMode: KeyCustodyMode;
 	pendingVouchToken: string | null;
 	pendingVouchInviter: string | null;
+	pendingVoucherPubkey: string | null;
+	pendingVouchRequest: PendingVouchRequest | null;
 	vouchedByHandle: string | null;
 	demoTokenBalance: number;
 	firstQuestionCreditUsed: boolean;
@@ -76,6 +96,7 @@ function normalizeOnboardingStep(raw: unknown): OnboardingStep | null {
 	const legacyMap: Record<string, OnboardingStep> = {
 		login: 'unlock',
 		manifesto: 'welcome',
+		network: 'welcome',
 		username: 'handle',
 		identity: 'details',
 		theme: 'details'
@@ -101,6 +122,13 @@ class SessionStore {
 	pendingDraftKeypair = $state<{ kp: GeneratedKeypair; recoveryKey: string } | null>(null);
 	pendingVouchToken = $state<string | null>(null);
 	pendingVouchInviter = $state<string | null>(null);
+	pendingVoucherPubkey = $state<string | null>(null);
+	pendingVouchRequest = $state<PendingVouchRequest | null>(null);
+	detectedRelayVouch = $state<VouchCertInfo | null>(null);
+	admissionStatus = $state<AdmissionStatus>('unknown');
+	incomingVouchRequests = $state<VouchRequestItem[]>([]);
+	isCheckingVouch = $state(false);
+	isLoadingIncomingVouches = $state(false);
 	vouchedByHandle = $state<string | null>(null);
 	demoTokenBalance = $state(0);
 	firstQuestionCreditUsed = $state(false);
@@ -108,6 +136,28 @@ class SessionStore {
 	relayStatus = $state<RelayStatusInfo | null>(null);
 	isConnectingRelay = $state(false);
 	isAuthenticating = $state(false);
+
+	private expiryTimer: ReturnType<typeof setTimeout> | null = null;
+	private visibilityListener: (() => void) | null = null;
+
+	isAdmitted = $derived(this.admissionStatus === 'admitted' || this.admissionStatus === 'open');
+	isPendingVouch = $derived(this.admissionStatus === 'pending-vouch');
+	isVouchExpired = $derived(this.admissionStatus === 'expired');
+	vouchExpiresAtMs = $derived(this.pendingVouchRequest?.expiresAtMs ?? null);
+
+	isHeroOnboarding = $derived.by(() => {
+		if (!this.isInitialized) return false;
+		if (!this.isLoggedIn) {
+			if (
+				this.wantsUnlockScreen ||
+				(this.hasVault && !PRE_AUTH_STEPS.has(this.onboardingStep))
+			) {
+				return false;
+			}
+			return true;
+		}
+		return this.onboardingStep === 'welcome' || this.onboardingStep === 'keypair';
+	});
 
 	constructor() {
 		if (browser) {
@@ -119,6 +169,17 @@ class SessionStore {
 
 	private async initialize(): Promise<void> {
 		try {
+			ledgerStore.setUserEventHandlers({
+				onVouchIssued: () => {
+					void this.checkAndAutoCompleteVouch();
+				},
+				onVouchRequested: () => {
+					void this.refreshIncomingVouchRequests();
+				},
+				onVouchRequestDismissed: () => {
+					void this.checkAndAutoCompleteVouch();
+				}
+			});
 			purgeLegacyPlaintextStorage();
 			this.hasVault = hasStoredVault();
 			this.restoreUiState();
@@ -182,6 +243,36 @@ class SessionStore {
 			if (typeof parsed.pendingVouchInviter === 'string' && parsed.pendingVouchInviter.trim()) {
 				this.pendingVouchInviter = parsed.pendingVouchInviter.trim();
 			}
+			if (
+				typeof parsed.pendingVoucherPubkey === 'string' &&
+				parsed.pendingVoucherPubkey.trim()
+			) {
+				this.pendingVoucherPubkey = parsed.pendingVoucherPubkey.trim();
+			}
+			if (parsed.pendingVouchRequest && typeof parsed.pendingVouchRequest === 'object') {
+				const req = parsed.pendingVouchRequest;
+				if (
+					typeof req.subjectPubkey === 'string' &&
+					typeof req.createdAtMs === 'number' &&
+					typeof req.expiresAtMs === 'number'
+				) {
+					this.pendingVouchRequest = {
+						subjectPubkey: req.subjectPubkey,
+						voucherPubkey:
+							typeof req.voucherPubkey === 'string' && req.voucherPubkey.trim()
+								? req.voucherPubkey.trim()
+								: null,
+						voucherHandle:
+							typeof req.voucherHandle === 'string' && req.voucherHandle.trim()
+								? req.voucherHandle.trim()
+								: null,
+						createdAtMs: req.createdAtMs,
+						expiresAtMs: req.expiresAtMs,
+						reason:
+							req.reason === 'expired' || req.reason === 'declined' ? req.reason : null
+					};
+				}
+			}
 			if (typeof parsed.vouchedByHandle === 'string' && parsed.vouchedByHandle.trim()) {
 				this.vouchedByHandle = parsed.vouchedByHandle.trim();
 			}
@@ -206,6 +297,7 @@ class SessionStore {
 		try {
 			const url = new URL(window.location.href);
 			let vouch = url.searchParams.get('vouch')?.trim() ?? '';
+			let voucher = url.searchParams.get('voucher')?.trim() ?? '';
 			let inviter =
 				url.searchParams.get('inviter')?.trim() ??
 				url.searchParams.get('by')?.trim() ??
@@ -216,30 +308,37 @@ class SessionStore {
 				url.searchParams.delete('vouch');
 				touched = true;
 			}
+			if (voucher) {
+				url.searchParams.delete('voucher');
+				touched = true;
+			}
 			if (url.searchParams.has('inviter') || url.searchParams.has('by')) {
 				url.searchParams.delete('inviter');
 				url.searchParams.delete('by');
 				touched = true;
 			}
 
-			if (!vouch && url.hash) {
+			if ((!vouch || !voucher) && url.hash) {
 				const rawHash = url.hash.replace(/^#/, '');
-				if (rawHash.startsWith('araliya-vouch-card:v1:')) {
+				if (!vouch && rawHash.startsWith('araliya-vouch-card:v1:')) {
 					vouch = rawHash;
 					url.hash = '';
 					touched = true;
-				} else if (rawHash.includes('vouch=')) {
+				} else if (rawHash.includes('vouch=') || rawHash.includes('voucher=')) {
 					const hashQuery = rawHash.startsWith('?') ? rawHash.slice(1) : rawHash;
 					const hashParams = new URLSearchParams(hashQuery);
 					const hashVouch = hashParams.get('vouch')?.trim() ?? '';
-					if (hashVouch) {
-						vouch = hashVouch;
+					const hashVoucher = hashParams.get('voucher')?.trim() ?? '';
+					if (hashVouch || hashVoucher) {
+						if (!vouch && hashVouch) vouch = hashVouch;
+						if (!voucher && hashVoucher) voucher = hashVoucher;
 						inviter =
 							inviter ||
 							hashParams.get('inviter')?.trim() ||
 							hashParams.get('by')?.trim() ||
 							'';
 						hashParams.delete('vouch');
+						hashParams.delete('voucher');
 						hashParams.delete('inviter');
 						hashParams.delete('by');
 						const remaining = hashParams.toString();
@@ -251,6 +350,9 @@ class SessionStore {
 
 			if (vouch) {
 				this.pendingVouchToken = vouch;
+			}
+			if (voucher) {
+				this.pendingVoucherPubkey = voucher;
 			}
 			if (inviter) {
 				this.pendingVouchInviter = inviter.replace(/^@+/, '');
@@ -273,11 +375,89 @@ class SessionStore {
 			custodyMode: this.custodyMode,
 			pendingVouchToken: this.pendingVouchToken,
 			pendingVouchInviter: this.pendingVouchInviter,
+			pendingVoucherPubkey: this.pendingVoucherPubkey,
+			pendingVouchRequest: this.pendingVouchRequest,
 			vouchedByHandle: this.vouchedByHandle,
 			demoTokenBalance: this.demoTokenBalance,
 			firstQuestionCreditUsed: this.firstQuestionCreditUsed
 		};
 		localStorage.setItem(UI_STATE_KEY, JSON.stringify(payload));
+	}
+
+	private async resolveVoucherHandle(voucherPubkey?: string | null): Promise<string | null> {
+		if (!voucherPubkey) return null;
+		const rootPk = this.relayStatus?.rootPubkey;
+		if (rootPk && pubkeyToHex(voucherPubkey) === pubkeyToHex(rootPk)) {
+			return 'genesis';
+		}
+		try {
+			const user = await araliyaService.getUserByPubkey(voucherPubkey);
+			return user?.username ?? null;
+		} catch {
+			return null;
+		}
+	}
+
+	private stopExpiryMonitor(): void {
+		if (this.expiryTimer) {
+			clearTimeout(this.expiryTimer);
+			this.expiryTimer = null;
+		}
+		if (browser && this.visibilityListener) {
+			document.removeEventListener('visibilitychange', this.visibilityListener);
+			this.visibilityListener = null;
+		}
+	}
+
+	private scheduleExpiryTimer(): void {
+		if (!browser || !this.isPendingVouch || !this.pendingVouchRequest) return;
+		if (this.expiryTimer) {
+			clearTimeout(this.expiryTimer);
+			this.expiryTimer = null;
+		}
+		const remaining = this.pendingVouchRequest.expiresAtMs - Date.now();
+		if (remaining <= 0) {
+			void this.handleExpiryTick();
+			return;
+		}
+		// Clamp delay to 1 hour so long timers survive sleep/wake and avoid 32-bit overflow.
+		const delay = Math.min(remaining, 3_600_000);
+		this.expiryTimer = setTimeout(() => {
+			void this.handleExpiryTick();
+		}, delay);
+	}
+
+	private startExpiryMonitor(): void {
+		if (!browser || !this.isPendingVouch || !this.pendingVouchRequest) return;
+		this.scheduleExpiryTimer();
+		if (!this.visibilityListener) {
+			this.visibilityListener = () => {
+				if (document.visibilityState === 'visible' && this.isLoggedIn && this.isPendingVouch) {
+					void this.checkAndAutoCompleteVouch();
+				}
+			};
+			document.addEventListener('visibilitychange', this.visibilityListener);
+		}
+	}
+
+	private async handleExpiryTick(): Promise<void> {
+		if (!this.isLoggedIn || !this.isPendingVouch || !this.pendingVouchRequest) return;
+		const res = await this.checkAndAutoCompleteVouch();
+		if (res.admitted || res.needsHandle || !this.isPendingVouch || !this.pendingVouchRequest) {
+			return;
+		}
+		if (Date.now() >= this.pendingVouchRequest.expiresAtMs) {
+			this.pendingVouchRequest = {
+				...this.pendingVouchRequest,
+				reason: 'expired'
+			};
+			this.admissionStatus = 'expired';
+			this.onboardingStep = 'vouch-expired';
+			this.stopExpiryMonitor();
+			this.persistUiState();
+		} else {
+			this.scheduleExpiryTimer();
+		}
 	}
 
 	private async ensureConnectedRelay(): Promise<RelayStatusInfo> {
@@ -293,6 +473,9 @@ class SessionStore {
 
 	private async finishAuthenticatedUnlock(identity: UserIdentity): Promise<void> {
 		this.identity = identity;
+		this.stopExpiryMonitor();
+		this.detectedRelayVouch = null;
+
 		const [onboardingResult, userResult] = await Promise.allSettled([
 			araliyaService.getOnboardingState(),
 			araliyaService.getUserByPubkey(identity.userPubkey)
@@ -303,30 +486,181 @@ class SessionStore {
 		const existingUser = userResult.status === 'fulfilled' ? userResult.value : null;
 		const remoteCursor = normalizeOnboardingStep(onboardingState?.stepCursor);
 
-		if (onboardingState?.completed) {
-			this.onboardingStep = 'feed';
-			this.pendingVouchToken = null;
-		} else if (remoteCursor && remoteCursor !== 'unlock') {
-			this.onboardingStep = remoteCursor;
-		} else if (existingUser !== null) {
-			this.onboardingStep = POST_REGISTRATION_STEPS.has(this.onboardingStep)
-				? this.onboardingStep
-				: 'feed';
-			this.pendingVouchToken = null;
-		} else {
-			this.onboardingStep = PRE_REGISTRATION_STEPS.has(this.onboardingStep)
-				? this.onboardingStep
-				: 'vouch';
-		}
-
 		if (existingUser !== null) {
+			this.admissionStatus = 'admitted';
 			this.pendingVouchToken = null;
+			this.pendingVoucherPubkey = null;
+			this.pendingVouchRequest = null;
+			deleteSealedDraft();
+
+			if (onboardingState?.completed) {
+				this.onboardingStep = 'feed';
+			} else if (remoteCursor && remoteCursor !== 'unlock') {
+				this.onboardingStep = remoteCursor;
+			} else {
+				this.onboardingStep = POST_REGISTRATION_STEPS.has(this.onboardingStep)
+					? this.onboardingStep
+					: 'feed';
+			}
+		} else if (this.relayStatus?.admissionPolicy === 'open') {
+			this.admissionStatus = 'open';
+			if (onboardingState?.completed) {
+				this.onboardingStep = 'feed';
+			} else if (remoteCursor && remoteCursor !== 'unlock') {
+				this.onboardingStep = remoteCursor;
+			} else {
+				this.onboardingStep = PRE_REGISTRATION_STEPS.has(this.onboardingStep)
+					? this.onboardingStep
+					: 'vouch';
+			}
+		} else {
+			await ledgerStore.restoreSealedDraftIfAny();
+			if (
+				this.pendingVouchRequest &&
+				pubkeyToHex(this.pendingVouchRequest.subjectPubkey) !==
+					pubkeyToHex(identity.userPubkey)
+			) {
+				this.pendingVouchRequest = null;
+			}
+
+			let validToken: string | null = null;
+			let tokenVoucherPk: string | null = null;
+			if (this.pendingVouchToken) {
+				const info = await araliyaService.inspectVouchTokenAsync(this.pendingVouchToken);
+				const matchesSubject =
+					!info.subjectPubkey ||
+					pubkeyToHex(info.subjectPubkey) === pubkeyToHex(identity.userPubkey);
+				if (info.validFormat && info.isValid !== false && !info.isExpired && matchesSubject) {
+					validToken = info.tokenOrJson;
+					tokenVoucherPk = info.voucherPubkey ?? null;
+				} else if (info.isExpired) {
+					this.pendingVouchToken = null;
+				}
+			}
+
+			const relayCert = validToken
+				? null
+				: await araliyaService.checkInitialVouch().catch(() => null);
+
+			if (validToken || relayCert) {
+				const voucherPk = tokenVoucherPk ?? relayCert?.voucherPubkey ?? null;
+				const voucherHandle = await this.resolveVoucherHandle(voucherPk);
+				if (voucherHandle) {
+					this.vouchedByHandle = voucherHandle;
+				}
+
+				if (ledgerStore.profile.username.value.trim()) {
+					try {
+						await ledgerStore.flushStagedOnboardingToRelay(
+							identity.userPubkey,
+							validToken
+						);
+						this.admissionStatus = 'admitted';
+						this.pendingVouchToken = null;
+						this.pendingVoucherPubkey = null;
+						this.pendingVouchRequest = null;
+						this.detectedRelayVouch = null;
+						if (
+							this.onboardingStep === 'vouch' ||
+							this.onboardingStep === 'vouch-expired' ||
+							this.onboardingStep === 'unlock'
+						) {
+							this.onboardingStep = 'custody';
+						}
+						toast.success(
+							voucherHandle
+								? `Vouched by @${voucherHandle} — full network access unlocked!`
+								: 'Vouch approved — full network access unlocked!'
+						);
+					} catch {
+						this.detectedRelayVouch = relayCert;
+						this.admissionStatus = 'unknown';
+						this.onboardingStep = 'handle';
+					}
+				} else {
+					this.detectedRelayVouch = relayCert;
+					this.admissionStatus = 'unknown';
+					this.onboardingStep = 'handle';
+				}
+			} else {
+				const relayReqs = await araliyaService.listMyVouchRequests().catch(() => []);
+				const matchedReq =
+					(this.pendingVouchRequest?.voucherPubkey
+						? relayReqs.find(
+								(r) =>
+									pubkeyToHex(r.voucherPubkey) ===
+									pubkeyToHex(this.pendingVouchRequest?.voucherPubkey ?? '')
+							)
+						: undefined) ?? relayReqs[0];
+
+				if (matchedReq) {
+					if (matchedReq.status === 'declined') {
+						const vHandle =
+							this.pendingVouchRequest?.voucherHandle ??
+							(await this.resolveVoucherHandle(matchedReq.voucherPubkey));
+						this.pendingVouchRequest = {
+							subjectPubkey: identity.userPubkey,
+							voucherPubkey: matchedReq.voucherPubkey,
+							voucherHandle: vHandle,
+							createdAtMs: matchedReq.createdAtMs,
+							expiresAtMs: matchedReq.expiresAtMs,
+							reason: 'declined'
+						};
+					} else if (
+						matchedReq.status === 'pending' &&
+						(!this.pendingVouchRequest ||
+							matchedReq.expiresAtMs > this.pendingVouchRequest.expiresAtMs)
+					) {
+						const vHandle =
+							this.pendingVouchRequest?.voucherHandle ??
+							(await this.resolveVoucherHandle(matchedReq.voucherPubkey));
+						this.pendingVouchRequest = {
+							subjectPubkey: identity.userPubkey,
+							voucherPubkey: matchedReq.voucherPubkey,
+							voucherHandle: vHandle,
+							createdAtMs: matchedReq.createdAtMs,
+							expiresAtMs: matchedReq.expiresAtMs,
+							reason: null
+						};
+					}
+				}
+
+				if (this.pendingVouchRequest) {
+					if (
+						this.pendingVouchRequest.reason === 'declined' ||
+						Date.now() >= this.pendingVouchRequest.expiresAtMs
+					) {
+						this.pendingVouchRequest = {
+							...this.pendingVouchRequest,
+							reason: this.pendingVouchRequest.reason ?? 'expired'
+						};
+						this.admissionStatus = 'expired';
+						this.onboardingStep = 'vouch-expired';
+					} else {
+						this.admissionStatus = 'pending-vouch';
+						if (!PENDING_ALLOWED_STEPS.has(this.onboardingStep)) {
+							this.onboardingStep = 'handle';
+						}
+					}
+				} else {
+					this.admissionStatus = 'unknown';
+					this.onboardingStep = 'vouch';
+				}
+			}
 		}
 
 		this.isLoggedIn = true;
 		this.wantsUnlockScreen = false;
 		this.persistUiState();
-		await ledgerStore.hydrateAfterUnlock(this.relayStatus?.rootPubkey ?? '');
+		await ledgerStore.hydrateAfterUnlock(this.relayStatus?.rootPubkey ?? '', {
+			isAdmitted: this.isAdmitted,
+			userPubkey: identity.userPubkey
+		});
+		if (this.isPendingVouch) {
+			this.startExpiryMonitor();
+		} else if (this.isAdmitted) {
+			void this.refreshIncomingVouchRequests();
+		}
 	}
 
 	async refreshRelayStatus(): Promise<RelayStatusInfo> {
@@ -443,16 +777,26 @@ class SessionStore {
 		kp: GeneratedKeypair,
 		mode: KeyCustodyMode
 	): Promise<void> {
+		this.stopExpiryMonitor();
+		this.detectedRelayVouch = null;
+		this.pendingVouchRequest = null;
+		deleteSealedDraft();
+
 		await saveQuickUnlockSecret(kp.secretKey, kp.publicKey);
 		const status =
 			this.relayStatus && this.relayStatus.connected
 				? this.relayStatus
 				: await this.refreshRelayStatus();
 
+		this.admissionStatus = status.admissionPolicy === 'open' ? 'open' : 'unknown';
+
 		if (status.connected) {
 			const identity = await araliyaService.unlockWithSecretKey(kp.secretKey, status);
 			this.identity = identity;
-			await ledgerStore.hydrateAfterUnlock(status.rootPubkey ?? '');
+			await ledgerStore.hydrateAfterUnlock(status.rootPubkey ?? '', {
+				isAdmitted: this.isAdmitted,
+				userPubkey: identity.userPubkey
+			});
 		} else {
 			this.identity = {
 				userPubkey: kp.publicKey,
@@ -661,6 +1005,267 @@ class SessionStore {
 		this.persistUiState();
 	}
 
+	async startPendingVouchWindow(
+		voucherPubkey?: string | null,
+		voucherHandle?: string | null,
+		requestedHandle?: string | null
+	): Promise<PendingVouchRequest> {
+		const subjectPubkey = this.identity?.userPubkey ?? '';
+		if (!subjectPubkey) {
+			throw new Error('Unlocked local identity required');
+		}
+		const now = Date.now();
+		let expiresAtMs = now + getVouchRequestTtlMs();
+		let createdAtMs = now;
+		const cleanedVoucher = voucherPubkey?.trim() || null;
+		let resolvedHandle = voucherHandle?.trim().replace(/^@+/, '') || null;
+
+		if (cleanedVoucher && this.relayStatus?.connected && araliyaService.hasUnlockedWasmSession()) {
+			const rec = await araliyaService.submitVouchRequest(
+				cleanedVoucher,
+				requestedHandle?.trim() || null,
+				expiresAtMs
+			);
+			createdAtMs = rec.createdAtMs;
+			expiresAtMs = rec.expiresAtMs;
+			if (!resolvedHandle) {
+				resolvedHandle = await this.resolveVoucherHandle(cleanedVoucher);
+			}
+		}
+
+		const req: PendingVouchRequest = {
+			subjectPubkey,
+			voucherPubkey: cleanedVoucher,
+			voucherHandle: resolvedHandle,
+			createdAtMs,
+			expiresAtMs,
+			reason: null
+		};
+		this.pendingVouchRequest = req;
+		this.admissionStatus = 'pending-vouch';
+		this.persistUiState();
+		this.startExpiryMonitor();
+		if (this.relayStatus?.connected && !ledgerStore.isLiveSyncActive) {
+			await ledgerStore.startLiveSync(this.relayStatus.rootPubkey ?? '', subjectPubkey);
+		}
+		return req;
+	}
+
+	async syncRequestedHandleToVoucher(handle: string | null): Promise<void> {
+		const voucherPk = this.pendingVouchRequest?.voucherPubkey;
+		if (!this.isPendingVouch || !voucherPk || !this.relayStatus?.connected) return;
+		const expiresAtMs = Math.max(Date.now() + 60_000, this.pendingVouchRequest?.expiresAtMs ?? 0);
+		await araliyaService
+			.submitVouchRequest(voucherPk, handle?.trim() || null, expiresAtMs)
+			.catch(() => {});
+	}
+
+	markAdmittedAfterRegistration(voucherHandle?: string | null): void {
+		this.stopExpiryMonitor();
+		this.admissionStatus = 'admitted';
+		if (voucherHandle) {
+			this.vouchedByHandle = voucherHandle.trim().replace(/^@+/, '') || null;
+		}
+		this.pendingVouchToken = null;
+		this.pendingVoucherPubkey = null;
+		this.pendingVouchRequest = null;
+		this.detectedRelayVouch = null;
+		deleteSealedDraft();
+		this.persistUiState();
+		void this.refreshIncomingVouchRequests();
+	}
+
+	async checkAndAutoCompleteVouch(
+		explicitToken?: string | null
+	): Promise<{ admitted: boolean; voucherHandle: string | null; needsHandle?: boolean }> {
+		if (!this.identity || this.isCheckingVouch) {
+			return { admitted: false, voucherHandle: null };
+		}
+		this.isCheckingVouch = true;
+		try {
+			await this.ensureUnlockedOnRelay();
+
+			const existing = await araliyaService
+				.getUserByPubkey(this.identity.userPubkey)
+				.catch(() => null);
+			if (existing) {
+				this.markAdmittedAfterRegistration(this.vouchedByHandle);
+				return { admitted: true, voucherHandle: this.vouchedByHandle };
+			}
+
+			let validToken: string | null = null;
+			let tokenVoucherPk: string | null = null;
+			const candidateToken = explicitToken?.trim() || this.pendingVouchToken;
+			if (candidateToken) {
+				const info = await araliyaService.inspectVouchTokenAsync(candidateToken);
+				const matchesSubject =
+					!info.subjectPubkey ||
+					pubkeyToHex(info.subjectPubkey) === pubkeyToHex(this.identity.userPubkey);
+				if (info.validFormat && info.isValid !== false && !info.isExpired && matchesSubject) {
+					validToken = info.tokenOrJson;
+					tokenVoucherPk = info.voucherPubkey ?? null;
+				}
+			}
+
+			const relayCert = validToken
+				? null
+				: await araliyaService.checkInitialVouch().catch(() => null);
+
+			if (!validToken && !relayCert) {
+				if (this.pendingVouchRequest?.voucherPubkey) {
+					const myReqs = await araliyaService.listMyVouchRequests().catch(() => []);
+					const match = myReqs.find(
+						(r) =>
+							pubkeyToHex(r.voucherPubkey) ===
+							pubkeyToHex(this.pendingVouchRequest?.voucherPubkey ?? '')
+					);
+					if (match?.status === 'declined') {
+						this.pendingVouchRequest = {
+							...this.pendingVouchRequest,
+							reason: 'declined'
+						};
+						this.admissionStatus = 'expired';
+						this.onboardingStep = 'vouch-expired';
+						this.stopExpiryMonitor();
+						this.persistUiState();
+						return { admitted: false, voucherHandle: null };
+					}
+				}
+
+				if (this.pendingVouchRequest && Date.now() >= this.pendingVouchRequest.expiresAtMs) {
+					this.pendingVouchRequest = {
+						...this.pendingVouchRequest,
+						reason: 'expired'
+					};
+					this.admissionStatus = 'expired';
+					this.onboardingStep = 'vouch-expired';
+					this.stopExpiryMonitor();
+					this.persistUiState();
+				}
+				return { admitted: false, voucherHandle: null };
+			}
+
+			const voucherPk = tokenVoucherPk ?? relayCert?.voucherPubkey ?? null;
+			const voucherHandle =
+				(await this.resolveVoucherHandle(voucherPk)) ??
+				this.pendingVouchRequest?.voucherHandle ??
+				null;
+
+			if (!ledgerStore.profile.username.value.trim()) {
+				if (validToken) {
+					this.pendingVouchToken = validToken;
+				}
+				if (relayCert) {
+					this.detectedRelayVouch = relayCert;
+				}
+				if (voucherHandle) {
+					this.vouchedByHandle = voucherHandle;
+				}
+				this.persistUiState();
+				return { admitted: false, voucherHandle, needsHandle: true };
+			}
+
+			try {
+				await ledgerStore.flushStagedOnboardingToRelay(
+					this.identity.userPubkey,
+					validToken
+				);
+			} catch (err) {
+				const msg = err instanceof Error ? err.message.toLowerCase() : '';
+				if (msg.includes('conflict') || msg.includes('already') || msg.includes('taken')) {
+					if (validToken) {
+						this.pendingVouchToken = validToken;
+					}
+					if (relayCert) {
+						this.detectedRelayVouch = relayCert;
+					}
+					if (voucherHandle) {
+						this.vouchedByHandle = voucherHandle;
+					}
+					this.onboardingStep = 'handle';
+					this.persistUiState();
+					toast.error('Your staged @handle was taken while waiting — pick a new one to finish.');
+					return { admitted: false, voucherHandle, needsHandle: true };
+				}
+				throw err;
+			}
+
+			this.markAdmittedAfterRegistration(voucherHandle);
+			if (this.onboardingStep === 'vouch' || this.onboardingStep === 'vouch-expired') {
+				this.onboardingStep = 'feed';
+				this.activeTab = 'feed';
+				this.persistUiState();
+			}
+			await araliyaService
+				.completeOnboardingStep(this.onboardingStep, this.onboardingStep === 'feed')
+				.catch(() => {});
+			toast.success(
+				voucherHandle
+					? `Vouched by @${voucherHandle} — full network access unlocked!`
+					: 'Vouch approved — full network access unlocked!'
+			);
+			return { admitted: true, voucherHandle };
+		} catch {
+			return { admitted: false, voucherHandle: null };
+		} finally {
+			this.isCheckingVouch = false;
+		}
+	}
+
+	restartVouchFlowFromExpired(): void {
+		this.stopExpiryMonitor();
+		this.pendingVouchRequest = null;
+		this.pendingVouchToken = null;
+		this.detectedRelayVouch = null;
+		this.admissionStatus = 'unknown';
+		this.onboardingStep = 'vouch';
+		this.persistUiState();
+	}
+
+	async refreshIncomingVouchRequests(): Promise<VouchRequestItem[]> {
+		if (!this.isAdmitted || !this.relayStatus?.connected || !araliyaService.hasUnlockedWasmSession()) {
+			return this.incomingVouchRequests;
+		}
+		this.isLoadingIncomingVouches = true;
+		try {
+			const reqs = await araliyaService.listIncomingVouchRequests();
+			this.incomingVouchRequests = reqs;
+			return reqs;
+		} catch {
+			return this.incomingVouchRequests;
+		} finally {
+			this.isLoadingIncomingVouches = false;
+		}
+	}
+
+	async approveIncomingVouch(
+		subjectPubkey: string,
+		ttlHours: number | null = 72
+	): Promise<IssuedVouchCard> {
+		await this.ensureUnlockedOnRelay();
+		const expiresAtMs = ttlHours && ttlHours > 0 ? Date.now() + ttlHours * 3_600_000 : null;
+		const card = await araliyaService.submitVouchCard(
+			subjectPubkey,
+			'initial_approval',
+			this.relayStatus?.rootPubkey ?? null,
+			this.relayStatus?.endpointId ?? null,
+			this.relayStatus?.dialPeerAddress ?? null,
+			expiresAtMs
+		);
+		this.incomingVouchRequests = this.incomingVouchRequests.filter(
+			(r) => pubkeyToHex(r.subjectPubkey) !== pubkeyToHex(subjectPubkey)
+		);
+		return card;
+	}
+
+	async declineIncomingVouch(subjectPubkey: string): Promise<void> {
+		await this.ensureUnlockedOnRelay();
+		await araliyaService.dismissVouchRequest(subjectPubkey);
+		this.incomingVouchRequests = this.incomingVouchRequests.filter(
+			(r) => pubkeyToHex(r.subjectPubkey) !== pubkeyToHex(subjectPubkey)
+		);
+	}
+
 	awardDemoTokens(amount: number): void {
 		if (!Number.isFinite(amount) || amount <= 0) return;
 		this.demoTokenBalance += amount;
@@ -678,18 +1283,25 @@ class SessionStore {
 	}
 
 	async advanceOnboardingStep(step: OnboardingStep): Promise<void> {
-		await araliyaService.completeOnboardingStep(step, false).catch(() => {});
+		if (this.isAdmitted) {
+			await araliyaService.completeOnboardingStep(step, false).catch(() => {});
+		}
 		this.setOnboardingStep(step);
 	}
 
 	async completeOnboarding(): Promise<void> {
-		await araliyaService.completeOnboardingStep('feed', true).catch(() => {});
+		if (this.isAdmitted) {
+			await araliyaService.completeOnboardingStep('feed', true).catch(() => {});
+		}
 		this.onboardingStep = 'feed';
 		this.activeTab = 'feed';
 		this.pendingDraftKeypair = null;
 		this.persistUiState();
 		if (ledgerStore.questions.length === 0 && this.relayStatus?.connected) {
-			await ledgerStore.hydrateAfterUnlock(this.relayStatus.rootPubkey ?? '');
+			await ledgerStore.hydrateAfterUnlock(this.relayStatus.rootPubkey ?? '', {
+				isAdmitted: this.isAdmitted,
+				userPubkey: this.identity?.userPubkey
+			});
 		}
 	}
 
@@ -699,11 +1311,15 @@ class SessionStore {
 	}
 
 	async lock(): Promise<void> {
+		this.stopExpiryMonitor();
 		ledgerStore.clearInMemoryState();
 		await araliyaService.lock().catch(() => {});
 		await clearQuickUnlockSession();
 		this.isLoggedIn = false;
 		this.identity = null;
+		this.admissionStatus = 'unknown';
+		this.detectedRelayVouch = null;
+		this.incomingVouchRequests = [];
 		this.pendingDraftKeypair = null;
 		this.wantsUnlockScreen = true;
 		this.onboardingStep = 'unlock';
@@ -718,11 +1334,15 @@ class SessionStore {
 	async resetAccount(): Promise<void> {
 		await this.lock();
 		deleteStoredVault();
+		deleteSealedDraft();
 		this.hasVault = false;
 		this.wantsUnlockScreen = false;
 		this.custodyMode = 'browser-encrypted';
 		this.pendingVouchToken = null;
 		this.pendingVouchInviter = null;
+		this.pendingVoucherPubkey = null;
+		this.pendingVouchRequest = null;
+		this.detectedRelayVouch = null;
 		this.vouchedByHandle = null;
 		this.demoTokenBalance = 0;
 		this.firstQuestionCreditUsed = false;

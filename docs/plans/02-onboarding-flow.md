@@ -14,11 +14,11 @@
 
 This milestone replaces the current 5-step alpha onboarding (`LoginVouchScreen` → `ManifestoScreen` → `UsernameScreen` → `PersonalDetailsScreen` → `ThemePickerScreen`) with a cohesive **10-screen, 4-stage onboarding flow** aligned with `araliya-net`'s Ed25519 identity model, local-first key custody, human vouch admission, public/private data ledger, and Q&A mechanics.
 
-### Protocol Boundary Decision (Zero Rust / WASM Changes Required)
+### Protocol Boundary & Peer-Vouch Bindings
 
-All required cryptographic, storage, admission, and Q&A primitives already exist in `$wasm` (`vendor/araliya-net-wasm/araliya_net_wasm.d.ts`):
-- **Identity & Local Vault:** `generateKeypair`, `createKeyVault`, `unlockWithVault`, `unlockWithSecretKey`, `unlockWithSecretKeyBytes`, `exportRecoveryKey`, `importRecoveryKey`, `exportRecoveryPayload`.
-- **Admission & Profile:** `registerWithVouchCard`, `registerUser`, `updateProfile`, `getUserByPubkey`, `setProfileField`, `getPrivateProfileFields`, `completeOnboardingStep`, `getOnboardingState`.
+All required cryptographic, storage, admission, peer-vouching, and Q&A primitives live in `$wasm` (`vendor/araliya-net-wasm/araliya_net_wasm.d.ts`):
+- **Identity & Local Vault:** `generateKeypair`, `createKeyVault`, `unlockWithVault`, `unlockWithSecretKey`, `unlockWithSecretKeyBytes`, `exportRecoveryKey`, `importRecoveryKey`, `exportRecoveryPayload`, `sealLocalDraft`, `unsealLocalDraft`.
+- **Admission, Peer Vouch & Profile:** `decodeVouchCard`, `registerWithVouchCard`, `registerWithSubmittedVouch`, `checkInitialVouch`, `listVouches`, `issueVouchCard`, `submitVouchCard`, `submitVouchRequest`, `listIncomingVouchRequests`, `listMyVouchRequests`, `dismissVouchRequest`, `registerUser`, `updateProfile`, `getUserByPubkey`, `getUserByUsername`, `setProfileField`, `getPrivateProfileFields`, `completeOnboardingStep`, `getOnboardingState`.
 - **Q&A:** `answerLeafHex`, `qnaListQuestions`, `qnaGetResults`, `qnaSetAnswerVisibility`, `qnaListMyPrivateResponses`, and **`qnaCreateQuestion`**.
 
 Because `araliya-net-qna` (`crates/araliya-net-qna/src/types.rs`) does not yet have protocol fields for `reference_url`, sponsorship flags, or token balances:
@@ -42,17 +42,19 @@ flowchart TD
     Unlock -- "Unlock succeeds" --> FinishUnlock
     Unlock -- "Create New Identity" --> S1
 
-    VaultCheck -- "No (new user or manual-only key)" --> S1["Stage 1 · Screen 1: Welcome to the Digital Commons (welcome)"]
-    S1 -- "Already have a key? Unlock / Paste Key" --> Unlock
-    S1 -- "Plant Your Roots →" --> S2["Stage 1 · Screen 2: Powered by araliya-net (network)"]
-    S2 -- "Create Your Identity →" --> S3["Stage 2 · Screen 3: Your Lock & Key (keypair)"]
-    S3 -- "Default: Set Password / Alt: Store secret manually" --> S4["Stage 2 · Screen 4: Join araliya-net Human Vouch (vouch)"]
-    S4 -- "Stage token or Genesis/Open relay" --> S5["Stage 3 · Screen 5: Claim Your Handle (handle)"]
-    S5 -- "Atomic register + setProfileField" --> S6["Stage 3 · Screen 6: Where Your Data Lives & Key Custody (custody)"]
-    S6 -- "Confirm custody mode" --> S7["Stage 3 · Screen 7: Personal Details, Storage Preview & Theme (details)"]
-    S7 -- "Explore Questions →" --> S8["Stage 4 · Screen 8: Public Question Demo — Locked Private (demo-public)"]
-    S8 -- "Submit & View Results / Skip" --> S9["Stage 4 · Screen 9: Sponsored Question Demo +5 Tokens (demo-sponsored)"]
-    S9 -- "Answer & Earn / Skip" --> S10["Stage 4 · Screen 10: Ask Your First Question (ask-first)"]
+    VaultCheck -- "No (new user or manual-only key)" --> S1["OnboardingHeroFlow (welcome): 3 Scroll-Up Animated Hero Slides (Digital Commons → P2P Sovereignty → Planting Seeds)"]
+    S1 -- "Unlock" --> Unlock
+    S1 -- "Scroll / Skip intro → Slide 3" --> S3["Step 1 / 8: Your Lock & Key (keypair · KeypairCustodyScreen)"]
+    S3 -- "Default: Set Password / Alt: Store secret manually" --> S4["Step 2 / 8: Join araliya-net Human Vouch (vouch)"]
+    S4 -- "Stage token, relay vouch, or Genesis/Open relay" --> S5["Step 3 / 8: Claim Your Handle (handle)"]
+    S4 -- "Continue While Waiting (72h / ?voucher=)" --> S5
+    S4 -- "72h expired or declined" --> Exp["VouchExpiredScreen (vouch-expired)"]
+    Exp -- "New request / valid token" --> S4
+    S5 -- "Register or stage encrypted local draft" --> S6["Step 4 / 8: Where Your Data Lives & Key Custody (custody)"]
+    S6 -- "Confirm custody mode" --> S7["Step 5 / 8: Personal Details, Storage Preview & Theme (details)"]
+    S7 -- "Explore Questions →" --> S8["Step 6 / 8: Public Question Demo — Locked Private (demo-public)"]
+    S8 -- "Submit & View Results / Skip" --> S9["Step 7 / 8: Sponsored Question Demo +5 Tokens (demo-sponsored)"]
+    S9 -- "Answer & Earn / Skip" --> S10["Step 8 / 8: Ask Your First Question (ask-first)"]
     S10 -- "Publish Question & Enter App / Skip" --> Complete["sessionStore.completeOnboarding() → Feed"]
 ```
 
@@ -84,21 +86,26 @@ Screen 3 (**Your Lock & Key**) keeps the password flow first by default while of
      3. **Do not store — I will copy and paste it every session** *(Prompts `[Copy Private Key]` + required confirmation `[✓] I backed up my key` before calling `deleteStoredVault()` on `[Next →]`)*
    - **When `custodyMode === 'manual-no-store'`:** Highlights **Option 3 (Manual Session-Only Custody)** as active (*"No encrypted vault is stored in this browser"* + `[Copy Private Key]`), while offering an inline *"Switch to browser password vault instead"* drawer so the user can set a password and opt into Option 1 if they change their mind.
 
-### 3.2 Screen 4 → Screen 5 Vouch Staging vs. Atomic Relay Admission
+### 3.2 Screen 4 → Screen 5 Peer Vouching, 72h Waiting Window & Auto-Completion
 
-In `araliya-net-store` (`crates/araliya-net-store/src/store/table.rs`), `RegisterAdmittedUser` checks `initial_vouch.subject_pk == profile.user_pubkey` and commits `username` + `initial_vouch` in a single atomic transaction (`registerWithVouchCard(username, displayName, vouchToken)`). Therefore:
-- **Screen 4 stages and validates** the vouch token without registering a blank username prematurely.
-- **Screen 5 commits** registration on the relay when the user claims their `@username`.
+In `araliya-net-store` (`crates/araliya-net-store/src/store/table.rs`), `RegisterAdmittedUser` checks `initial_vouch.subject_pk == profile.user_pubkey` and commits `username` + `initial_vouch` in a single atomic transaction (`registerWithVouchCard` or `registerWithSubmittedVouch`). Therefore:
+- **Screen 4 stages** a vouch token, detects a relay-submitted vouch (`checkInitialVouch`), or submits/starts a **72-hour** pending-vouch window (default `72 * 60 * 60 * 1000` ms, overridable via `PUBLIC_VOUCH_REQUEST_TTL_MS`).
+- **Screen 5 commits** registration immediately when a vouch or open policy is available, or saves an encrypted local draft (`araliya_pending_draft_v1`) when `admissionStatus === 'pending-vouch'`.
 
-Screen 4 handles both states:
-- **URL Invite Capture:** On initialization, `sessionStore` checks `window.location.search` / hash for `?vouch=<token>` (and optional `&inviter=<handle>`) and stores it in `pendingVouchToken` / `pendingVouchInviter`.
-- **State A — Auto-Genesis or Invite Present:**
-  - If `pendingVouchToken` is already set, displays the token status and resolves the voucher handle when possible (from `cert.voucher_pk` on JSON `VouchCard`s via `getUserByPubkey`, or `?inviter=` hint; `araliya-vouch-card:v1:...` tokens are `postcard`-encoded binary payloads passed verbatim to WASM).
-  - If no `pendingVouchToken` exists and `relayStatus.httpAvailable && relayStatus.genesisMode`, Screen 4 automatically requests a Genesis `VouchCard` for `identity.userPubkey` via `POST /genesis/vouch` and displays: *"You have been accepted to the network by the recommendation of `@genesis`!"*
-- **State B — No Invite Link Yet:**
-  - Provides `[Paste Vouch Token]` (`araliya-vouch-card:v1:...` or JSON) with format validation.
-  - Provides `[Copy Vouch Request for Relay Maintainer]`, which copies a formatted request payload containing the user's `userPubkey` (plus a local `--genesis` `curl` snippet when applicable) so an existing member or relay maintainer can mint a `VouchCard` bound to that `subject_pk`.
-  - When `relayStatus.admissionPolicy === 'open'`, shows an explicit `"Open Relay — Continue without vouch token →"` path.
+Screen 4 handles all states:
+- **URL Invite Capture:** On initialization, `sessionStore` checks `window.location.search` / hash for `?vouch=<token>` (with optional `&inviter=`/`&by=`) as well as `?voucher=<alice_pubkey>` (`pendingVoucherPubkey`), stripping parameters cleanly via `history.replaceState`.
+- **State A — Relay Vouch or Token Ready:**
+  - Checks `checkInitialVouch()` on mount; if a valid `InitialApproval` cert is already recorded on the relay or `pendingVouchToken` is set, decodes it (`decodeVouchCard`), resolves the voucher handle (`getUserByPubkey` or `@genesis`), and lets the user enter `'handle'`.
+  - If no `pendingVouchToken`, no relay vouch, and no `pendingVoucherPubkey` is present while `relayStatus.httpAvailable && relayStatus.genesisMode`, Screen 4 auto-requests a Genesis `VouchCard` via `POST /genesis/vouch`. (Peer `?voucher=` links bypass auto-genesis.)
+- **State B1 — Arriving via `?voucher=<alice_pubkey>`:**
+  - Automatically resolves Alice's handle and calls `submitVouchRequest(alice_pk, null, expires_at_ms)` to send a 72h request straight to Alice on the relay without requiring Bob to choose a voucher or copy-paste his pubkey.
+  - Bob clicks **Continue Onboarding While Waiting (72h)** to stage his handle (syncing `requested_handle` to Alice only when `public`), optionally add private details, and browse the public Q&A feed read-only under `PendingVouchBanner`.
+- **State B2 — No Invite Link Yet / Paste & Waiting:**
+  - Allows pasting an `araliya-vouch-card:v1:...` token or JSON, copying the user's `userPubkey` / `araliya-vouch-request/v1` JSON (or local `--genesis` `curl` command), checking relay status, or clicking **Continue Onboarding While Waiting (72h)** (or **Open Relay · Enter the Network** when `admissionPolicy === 'open'`).
+- **No-Paste-Back Auto-Completion & Expiry (`VouchExpiredScreen`):**
+  - While `isPendingVouch`, `WasmEventPoller` subscribes to `{ User: pkBytes }` alongside `{ Domain: { domain: 'qna', channel: 'pub' } }`, and `sessionStore` also checks on unlock, tab `visibilitychange`, and before timer expiry.
+  - When Alice clicks **Approve & Vouch** in **UserDashboard → Profile → Invite & Vouch** (`submitVouchCard`), `VouchIssued` triggers `checkAndAutoCompleteVouch()` → `registerWithSubmittedVouch` + encrypted draft flush (`flushStagedOnboardingToRelay`) + `deleteSealedDraft()`, unlocking full write access automatically (handling username conflicts by routing to `'handle'`).
+  - If the 72h window expires or Alice clicks **Decline** (`VouchRequestDismissed`), Bob is routed to **`VouchExpiredScreen`** (`'vouch-expired'`, guarded on both `/` and `/dashboard`), preserving his local vault and staged handle while offering **Start a New Vouch Request**, **Check Relay Again**, or inline token paste.
 
 ### 3.3 Screen 5 Privacy-Preserving `[Make Private]` Handle Registration
 
@@ -154,18 +161,19 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
 
 | Stage / Screen | `OnboardingStep` | Component Path (`src/lib/components/onboarding/`) | Primary Actions & Store/WASM Calls | Back / Secondary Navigation |
 | :--- | :--- | :--- | :--- | :--- |
-| **Returning Gate** | `unlock` *(when `!isLoggedIn && hasVault`)* | `UnlockRecoverScreen.svelte` | `sessionStore.unlockWithPassword`, `recoverFromRecoveryKey`, `unlockWithRawSecret` | Switch to *"Paste Recovery / Private Key"* or *"Create New Identity"* (`welcome`) |
-| **Header Control** | *(Shared)* | `RelayStatusPill.svelte` | `sessionStore.refreshRelayStatus`, `setManualRelayOverride`, `clearManualRelayOverride` | Toggle Direct Iroh `EndpointId` / relay URLs override drawer |
-| **Stage 1 · Screen 1** | `'welcome'` | `WelcomeCommonsScreen.svelte` | `[Plant Your Roots →]` → `setOnboardingStep('network')` | `"Already have a key? Unlock / Paste Key"` → `UnlockRecoverScreen` |
-| **Stage 1 · Screen 2** | `'network'` | `PoweredByAraliyaScreen.svelte` | `[Create Your Identity →]` → `setOnboardingStep('keypair')` | `← Back` → `'welcome'` |
-| **Stage 2 · Screen 3** | `'keypair'` | `KeypairCustodyScreen.svelte` | `generateKeypair`, `exportRecoveryKey`; Default: `createVaultJson` + `unlockWithSecretKey`; Manual link: `unlockWithSecretKey` + `saveQuickUnlockSecret` only | `← Back` → `'network'`; inline toggle `Store secret manually instead →` |
-| **Stage 2 · Screen 4** | `'vouch'` | `HumanVouchScreen.svelte` | Auto `requestGenesisVouch` (if HTTP `--genesis`), `inspectVouchCard`, `getUserByPubkey`, stage `pendingVouchToken` | `← Back` → `'keypair'`; copy Vouch Request (`userPubkey`) or continue if `open` policy |
-| **Stage 3 · Screen 5** | `'handle'` | `ClaimHandleScreen.svelte` | `ledgerStore.saveUsername(handle, keepPublic, pendingVouchToken)` (`registerWithVouchCard` / `registerUser` + `setProfileField`); `advanceOnboardingStep('custody')` | `← Back` → `'vouch'` |
-| **Stage 3 · Screen 6** | `'custody'` | `StorageCustodyScreen.svelte` | `sessionStore.applyCustodySelection(mode, password?)` (`deleteStoredVault` for options 2/3 with backup check, or `createVaultJson` if upgrading from manual); `advanceOnboardingStep('details')` | `← Back` → `'handle'` |
-| **Stage 3 · Screen 7** | `'details'` | `PersonalDetailsPreviewScreen.svelte` | Optional `Name`, `DoB`, `Pronouns` → `ledgerStore.saveIdentityDetails(...)`; live `/public` & `/private` tree; `themeStore.setTheme(...)` (`Forest Dark` default); `advanceOnboardingStep('demo-public')` | `← Back` → `'custody'` |
-| **Stage 4 · Screen 8** | `'demo-public'` | `PublicQuestionDemoScreen.svelte` | Locked `🔒 Private`; if question exists on relay, `ledgerStore.submitAnswer(..., false)` (`qnaSetAnswerVisibility`); reveal results + privacy note; `advanceOnboardingStep('demo-sponsored')` | `← Back` → `'details'`; `[Skip Question]` |
-| **Stage 4 · Screen 9** | `'demo-sponsored'` | `SponsoredQuestionDemoScreen.svelte` | Preview external link; `[Answer & Earn +5 Tokens →]` increments `demoTokenBalance` (`+5`); `advanceOnboardingStep('ask-first')` | `← Back` → `'demo-public'`; `[Skip]` |
-| **Stage 4 · Screen 10** | `'ask-first'` | `AskFirstQuestionScreen.svelte` | `ledgerStore.createQuestion(text, choices)` (`qnaCreateQuestion`); marks `firstQuestionCreditUsed`; `sessionStore.completeOnboarding()` → `'feed'` | `← Back` → `'demo-sponsored'`; `[Skip & Enter App →]` |
+| **Returning Gate** | `unlock` *(when `!isLoggedIn && hasVault`)* | `UnlockRecoverScreen.svelte` | `sessionStore.unlockWithPassword`, `unlockWithKeyInput` | Switch to *"Paste Key / Recover"* or *"New Digital Gardener? Plant Your Roots"* (`welcome`) |
+| **Header Control** | *(Shared, Steps 2–8)* | `RelayStatusPill.svelte` | `sessionStore.refreshRelayStatus`, `setManualRelayOverride`, `clearManualRelayOverride` | Toggle Direct Iroh `EndpointId` / relay URLs override drawer |
+| **Hero Intro (Slides 0–2)** | `'welcome'` | `OnboardingHeroFlow.svelte` | Full-bleed (`100vw × 100dvh`) scroll-up track with 3 animated SVG heroes (*Digital Commons*, *P2P Sovereignty*, *Planting Seeds*) | `Unlock` pill → `UnlockRecoverScreen`; `Skip intro →` / scroll up → Slide 3 (`keypair`) |
+| **Step 1 / 8 (Slide 3)** | `'keypair'` | `KeypairCustodyScreen.svelte` | `generateKeypair`, `exportRecoveryKey`; Default: single password + `createVaultJson`; Manual: `unlockWithSecretKey` + `saveQuickUnlockSecret` only | `↑ Replay intro` → Slide 0 (`welcome`); inline toggle `Store secret manually →`; relay settings gear |
+| **Step 2 / 8** | `'vouch'` | `HumanVouchScreen.svelte` | Check `checkInitialVouch`, auto `submitVouchRequest` on `?voucher=`, auto `requestGenesisVouch` (if HTTP `--genesis`), `inspectVouchTokenAsync` (`decodeVouchCard`), or `startPendingVouchWindow` | `← Back` → `'keypair'` (Slide 3); **Continue Onboarding While Waiting (72h)** → `'handle'` |
+| **Vouch Expired Gate** | `'vouch-expired'` | `VouchExpiredScreen.svelte` | Shown when 72h pending window expires or is declined (vault & staged handle preserved); `checkAndAutoCompleteVouch`, inline token paste, `restartVouchFlowFromExpired` | **Start a New Vouch Request** → `'vouch'` |
+| **Waiting Banner** | `feed` *(when `isPendingVouch`)* | `PendingVouchBanner.svelte` | Live 72h countdown above read-only `QuestionFeed` / `UserDashboard`; manual **Check** (`checkAndAutoCompleteVouch`) | **Vouch** → `'vouch'` |
+| **Step 3 / 8** | `'handle'` | `ClaimHandleScreen.svelte` | `ledgerStore.saveUsername` (`registerWithVouchCard` / `registerWithSubmittedVouch` / `registerUser`) or `stageUsernameDraft` + `syncRequestedHandleToVoucher` when `isPendingVouch`; `advanceOnboardingStep('custody')` | `← Back` → `'vouch'` |
+| **Step 4 / 8** | `'custody'` | `StorageCustodyScreen.svelte` | `sessionStore.applyCustodySelection(mode, password?)` (`deleteStoredVault` for options 2/3 with backup check, or `createVaultJson` if upgrading from manual); `advanceOnboardingStep('details')` | `← Back` → `'handle'` |
+| **Step 5 / 8** | `'details'` | `PersonalDetailsPreviewScreen.svelte` | Optional `Name`, `DoB`, `Pronouns` → `ledgerStore.saveIdentityDetails(...)`; live `/public` & `/private` tree; `themeStore.setTheme(...)` (`Forest Dark` default); `advanceOnboardingStep('demo-public')` | `← Back` → `'custody'` |
+| **Step 6 / 8** | `'demo-public'` | `PublicQuestionDemoScreen.svelte` | Locked `🔒 Private`; if question exists on relay, `ledgerStore.submitAnswer(..., false)` (`qnaSetAnswerVisibility`); reveal results + privacy note; `advanceOnboardingStep('demo-sponsored')` | `← Back` → `'details'`; `[Skip Question]` |
+| **Step 7 / 8** | `'demo-sponsored'` | `SponsoredQuestionDemoScreen.svelte` | Preview external link; `[Answer & Earn +5 Tokens →]` increments `demoTokenBalance` (`+5`); `advanceOnboardingStep('ask-first')` | `← Back` → `'demo-public'`; `[Skip]` |
+| **Step 8 / 8** | `'ask-first'` | `AskFirstQuestionScreen.svelte` | `ledgerStore.createQuestion(text, choices)` (`qnaCreateQuestion`); marks `firstQuestionCreditUsed`; `sessionStore.completeOnboarding()` → `'feed'` | `← Back` → `'demo-sponsored'`; `[Skip & Enter App →]` |
 
 ---
 
@@ -199,20 +207,16 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
    - Update `saveUsername(username, keepPublic, pendingVouchToken)` so when `keepPublic === false`, it registers `gardener_${pkHex.slice(0, 8)}` (retrying with `12` chars on conflict) in the relay `users` directory while storing the user's real `@username` in encrypted `profile_fields` (`isPublic = false`).
    - Expose `createQuestion(text: string, answers: string[])` which calls `araliyaService.createPublicQuestion`, appends/reloads `questions` via `loadQuestionsFromRelay`, and returns `{ cid, created }`.
 
-### Slice 3 — Entry Gate & Stage 1–2 Screens (Screens 1–4 + Unlock)
-7. **`src/lib/components/onboarding/RelayStatusPill.svelte` *(new)***
-   - Extract the relay connectivity indicator and Direct Iroh override popover from `LoginVouchScreen.svelte` into a compact reusable header component used across `UnlockRecoverScreen` and Stage 1–2 onboarding headers.
-8. **`src/lib/components/onboarding/UnlockRecoverScreen.svelte` *(new)***
-   - Handles returning `Unlock` (when `hasVault`), `Paste Key / Recover` (`araliya-recovery:v1:...` or raw base64 secret key, with optional *"Save as local encrypted vault"* toggle vs. session-only unlock), and a `"New here? Start onboarding"` button routing to Screen 1 (`'welcome'`).
-9. **`src/lib/components/onboarding/WelcomeCommonsScreen.svelte` *(new — Screen 1)***
-   - Stage 1 copy (*"Digital Gardeners: Own your data, your attention, and your work."*), `[Plant Your Roots →]` CTA, `"Already have a key? Unlock / Paste Key"` action, and `RelayStatusPill`.
-10. **`src/lib/components/onboarding/PoweredByAraliyaScreen.svelte` *(new — Screen 2)***
-    - Explains `araliya-net` + `iroh` peer storage relays, live connection badge, `← Back`, and `[Create Your Identity →]`.
-11. **`src/lib/components/onboarding/KeypairCustodyScreen.svelte` *(new — Screen 3)***
-    - Shows generated Public Key (`Lock`) + masked Private Recovery Key (`Key`, `[Reveal]`, `[Copy]`).
-    - Default: Password + Confirm Password inputs (`minlength={8}`), plus small **`Store secret manually instead →`** link.
-    - Manual mode: hides password inputs, highlights key backup copy + mandatory backup acknowledgment checkbox, and switches cleanly back via `"Encrypt with a local password instead"`.
-12. **`src/lib/components/onboarding/HumanVouchScreen.svelte` *(new — Screen 4)***
+### Slice 3 — Entry Gate, Full-Bleed Scroll-Up Hero Intro & Steps 1–2
+7. **`src/lib/components/onboarding/RelayStatusPill.svelte`**
+   - Compact reusable header component used across `UnlockRecoverScreen` and Steps 2–8.
+8. **`src/lib/components/onboarding/UnlockRecoverScreen.svelte`**
+   - Handles returning `Unlock` (when `hasVault`), `Paste Key / Recover` (`araliya-recovery:v1:...` or raw base64 secret key, with optional *"Save as local encrypted vault"* toggle vs. session-only unlock), and a `"New here? Start onboarding"` button routing to `'welcome'`.
+9. **`src/lib/components/onboarding/OnboardingHeroFlow.svelte` *(Slides 0–3, full-bleed `100vw × 100dvh`)***
+   - Renders the 3 animated SVG hero slides (*Digital Commons*, *Peer-to-Peer Sovereignty*, *Planting the Seeds*) in a vertical scroll-up track driven by wheel, touch swipe-up, keyboard, or dot indicators, stopping on Slide 3 (`KeypairCustodyScreen`) with minimal `Unlock` and `Skip intro →` controls.
+10. **`src/lib/components/onboarding/KeypairCustodyScreen.svelte` *(Step 1 / 8 · Slide 3)***
+    - Botanical `Your Lock & Key` card showing Public Key (`Lock`), maskable Private Recovery Key (`Key`, `[Reveal]`, `[Copy]`), single local password input (min 8 chars) with reveal toggle, **`Store secret manually →`** link, compact relay override gear, and `↑ Replay intro` button.
+11. **`src/lib/components/onboarding/HumanVouchScreen.svelte` *(Step 2 / 8)***
     - Handles State A (pre-filled `?vouch=` invite or automatic `--genesis` vouch fetch with voucher identity lookup) and State B (`[Paste Vouch Token]` + `[Copy Vouch Request for Relay Maintainer]` containing `userPubkey`, plus open-relay fallback when `admissionPolicy === 'open'`).
 
 ### Slice 4 — Stage 3–4 Screens (Screens 5–10), Routing & Cleanup
@@ -228,10 +232,10 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
     - Renders `"We don't need nukes."` with `⚡ Sponsored (+5 Tokens)`, `🔗 External Context` reader drawer/link, `[Skip]`, and `[Answer & Earn +5 Tokens →]`.
 18. **`src/lib/components/onboarding/AskFirstQuestionScreen.svelte` *(new — Screen 10)***
     - Question input, dynamic 2–6 choice builder, optional Reference Link (walkthrough UI), pre-checked `FREE (First Question Credit)` sponsorship toggle (walkthrough UI), `[Publish Question & Enter App →]` (real `qnaCreateQuestion`), and `[Skip & Enter App →]`.
-19. **`src/routes/+page.svelte`, `src/lib/components/dashboard/UserDashboard.svelte`, & Cleanup**
-    - Update `+page.svelte` step switch to route `!isLoggedIn` between `'unlock'` and `'welcome'`–`'vouch'` as appropriate, and authenticated steps `'handle'`–`'ask-first'` to their new screens.
-    - Update `UserDashboard.svelte`: `"Revisit Onboarding"` restarts at `'welcome'`, display custody status & `demoTokenBalance` in Settings.
-    - Remove obsolete alpha onboarding components (`LoginVouchScreen.svelte`, `ManifestoScreen.svelte`, `UsernameScreen.svelte`, `PersonalDetailsScreen.svelte`, `ThemePickerScreen.svelte`) once all imports are migrated.
+19. **`src/routes/+page.svelte`, `src/routes/dashboard/+page.svelte`, `MobileViewport.svelte`, `PendingVouchBanner.svelte`, `VouchExpiredScreen.svelte`, & `UserDashboard.svelte`**
+    - `+page.svelte` and `dashboard/+page.svelte` route/guard `'vouch-expired'` (`VouchExpiredScreen.svelte`) when the 72h pending window expires or is declined.
+    - `MobileViewport.svelte` displays `PendingVouchBanner.svelte` above the read-only `QuestionFeed` / `UserDashboard` while `isPendingVouch`.
+    - `UserDashboard.svelte` adds **Invite & Vouch** inside the **Profile** tab for admitted users (copyable `/?voucher=<pubkey>` onboarding link, live incoming request queue with **Approve & Vouch** / **Decline**, manual pubkey / offline `VouchCard` minting, and copyable fallback `VouchCard` links/tokens) plus encrypted local profile edits & waiting status for pending users, `"Revisit Onboarding"` restarting at `'welcome'`, and custody status / `demoTokenBalance` in Settings.
 
 20. **`vite.config.ts` & `src/lib/services/araliya.service.ts` (WASM Dev Serving Guard)**
     - Added `./vendor` (`fileURLToPath(new URL('./vendor', import.meta.url))`) to `server.fs.allow` so `vite dev` serves `/vendor/araliya-net-wasm/araliya_net_wasm.js` and `araliya_net_wasm_bg.wasm` alongside `@sveltejs/kit/vite`'s default allow-list.

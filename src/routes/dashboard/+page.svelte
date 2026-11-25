@@ -5,7 +5,7 @@
 	import UserDashboard from '$lib/components/dashboard/UserDashboard.svelte';
 
 	onMount(() => {
-		if (!sessionStore.isLoggedIn) {
+		if (!sessionStore.isLoggedIn || sessionStore.isVouchExpired) {
 			goto('/');
 			return;
 		}
@@ -13,6 +13,6 @@
 	});
 </script>
 
-{#if sessionStore.isLoggedIn}
+{#if sessionStore.isLoggedIn && !sessionStore.isVouchExpired}
 	<UserDashboard />
 {/if}

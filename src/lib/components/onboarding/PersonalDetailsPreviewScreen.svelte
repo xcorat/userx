@@ -38,9 +38,15 @@
 				? usernameField.value.trim()
 				: buildPseudonymousHandle(sessionStore.identity?.userPubkey ?? '', 8);
 
+		const vouchedByLabel = sessionStore.isPendingVouch
+			? sessionStore.pendingVouchRequest?.voucherHandle
+				? `pending (@${sessionStore.pendingVouchRequest.voucherHandle})`
+				: 'pending'
+			: sessionStore.vouchedByHandle ?? sessionStore.pendingVouchInviter ?? 'genesis';
+
 		const obj: Record<string, string> = {
 			username: publicHandle,
-			vouched_by: sessionStore.vouchedByHandle ?? sessionStore.pendingVouchInviter ?? 'genesis'
+			vouched_by: vouchedByLabel
 		};
 		if (realNamePublic && realName.trim()) obj.name = realName.trim();
 		if (dobPublic && dob.trim()) obj.dob = dob.trim();
@@ -81,18 +87,21 @@
 		event.preventDefault();
 		isSaving = true;
 		try {
+			const details = {
+				realName,
+				realNamePublic,
+				dob,
+				dobPublic,
+				pronouns,
+				pronounsPublic
+			};
+			if (!sessionStore.isAdmitted) {
+				await ledgerStore.stageIdentityDetailsDraft(details);
+				await sessionStore.advanceOnboardingStep('demo-public');
+				return;
+			}
 			await sessionStore.ensureUnlockedOnRelay();
-			await ledgerStore.saveIdentityDetails(
-				{
-					realName,
-					realNamePublic,
-					dob,
-					dobPublic,
-					pronouns,
-					pronounsPublic
-				},
-				sessionStore.identity?.userPubkey
-			);
+			await ledgerStore.saveIdentityDetails(details, sessionStore.identity?.userPubkey);
 			await sessionStore.advanceOnboardingStep('demo-public');
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Failed to save optional details');
@@ -107,7 +116,7 @@
 	class="flex h-full flex-col justify-between gap-3 overflow-y-auto px-5 py-6"
 >
 	<RelayStatusPill
-		stepLabel="07 / 10"
+		stepLabel="Step 5 / 8"
 		onBack={() => sessionStore.setOnboardingStep('custody')}
 	/>
 
