@@ -7,6 +7,42 @@ import type { ThemeConfig, ThemeId } from '$lib/types';
  */
 export const THEMES: ThemeConfig[] = [
 	{
+		id: 'forest',
+		name: 'Forest Dark',
+		description: 'Deep canopy slate, botanical emerald highlights & warm golden-hour accents.',
+		fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif",
+		headingFont: "'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif",
+		decoration: 'aura',
+		swatches: {
+			bg: '#08120e',
+			card: '#0f1f18',
+			primary: '#34d399',
+			accent: '#f59e0b',
+			fg: '#ecfdf5'
+		},
+		cssVars: {
+			'--background': '#08120e',
+			'--foreground': '#ecfdf5',
+			'--card': '#0f1f18',
+			'--card-foreground': '#ecfdf5',
+			'--popover': '#0f1f18',
+			'--popover-foreground': '#ecfdf5',
+			'--primary': '#34d399',
+			'--primary-foreground': '#032015',
+			'--secondary': '#162b22',
+			'--secondary-foreground': '#d1fae5',
+			'--muted': '#14271f',
+			'--muted-foreground': '#9ab8ab',
+			'--accent': '#f59e0b',
+			'--accent-foreground': '#1c1002',
+			'--destructive': '#ef4444',
+			'--border': '#213d31',
+			'--input': '#213d31',
+			'--ring': '#34d399',
+			'--radius': '1rem'
+		}
+	},
+	{
 		id: 'obsidian',
 		name: 'Obsidian Terminal',
 		description: 'High-contrast midnight slate, crisp monospace accents & subtle tactical grid.',
@@ -152,7 +188,7 @@ export const THEMES: ThemeConfig[] = [
 	}
 ];
 
-export const DEFAULT_THEME_ID: ThemeId = 'araliya';
+export const DEFAULT_THEME_ID: ThemeId = 'forest';
 
 export function getThemeById(id: ThemeId): ThemeConfig {
 	return THEMES.find((t) => t.id === id) ?? THEMES[0];

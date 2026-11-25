@@ -2,28 +2,28 @@
 @import "tw-animate-css";
 
 :root {
-	--radius: 1.25rem;
-	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-	--font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--radius: 1rem;
+	--font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+	--font-heading: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-	--background: #070318;
-	--foreground: #f8f5ff;
-	--card: #120b2e;
-	--card-foreground: #f8f5ff;
-	--popover: #120b2e;
-	--popover-foreground: #f8f5ff;
-	--primary: #00d2a0;
-	--primary-foreground: #021c15;
-	--secondary: #1f1547;
-	--secondary-foreground: #f3edff;
-	--muted: #1f1547;
-	--muted-foreground: #b5abd4;
-	--accent: #9d4edd;
-	--accent-foreground: #ffffff;
+	--background: #08120e;
+	--foreground: #ecfdf5;
+	--card: #0f1f18;
+	--card-foreground: #ecfdf5;
+	--popover: #0f1f18;
+	--popover-foreground: #ecfdf5;
+	--primary: #34d399;
+	--primary-foreground: #032015;
+	--secondary: #162b22;
+	--secondary-foreground: #d1fae5;
+	--muted: #14271f;
+	--muted-foreground: #9ab8ab;
+	--accent: #f59e0b;
+	--accent-foreground: #1c1002;
 	--destructive: #ef4444;
-	--border: #2e225c;
-	--input: #2e225c;
-	--ring: #00d2a0;
+	--border: #213d31;
+	--input: #213d31;
+	--ring: #34d399;
 }
 
 @theme inline {

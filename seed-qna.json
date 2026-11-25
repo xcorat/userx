@@ -1,0 +1,12 @@
+[
+  {
+    "text": "Pepsi or Coke?",
+    "answers": ["Pepsi", "Coke", "No preference"],
+    "multiple": false
+  },
+  {
+    "text": "We don't need nukes.",
+    "answers": ["Agree", "Disagree"],
+    "multiple": false
+  }
+]

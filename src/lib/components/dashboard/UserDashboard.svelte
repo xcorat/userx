@@ -21,6 +21,7 @@
 		Lock,
 		LogOut,
 		Palette,
+		Plus,
 		RotateCcw,
 		Shield,
 		User
@@ -36,6 +37,14 @@
 	let publicProjection = $derived(ledgerStore.publicLedgerProjection);
 	let privateStore = $derived(ledgerStore.privateEncryptedStore);
 
+	let custodyLabel = $derived(
+		sessionStore.custodyMode === 'browser-encrypted'
+			? 'Browser Encrypted Vault'
+			: sessionStore.custodyMode === 'password-vault-wiped'
+				? 'External Vault (Wiped)'
+				: 'Manual Session Key'
+	);
+
 	function switchSection(section: DashboardSection) {
 		activeSection = section;
 		if (section !== 'settings') {
@@ -46,7 +55,11 @@
 	async function handleUpdateFieldValue(key: ProfileFieldKey, value: string) {
 		try {
 			if (!sessionStore.identity) throw new Error('Vault is locked');
-			await ledgerStore.updateProfileFieldValue(key, value);
+			await ledgerStore.updateProfileFieldValue(
+				key,
+				value,
+				sessionStore.identity.userPubkey
+			);
 			toast.success(`Saved ${ledgerStore.profile[key].label}`);
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Failed to save profile field');
@@ -56,7 +69,7 @@
 	async function handleToggleFieldVisibility(key: ProfileFieldKey) {
 		try {
 			if (!sessionStore.identity) throw new Error('Vault is locked');
-			await ledgerStore.toggleProfileFieldVisibility(key);
+			await ledgerStore.toggleProfileFieldVisibility(key, sessionStore.identity.userPubkey);
 			const updated = ledgerStore.profile[key];
 			toast.success(
 				`${updated.label} moved to ${
@@ -85,7 +98,15 @@
 
 	function handleRevisitOnboarding() {
 		exportedRecoveryKey = null;
-		sessionStore.setOnboardingStep('manifesto');
+		sessionStore.setOnboardingStep('welcome');
+		if (page.url.pathname !== '/') {
+			goto('/');
+		}
+	}
+
+	function handleOpenAskQuestion() {
+		exportedRecoveryKey = null;
+		sessionStore.setOnboardingStep('ask-first');
 		if (page.url.pathname !== '/') {
 			goto('/');
 		}
@@ -221,6 +242,17 @@
 					<p class="text-[11px] text-muted-foreground">Private</p>
 				</div>
 			</div>
+
+			<Button
+				type="button"
+				variant="outline"
+				size="sm"
+				onclick={handleOpenAskQuestion}
+				class="h-9 w-full cursor-pointer text-xs font-semibold"
+			>
+				<Plus class="mr-1.5 h-3.5 w-3.5 text-primary" />
+				Ask a Question
+			</Button>
 
 			{#if ledgerStore.answers.length === 0}
 				<div class="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -392,6 +424,8 @@
 					<p class="truncate">endpoint: {sessionStore.relayStatus?.endpointId || 'disconnected'}</p>
 					<p>mode: {sessionStore.relayStatus?.source ?? 'none'}</p>
 					<p class="truncate">root_pk: {sessionStore.relayStatus?.rootPubkey || '—'}</p>
+					<p>custody: {custodyLabel}</p>
+					<p>demo_tokens: {sessionStore.demoTokenBalance}</p>
 					<p>live_sync: {ledgerStore.isLiveSyncActive ? 'active' : 'paused'}</p>
 				</div>
 

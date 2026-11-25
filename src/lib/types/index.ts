@@ -5,12 +5,23 @@
 export type FieldVisibility = 'private' | 'public';
 
 export type OnboardingStep =
-	| 'login'
-	| 'manifesto'
-	| 'username'
-	| 'identity'
-	| 'theme'
+	| 'unlock'
+	| 'welcome'
+	| 'network'
+	| 'keypair'
+	| 'vouch'
+	| 'handle'
+	| 'custody'
+	| 'details'
+	| 'demo-public'
+	| 'demo-sponsored'
+	| 'ask-first'
 	| 'feed';
+
+export type KeyCustodyMode =
+	| 'browser-encrypted'
+	| 'password-vault-wiped'
+	| 'manual-no-store';
 
 export type AppTab = 'feed' | 'dashboard';
 
@@ -97,7 +108,28 @@ export interface AnsweredQuestionRecord {
 	answeredAt: string;
 }
 
-export type ThemeId = 'obsidian' | 'solaris' | 'araliya' | 'monolith';
+export interface OnboardingDemoQuestion {
+	cid: string;
+	text: string;
+	options: QuestionOption[];
+	baselineCounts: Record<string, number>;
+	totalBaselineResponses: number;
+	sponsoredRewardTokens?: number;
+	referenceUrl?: string;
+	referenceSummary?: string;
+}
+
+export interface VouchInspection {
+	validFormat: boolean;
+	format: 'token' | 'json' | 'invalid';
+	tokenOrJson: string;
+	subjectPubkey?: string;
+	voucherPubkey?: string;
+	expiresAtMs?: number | null;
+	error?: string;
+}
+
+export type ThemeId = 'forest' | 'araliya' | 'obsidian' | 'solaris' | 'monolith';
 
 export type ThemeDecoration = 'grid' | 'editorial' | 'aura' | 'minimal';
 

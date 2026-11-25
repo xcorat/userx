@@ -13,6 +13,7 @@
 		Database,
 		Globe,
 		LayoutDashboard,
+		Plus,
 		RefreshCw,
 		Sparkles,
 		UserCheck
@@ -132,6 +133,14 @@
 		</div>
 
 		<div class="flex items-center gap-2">
+			<button
+				type="button"
+				onclick={() => sessionStore.setOnboardingStep('ask-first')}
+				class="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20"
+			>
+				<Plus class="h-3 w-3" />
+				Ask
+			</button>
 			<span class="font-mono text-xs text-muted-foreground">
 				{answeredCount} / {totalCount}
 			</span>
@@ -171,10 +180,19 @@
 						The connected relay currently has an empty <span class="font-mono">questions</span> table.
 					</p>
 				</div>
-				<Button onclick={handleRefresh} variant="outline" class="w-full max-w-xs cursor-pointer">
-					<RefreshCw class="mr-2 h-4 w-4" />
-					Refresh from Relay
-				</Button>
+				<div class="flex w-full max-w-xs flex-col gap-2">
+					<Button
+						onclick={() => sessionStore.setOnboardingStep('ask-first')}
+						class="w-full cursor-pointer"
+					>
+						<Plus class="mr-2 h-4 w-4" />
+						Ask First Question
+					</Button>
+					<Button onclick={handleRefresh} variant="outline" class="w-full cursor-pointer">
+						<RefreshCw class="mr-2 h-4 w-4" />
+						Refresh from Relay
+					</Button>
+				</div>
 			</div>
 		{:else if currentQuestion}
 			{@const question = currentQuestion}
@@ -282,6 +300,14 @@
 				</div>
 				<div class="flex w-full max-w-xs flex-col gap-2.5">
 					<Button
+						onclick={() => sessionStore.setOnboardingStep('ask-first')}
+						class="w-full cursor-pointer"
+					>
+						<Plus class="mr-2 h-4 w-4" />
+						Ask a Question
+					</Button>
+					<Button
+						variant="secondary"
 						onclick={() => sessionStore.setActiveTab('dashboard')}
 						class="w-full cursor-pointer"
 					>

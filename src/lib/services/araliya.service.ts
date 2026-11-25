@@ -16,7 +16,8 @@ import type {
 	QuestionOption,
 	RecoveryPayload,
 	RelayStatusInfo,
-	UserIdentity
+	UserIdentity,
+	VouchInspection
 } from '$lib/types';
 import type { AraliyaWasmApp, WasmEventPoller } from '$wasm/araliya_net_wasm';
 
@@ -89,6 +90,29 @@ export function bytesToHex(bytes: number[] | Uint8Array): string {
 	return Array.from(bytes, (b) => (b & 0xff).toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Normalize a 32-byte Ed25519 public key (base64url or hex) into lowercase 64-char hex.
+ */
+export function pubkeyToHex(pubkeyB64UrlOrHex: string): string {
+	const trimmed = pubkeyB64UrlOrHex.trim();
+	if (!trimmed) return '';
+	if (/^[0-9a-fA-F]{64}$/.test(trimmed)) {
+		return trimmed.toLowerCase();
+	}
+	try {
+		const b64 = trimmed.replace(/-/g, '+').replace(/_/g, '/');
+		const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+		const bin = atob(padded);
+		const bytes = new Uint8Array(bin.length);
+		for (let i = 0; i < bin.length; i += 1) {
+			bytes[i] = bin.charCodeAt(i);
+		}
+		return bytesToHex(bytes);
+	} catch {
+		return trimmed.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+	}
+}
+
 function errorMessage(err: unknown, fallback: string): string {
 	if (err instanceof Error) return err.message;
 	if (typeof err === 'string' && err.trim().length > 0) return err;
@@ -151,7 +175,10 @@ class AraliyaService {
 				]);
 				await mod.default({ module_or_path: wasmUrlMod.default });
 				return mod;
-			})();
+			})().catch((err) => {
+				this.wasmPromise = null;
+				throw err;
+			});
 		}
 		return this.wasmPromise;
 	}
@@ -483,9 +510,106 @@ class AraliyaService {
 		return this.app;
 	}
 
+	hasUnlockedWasmSession(): boolean {
+		return Boolean(this.app?.identity());
+	}
+
 	async generateKeypair(): Promise<GeneratedKeypair> {
 		const wasm = await this.ensureWasm();
 		return wasm.generateKeypair() as GeneratedKeypair;
+	}
+
+	async derivePublicKey(secretKeyB64: string): Promise<string> {
+		const wasm = await this.ensureWasm();
+		return wasm.derivePublicKey(secretKeyB64);
+	}
+
+	inspectVouchToken(rawInput: string): VouchInspection {
+		const trimmed = rawInput.trim();
+		if (!trimmed) {
+			return {
+				validFormat: false,
+				format: 'invalid',
+				tokenOrJson: '',
+				error: 'Paste a vouch token or JSON payload.'
+			};
+		}
+
+		if (trimmed.startsWith('araliya-vouch-card:v1:')) {
+			const body = trimmed.slice('araliya-vouch-card:v1:'.length);
+			if (body.length < 32 || !/^[A-Za-z0-9_-]+=*$/.test(body)) {
+				return {
+					validFormat: false,
+					format: 'invalid',
+					tokenOrJson: trimmed,
+					error: 'Malformed araliya-vouch-card:v1 token payload.'
+				};
+			}
+			return {
+				validFormat: true,
+				format: 'token',
+				tokenOrJson: trimmed
+			};
+		}
+
+		if (trimmed.startsWith('{')) {
+			try {
+				const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+				const card =
+					parsed.vouch_card && typeof parsed.vouch_card === 'object'
+						? (parsed.vouch_card as Record<string, unknown>)
+						: parsed;
+				const cert =
+					card.cert && typeof card.cert === 'object'
+						? (card.cert as Record<string, unknown>)
+						: null;
+				if (!cert) {
+					return {
+						validFormat: false,
+						format: 'invalid',
+						tokenOrJson: trimmed,
+						error: 'JSON does not contain a VouchCard cert object.'
+					};
+				}
+
+				const extractPk = (val: unknown): string | undefined => {
+					if (typeof val === 'string' && val.trim().length > 0) return val.trim();
+					if (Array.isArray(val) && val.length === 32) {
+						return bytesToHex(val as number[]);
+					}
+					return undefined;
+				};
+
+				const tokenFromEnvelope =
+					typeof parsed.vouch_card_token === 'string' && parsed.vouch_card_token.trim()
+						? parsed.vouch_card_token.trim()
+						: JSON.stringify(card);
+
+				return {
+					validFormat: true,
+					format: 'json',
+					tokenOrJson: tokenFromEnvelope,
+					subjectPubkey: extractPk(cert.subject_pk),
+					voucherPubkey: extractPk(cert.voucher_pk),
+					expiresAtMs:
+						typeof cert.expires_at_ms === 'number' ? cert.expires_at_ms : null
+				};
+			} catch {
+				return {
+					validFormat: false,
+					format: 'invalid',
+					tokenOrJson: trimmed,
+					error: 'Invalid VouchCard JSON.'
+				};
+			}
+		}
+
+		return {
+			validFormat: false,
+			format: 'invalid',
+			tokenOrJson: trimmed,
+			error: 'Expected araliya-vouch-card:v1:... token or VouchCard JSON.'
+		};
 	}
 
 	async createVaultJson(secretKeyB64: string, password: string): Promise<string> {
@@ -681,6 +805,30 @@ class AraliyaService {
 		isPublic: boolean
 	): Promise<void> {
 		await this.requireApp().qnaSetAnswerVisibility(questionCidHex, [leafHex], isPublic);
+	}
+
+	async createPublicQuestion(
+		text: string,
+		answers: string[]
+	): Promise<{ cid: string; created: boolean }> {
+		const res = (await this.requireApp().qnaCreateQuestion({
+			text: text.trim(),
+			answers: answers.map((a) => a.trim()),
+			multiple: false,
+			scope: 'pub'
+		})) as { item?: { cid?: number[] | string }; created?: boolean };
+
+		const rawCid = res?.item?.cid;
+		const cid =
+			typeof rawCid === 'string'
+				? rawCid
+				: Array.isArray(rawCid)
+					? bytesToHex(rawCid)
+					: '';
+		return {
+			cid,
+			created: Boolean(res?.created)
+		};
 	}
 
 	async listMyPrivateResponses(): Promise<

@@ -1,6 +1,7 @@
 import {
 	araliyaService,
 	bytesToHex,
+	pubkeyToHex,
 	type QnaEventBatch
 } from '$lib/services/araliya.service';
 import type {
@@ -31,6 +32,15 @@ function isProfileFieldKey(key: string): key is ProfileFieldKey {
 	return PROFILE_KEYS.has(key as ProfileFieldKey);
 }
 
+/**
+ * Build a deterministic pseudonymous handle for the public `users` relay directory
+ * when a user chooses to keep their real `@username` strictly inside `/private`.
+ */
+export function buildPseudonymousHandle(pubkeyB64UrlOrHex: string, chars = 8): string {
+	const hex = pubkeyToHex(pubkeyB64UrlOrHex) || 'anon00000000';
+	return `gardener_${hex.slice(0, chars)}`;
+}
+
 function createInitialProfile(): ProfileFieldMap {
 	const now = new Date().toISOString();
 	return {
@@ -44,10 +54,10 @@ function createInitialProfile(): ProfileFieldMap {
 		},
 		realName: {
 			key: 'realName',
-			label: 'Real Name',
+			label: 'Name',
 			value: '',
 			visibility: 'private',
-			required: true,
+			required: false,
 			updatedAt: now
 		},
 		dateOfBirth: {
@@ -213,19 +223,72 @@ class LedgerStore {
 		}
 	}
 
+	private resolvePublicDirectoryIdentity(
+		userPubkey?: string,
+		pseudonymLen = 8
+	): { directoryHandle: string; publicDisplayName: string } {
+		const usernamePublic =
+			this.profile.username.visibility === 'public' &&
+			this.profile.username.value.trim().length > 0;
+		const directoryHandle = usernamePublic
+			? this.profile.username.value.trim()
+			: buildPseudonymousHandle(userPubkey ?? '', pseudonymLen);
+
+		const namePublic =
+			this.profile.realName.visibility === 'public' &&
+			this.profile.realName.value.trim().length > 0;
+		const publicDisplayName = namePublic
+			? this.profile.realName.value.trim()
+			: directoryHandle;
+
+		return { directoryHandle, publicDisplayName };
+	}
+
+	private async syncPublicDirectoryRegistration(userPubkey?: string): Promise<void> {
+		if (!this.profile.username.value.trim() && !userPubkey) return;
+		const { directoryHandle, publicDisplayName } = this.resolvePublicDirectoryIdentity(userPubkey);
+		await araliyaService
+			.ensureRegisteredAndUpdateProfile(directoryHandle, publicDisplayName)
+			.catch(() => {});
+	}
+
 	async saveUsername(
 		username: string,
 		keepPublic: boolean,
-		pendingVouchToken?: string | null
-	): Promise<{ usedVouch: boolean }> {
+		pendingVouchToken?: string | null,
+		userPubkey?: string
+	): Promise<{ usedVouch: boolean; directoryHandle: string }> {
 		const cleaned = username.trim().replace(/^@+/, '');
-		const displayName = this.profile.realName.value.trim() || cleaned;
+		let directoryHandle = keepPublic ? cleaned : buildPseudonymousHandle(userPubkey ?? '', 8);
+		let publicDisplayName =
+			keepPublic &&
+			this.profile.realName.visibility === 'public' &&
+			this.profile.realName.value.trim().length > 0
+				? this.profile.realName.value.trim()
+				: directoryHandle;
 
-		const admission = await araliyaService.ensureRegisteredAndUpdateProfile(
-			cleaned,
-			displayName,
-			pendingVouchToken
-		);
+		let admission: { usedVouch: boolean };
+		try {
+			admission = await araliyaService.ensureRegisteredAndUpdateProfile(
+				directoryHandle,
+				publicDisplayName,
+				pendingVouchToken
+			);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message.toLowerCase() : '';
+			if (!keepPublic && (msg.includes('conflict') || msg.includes('already') || msg.includes('taken'))) {
+				directoryHandle = buildPseudonymousHandle(userPubkey ?? '', 12);
+				publicDisplayName = directoryHandle;
+				admission = await araliyaService.ensureRegisteredAndUpdateProfile(
+					directoryHandle,
+					publicDisplayName,
+					pendingVouchToken
+				);
+			} else {
+				throw err;
+			}
+		}
+
 		await araliyaService.setProfileField('username', cleaned, keepPublic);
 
 		this.profile = {
@@ -237,17 +300,20 @@ class LedgerStore {
 				updatedAt: new Date().toISOString()
 			}
 		};
-		return admission;
+		return { usedVouch: admission.usedVouch, directoryHandle };
 	}
 
-	async saveIdentityDetails(details: {
-		realName: string;
-		realNamePublic: boolean;
-		dob: string;
-		dobPublic: boolean;
-		pronouns: string;
-		pronounsPublic: boolean;
-	}): Promise<void> {
+	async saveIdentityDetails(
+		details: {
+			realName: string;
+			realNamePublic: boolean;
+			dob: string;
+			dobPublic: boolean;
+			pronouns: string;
+			pronounsPublic: boolean;
+		},
+		userPubkey?: string
+	): Promise<void> {
 		const realName = details.realName.trim();
 		const dob = details.dob.trim();
 		const pronouns = details.pronouns.trim();
@@ -257,13 +323,6 @@ class LedgerStore {
 			araliyaService.setProfileField('dateOfBirth', dob, details.dobPublic),
 			araliyaService.setProfileField('pronouns', pronouns, details.pronounsPublic)
 		]);
-
-		const currentUsername = this.profile.username.value.trim();
-		if (currentUsername) {
-			await araliyaService
-				.ensureRegisteredAndUpdateProfile(currentUsername, realName || currentUsername)
-				.catch(() => {});
-		}
 
 		const now = new Date().toISOString();
 		this.profile = {
@@ -287,11 +346,17 @@ class LedgerStore {
 				updatedAt: now
 			}
 		};
+
+		await this.syncPublicDirectoryRegistration(userPubkey);
 	}
 
-	async updateProfileFieldValue(key: ProfileFieldKey, value: string): Promise<void> {
+	async updateProfileFieldValue(
+		key: ProfileFieldKey,
+		value: string,
+		userPubkey?: string
+	): Promise<void> {
 		const current = this.profile[key];
-		const cleaned = value.trim();
+		const cleaned = key === 'username' ? value.trim().replace(/^@+/, '') : value.trim();
 		await araliyaService.setProfileField(key, cleaned, current.visibility === 'public');
 
 		this.profile = {
@@ -302,9 +367,16 @@ class LedgerStore {
 				updatedAt: new Date().toISOString()
 			}
 		};
+
+		if (key === 'username' || key === 'realName') {
+			await this.syncPublicDirectoryRegistration(userPubkey);
+		}
 	}
 
-	async toggleProfileFieldVisibility(key: ProfileFieldKey): Promise<void> {
+	async toggleProfileFieldVisibility(
+		key: ProfileFieldKey,
+		userPubkey?: string
+	): Promise<void> {
 		const current = this.profile[key];
 		const nextVisibility: FieldVisibility =
 			current.visibility === 'public' ? 'private' : 'public';
@@ -322,6 +394,31 @@ class LedgerStore {
 				updatedAt: new Date().toISOString()
 			}
 		};
+
+		if (key === 'username' || key === 'realName') {
+			await this.syncPublicDirectoryRegistration(userPubkey);
+		}
+	}
+
+	async createQuestion(
+		text: string,
+		answers: string[],
+		rootPubkeyHex: string
+	): Promise<{ cid: string; created: boolean }> {
+		const cleanedText = text.trim();
+		const cleanedAnswers = answers.map((a) => a.trim()).filter((a) => a.length > 0);
+		if (!cleanedText) {
+			throw new Error('Enter a question prompt.');
+		}
+		if (cleanedAnswers.length < 2) {
+			throw new Error('Provide at least 2 answer choices.');
+		}
+		if (new Set(cleanedAnswers).size !== cleanedAnswers.length) {
+			throw new Error('Answer choices must be unique.');
+		}
+		const out = await araliyaService.createPublicQuestion(cleanedText, cleanedAnswers);
+		await this.loadQuestionsFromRelay(rootPubkeyHex);
+		return out;
 	}
 
 	async submitAnswer(
