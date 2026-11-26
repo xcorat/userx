@@ -2,7 +2,7 @@
 
 **Status:** Implemented  
 **Target Workspace:** `/data/p2p/userx` (SvelteKit 2 + Svelte 5 + Tailwind v4 + `$wasm` `araliya-net-wasm`)  
-**Companion Seed File (Optional Relay Bootstrap):** [seed-qna.json](file:///data/p2p/userx/seed-qna.json) (tracked in `userx`; mirrored at `/data/p2p/araliya-net/data/seed_qna.json` for `araliya-net-relay --seed-qna`)  
+**Canonical Onboarding Manifest:** [`araliya-net/data/seed_qna.json`](file:///data/p2p/araliya-net/data/seed_qna.json), published by the relay as the public doc `onboarding/manifest-v1` and loaded by `userx` over Iroh.
 **Related Docs:**
 - [01-wasm-client-architecture.md](file:///data/p2p/userx/docs/plans/01-wasm-client-architecture.md)
 - [userx_main.md](file:///data/p2p/docs/userx_main.md)
@@ -135,11 +135,12 @@ The relay `users` table requires a unique plaintext `username` during `RegisterA
 
 ### 3.5 Stage 4 Default Intro Questions (Screens 8–9) & First Question Creation (Screen 10)
 
-Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `questions` table is empty by default unless `--seed-qna <PATH>` is passed on relay startup. To guarantee Screens 8–9 **always** display the two default walkthrough questions reliably:
+Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `questions` table is empty by default unless `--seed-qna <PATH>` is passed on relay startup. The relay now publishes the versioned onboarding manifest to a public doc so the UI and relay seed use the same question and profile-field definitions.
 
-1. **Dual Canonical Source (`onboarding.questions.ts` + `seed_qna.json`):**
-   - Create `src/lib/config/onboarding.questions.ts` containing the canonical default Question #1 and Question #2 definitions.
-   - Create `/data/p2p/araliya-net/data/seed_qna.json` matching `SeedQuestionEntry` (`crates/araliya-net-relay/src/lib.rs`: `text`, `answers`, `multiple`) so relays started with `--seed-qna data/seed_qna.json` seed the exact same content-addressed `qa-cid/v1` rows.
+1. **Single Canonical Source (`araliya-net/data/seed_qna.json`):**
+   - The manifest defines question IDs, question scope, response visibility, relay seeding, screen stage, presentation, demo-only rewards, and profile-field defaults.
+   - `araliya-net-relay --seed-qna ./data/seed_qna.json` seeds only entries marked `relay_seed: true` and publishes the full manifest at `onboarding/manifest-v1`.
+   - `userx` fetches and validates that public manifest; it does not maintain a second seed JSON or duplicate question definitions.
 2. **Screen 8 — Question #1 (`Pepsi or Coke?`):**
    - Choices: `Pepsi`, `Coke`, `No preference`.
    - Answer mode badge: **`🔒 Private · Locked for this intro`** (no public-toggle switch on Screen 8).
@@ -148,15 +149,15 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
      - Regardless of whether the relay was seeded, displays the result breakdown (live relay counts merged with/falling back to the baseline `41% / 47% / 12%` preview) plus a clear privacy note explaining that private answers stay encrypted and never increment public tallies.
    - Includes `[Skip Question]` and `[Submit & View Results →]` → `[Continue →]`.
 3. **Screen 9 — Question #2 (`We don't need nukes.` — UI Walkthrough Preview):**
-   - Header badges: `⚡ Sponsored (+5 Tokens)` · `🔗 External Context`.
+   - Header badges: `⚡ Sponsored demo (+5 simulated tokens)` · `🔗 External Context`.
    - Choices: `Agree`, `Disagree` + clickable `📎 Read background link ↗` modal/preview.
-   - Clicking `[Answer & Earn +5 Tokens →]` increments `sessionStore.demoTokenBalance` (`+5`, persisted in walkthrough UI state) and advances (or shows a quick earned toast); `[Skip]` advances without adding tokens.
+   - Clicking `[Answer & Earn +5 Demo Tokens →]` increments only the local walkthrough `sessionStore.demoTokenBalance` (`+5`, persisted in UI state); it does not create a relay response, payment, or real token balance. `[Skip]` advances without adding tokens.
 4. **Screen 10 — `Ask Your First Question` (Real Relay Publish):**
    - Question prompt input + dynamic answer choice list (minimum 2, up to 6 via `[+ Add another choice]`, client validation matching `answers_root`: >= 2 non-empty, unique trimmed choices).
-   - Optional `Reference Link` input & pre-checked `[✓] Make this a sponsored question — ~~50 Tokens~~ FREE (First Question Credit)` (both held as onboarding walkthrough UI state; marks `firstQuestionCreditUsed = true` on publish).
+    - Sponsorship and reference links are shown as unsupported previews only; the UI no longer collects them as if they would be persisted. Publishing stores only question text and choices.
    - `[Publish Question & Enter App →]` calls `ledgerStore.createQuestion(text, answers)` (`araliyaService.createPublicQuestion` → `AraliyaWasmApp.qnaCreateQuestion`) and reloads questions from the relay (`loadQuestionsFromRelay`).
    - After a successful publish, Genesis asks **“We need help, would you contribute?”** with the choices **Provide feedback**, **Invest money ($5+)**, **Help Develop**, **Other**, and **No**. Choosing an answer submits it as a private Q&A response (`ledgerStore.submitAnswer(question, option.id, false)`); it does not contribute to public results. `[Skip]` bypasses the response, and either path completes onboarding.
-   - The Genesis follow-up must be included in the relay's `--seed-qna` file. For an existing relay, restart it with the updated seed file; relay Q&A seeding is idempotent.
+   - The Genesis follow-up is in the canonical manifest and seeded as a public question. The user's optional response is encrypted/private and does not affect public tallies.
    - Secondary `[Skip & Enter App →]` exits directly to the main feed without publishing.
 
 ---
@@ -176,7 +177,7 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
 | **Step 4 / 8** | `'custody'` | `StorageCustodyScreen.svelte` | `sessionStore.applyCustodySelection(mode, password?)` (`deleteStoredVault` for options 2/3 with backup check, or `createVaultJson` if upgrading from manual); `advanceOnboardingStep('details')` | `← Back` → `'handle'` |
 | **Step 5 / 8** | `'details'` | `PersonalDetailsPreviewScreen.svelte` | Optional `Name`, `DoB`, `Pronouns` → `ledgerStore.saveIdentityDetails(...)`; live `/public` & `/private` tree; `themeStore.setTheme(...)` (`Forest Dark` default); `advanceOnboardingStep('demo-public')` | `← Back` → `'custody'` |
 | **Step 6 / 8** | `'demo-public'` | `PublicQuestionDemoScreen.svelte` | Locked `🔒 Private`; if question exists on relay, `ledgerStore.submitAnswer(..., false)` (`qnaSetAnswerVisibility`); reveal results + privacy note; `advanceOnboardingStep('demo-sponsored')` | `← Back` → `'details'`; `[Skip Question]` |
-| **Step 7 / 8** | `'demo-sponsored'` | `SponsoredQuestionDemoScreen.svelte` | Preview external link; `[Answer & Earn +5 Tokens →]` increments `demoTokenBalance` (`+5`); `advanceOnboardingStep('ask-first')` | `← Back` → `'demo-public'`; `[Skip]` |
+| **Step 7 / 8** | `'demo-sponsored'` | `SponsoredQuestionDemoScreen.svelte` | Preview external link; `[Answer & Earn +5 Demo Tokens →]` increments local-only `demoTokenBalance`; no relay response/payment | `← Back` → `'demo-public'`; `[Skip]` |
 | **Step 8 / 8** | `'ask-first'` | `AskFirstQuestionScreen.svelte` | `ledgerStore.createQuestion(text, choices)` (`qnaCreateQuestion`); marks `firstQuestionCreditUsed`; then optionally saves a private Genesis contribution response before `sessionStore.completeOnboarding()` → `'feed'` | `← Back` → `'demo-sponsored'`; `[Skip & Enter App →]` |
 
 ---
@@ -193,9 +194,9 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
 2. **`src/lib/config/themes.config.ts` & `src/app.css`**
    - Add **`Forest Dark`** (`id: 'forest'`) as the first entry in `THEMES` and set `DEFAULT_THEME_ID: ThemeId = 'forest'`.
    - Update `:root` fallback CSS variables in `src/app.css` to match `Forest Dark` so there is zero flash of cosmic indigo on first paint before hydration.
-3. **`src/lib/config/onboarding.questions.ts` *(new)* & `/data/p2p/araliya-net/data/seed_qna.json` *(new)***
-   - Define `DEFAULT_PUBLIC_DEMO_QUESTION` (`"Pepsi or Coke?"`, options `["Pepsi", "Coke", "No preference"]`, baseline preview counts `{ Pepsi: 582, Coke: 667, "No preference": 171 }` totaling `1,420`) and `DEFAULT_SPONSORED_DEMO_QUESTION` (`"We don't need nukes."`, options `["Agree", "Disagree"]`, reward `5`, reference URL/summary).
-   - Mirror both questions in `/data/p2p/araliya-net/data/seed_qna.json` for optional relay seeding via `--seed-qna`.
+3. **`araliya-net/data/seed_qna.json` — single onboarding source**
+   - Define the public preference demo and its private response mode, the local-only sponsored walkthrough (5 simulated demo tokens and background reference), the Genesis contribution prompt, and onboarding profile-field visibility defaults.
+   - Relay startup rejects unsupported schema versions and private/group plaintext content. Only relay-enabled public questions are persisted; baseline counts and demo rewards are never inserted as real responses or balances.
 
 ### Slice 2 — WASM Service & Reactive Stores
 4. **`src/lib/services/araliya.service.ts`**
@@ -233,7 +234,7 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
 16. **`src/lib/components/onboarding/PublicQuestionDemoScreen.svelte` *(new — Screen 8)***
     - Renders `"Pepsi or Coke?"` with locked `🔒 Private` answer mode, submits privately to relay if the seeded CID exists (or local walkthrough state otherwise), reveals the result bars + privacy callout, and advances.
 17. **`src/lib/components/onboarding/SponsoredQuestionDemoScreen.svelte` *(new — Screen 9)***
-    - Renders `"We don't need nukes."` with `⚡ Sponsored (+5 Tokens)`, `🔗 External Context` reader drawer/link, `[Skip]`, and `[Answer & Earn +5 Tokens →]`.
+    - Loads `"We don't need nukes."` from the canonical manifest and renders `⚡ Sponsored demo (+5 simulated tokens)`, `🔗 External Context`, `[Skip]`, and a local-only demo reward. It creates no relay response, payment, or real token balance.
 18. **`src/lib/components/onboarding/AskFirstQuestionScreen.svelte` *(new — Screen 10)***
     - Question input, dynamic 2–6 choice builder, optional Reference Link (walkthrough UI), pre-checked `FREE (First Question Credit)` sponsorship toggle (walkthrough UI), `[Publish Question & Enter App →]` (real `qnaCreateQuestion`), private Genesis contribution prompt (optional private Q&A response), and `[Skip & Enter App →]`.
 19. **`src/routes/+page.svelte`, `src/routes/dashboard/+page.svelte`, `MobileViewport.svelte`, `PendingVouchBanner.svelte`, `VouchExpiredScreen.svelte`, & `UserDashboard.svelte`**

@@ -1,26 +1,31 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import {
-		DEFAULT_PUBLIC_DEMO_QUESTION,
-		findMatchingRelayQuestion
-	} from '$lib/config/onboarding.questions';
+		findMatchingRelayQuestion,
+		toOnboardingDemoQuestion
+	} from '$lib/config/onboarding.manifest';
 	import { ledgerStore } from '$lib/stores/ledger.svelte';
+	import { onboardingManifestStore } from '$lib/stores/onboarding-manifest.svelte';
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import RelayStatusPill from '$lib/components/onboarding/RelayStatusPill.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
-	import { ArrowRight, Check, Globe } from 'lucide-svelte';
+	import { ArrowRight, Check, Globe, LockKeyhole } from 'lucide-svelte';
 
 	let selectedOptionId = $state<string | null>(null);
 	let submitted = $state(false);
 	let isSubmitting = $state(false);
 
+	let manifestQuestion = $derived(onboardingManifestStore.question('intro.preference'));
+	let demo = $derived(
+		manifestQuestion ? toOnboardingDemoQuestion(manifestQuestion) : null
+	);
 	let relayQuestion = $derived(
-		findMatchingRelayQuestion(ledgerStore.questions, DEFAULT_PUBLIC_DEMO_QUESTION)
+		demo ? findMatchingRelayQuestion(ledgerStore.questions, demo) : null
 	);
 
 	let displayOptions = $derived(
-		relayQuestion ? relayQuestion.options : DEFAULT_PUBLIC_DEMO_QUESTION.options
+		relayQuestion?.options ?? demo?.options ?? []
 	);
 
 	let totalDisplayAnswers = $derived.by(() => {
@@ -31,7 +36,7 @@
 			);
 			if (liveTotal > 0) return liveTotal;
 		}
-		return DEFAULT_PUBLIC_DEMO_QUESTION.totalBaselineResponses;
+		return demo?.totalBaselineResponses ?? 0;
 	});
 
 	function optionPercent(optionId: string, optionText: string): number {
@@ -45,13 +50,14 @@
 				return Math.round((count / liveTotal) * 100);
 			}
 		}
-		const baseOpt = DEFAULT_PUBLIC_DEMO_QUESTION.options.find(
+		const baseOpt = demo?.options.find(
 			(o) => o.id === optionId || o.text === optionText
 		);
 		const count = baseOpt
-			? (DEFAULT_PUBLIC_DEMO_QUESTION.baselineCounts[baseOpt.id] ?? 0)
+			? (demo?.baselineCounts[baseOpt.id] ?? 0)
 			: 0;
-		return Math.round((count / DEFAULT_PUBLIC_DEMO_QUESTION.totalBaselineResponses) * 100);
+		const total = demo?.totalBaselineResponses ?? 0;
+		return total > 0 ? Math.round((count / total) * 100) : 0;
 	}
 
 	onMount(async () => {
@@ -63,6 +69,10 @@
 	});
 
 	async function handleSubmit() {
+		if (!demo) {
+			toast.error('Onboarding question is unavailable. Check the relay connection.');
+			return;
+		}
 		if (!selectedOptionId) {
 			toast.error('Select an answer or skip this walkthrough question');
 			return;
@@ -71,12 +81,12 @@
 		try {
 			if (relayQuestion && sessionStore.isAdmitted) {
 				await sessionStore.ensureUnlockedOnRelay();
-				await ledgerStore.submitAnswer(relayQuestion, selectedOptionId, true);
-				toast.success('Saved public response to the relay');
+				await ledgerStore.submitAnswer(relayQuestion, selectedOptionId, false);
+				toast.success('Saved privately; your choice does not change public totals');
 			} else if (!sessionStore.isAdmitted) {
 				toast.success('Walkthrough choice previewed locally (waiting for vouch)');
 			} else {
-				toast.success('Walkthrough choice recorded privately');
+				toast.success('Walkthrough choice previewed locally; relay question is not available');
 			}
 			submitted = true;
 		} catch (err) {
@@ -110,8 +120,13 @@
 		</div>
 
 		<h1 class="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-			{DEFAULT_PUBLIC_DEMO_QUESTION.text}
+			{demo?.text ?? 'Onboarding question unavailable'}
 		</h1>
+		{#if !demo}
+			<p class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-muted-foreground">
+				{onboardingManifestStore.error ?? 'Connect to a relay seeded with the onboarding manifest to load this question.'}
+			</p>
+		{/if}
 
 		<div class="space-y-2.5">
 			{#each displayOptions as option (option.id)}
@@ -156,7 +171,7 @@
 			{/each}
 		</div>
 
-		<!-- Fixed Public Answer Mode -->
+		<!-- The question is public; this onboarding response is private. -->
 		<div class="flex items-center justify-between gap-2 rounded-xl border border-border/80 bg-card/85 px-3.5 py-2.5 text-xs">
 			<div class="flex items-center gap-2">
 				<span class="font-medium text-muted-foreground">Answer Mode:</span>
@@ -165,22 +180,22 @@
 						type="checkbox"
 						checked
 						disabled
-						aria-label="Public answer mode, fixed"
+						aria-label="Private answer mode, fixed"
 						class="h-3.5 w-3.5 accent-[var(--primary)]"
 					/>
-					<Globe class="h-3 w-3" />
-					Public
+					<LockKeyhole class="h-3 w-3" />
+					Private
 				</label>
 			</div>
 		</div>
 
 		{#if submitted}
 			<div class="rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs leading-relaxed text-foreground">
-				Public is selected for this walkthrough, so eligible responses contribute to the percentages above.
+				Your response is encrypted and does not contribute to the public totals above.
 			</div>
 		{:else}
 			<p class="text-[11px] leading-relaxed text-muted-foreground">
-				Note: Every question-and-answer set is uniquely indexed to prevent duplicate splits. Different choices create distinct questions.
+				The question is public, but this intro response is private. Baseline results are display-only; your private response does not change them.
 			</p>
 		{/if}
 	</div>
@@ -199,7 +214,7 @@
 			<Button
 				type="button"
 				onclick={handleSubmit}
-				disabled={isSubmitting}
+				disabled={isSubmitting || !demo}
 				class="h-12 flex-1 cursor-pointer font-semibold"
 			>
 				{isSubmitting ? 'Encrypting...' : 'Submit & View Results'}

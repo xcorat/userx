@@ -1,9 +1,6 @@
 <script lang="ts">
-	import {
-		DEFAULT_SPONSORED_DEMO_QUESTION,
-		findMatchingRelayQuestion
-	} from '$lib/config/onboarding.questions';
-	import { ledgerStore } from '$lib/stores/ledger.svelte';
+	import { toOnboardingDemoQuestion } from '$lib/config/onboarding.manifest';
+	import { onboardingManifestStore } from '$lib/stores/onboarding-manifest.svelte';
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import RelayStatusPill from '$lib/components/onboarding/RelayStatusPill.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -14,28 +11,31 @@
 	let showContext = $state(false);
 	let isSubmitting = $state(false);
 
-	let relayQuestion = $derived(
-		findMatchingRelayQuestion(ledgerStore.questions, DEFAULT_SPONSORED_DEMO_QUESTION)
+	let manifestQuestion = $derived(
+		onboardingManifestStore.question('intro.sponsored-demo')
+	);
+	let demo = $derived(
+		manifestQuestion ? toOnboardingDemoQuestion(manifestQuestion) : null
 	);
 	let displayOptions = $derived(
-		relayQuestion ? relayQuestion.options : DEFAULT_SPONSORED_DEMO_QUESTION.options
+		demo?.options ?? []
 	);
-	let rewardTokens = DEFAULT_SPONSORED_DEMO_QUESTION.sponsoredRewardTokens ?? 1;
+	let rewardTokens = $derived(demo?.sponsoredRewardTokens ?? 0);
 
 	async function handleAnswerAndEarn() {
+		if (!demo) {
+			toast.error('Onboarding demo is unavailable. Check the relay connection.');
+			return;
+		}
 		if (!selectedOptionId) {
 			toast.error('Select Agree or Disagree to earn the walkthrough reward');
 			return;
 		}
 		isSubmitting = true;
 		try {
-			if (relayQuestion && sessionStore.isAdmitted) {
-				await sessionStore.ensureUnlockedOnRelay().catch(() => {});
-				await ledgerStore.submitAnswer(relayQuestion, selectedOptionId, false).catch(() => {});
-			}
 			if (sessionStore.demoTokenBalance < rewardTokens) {
 				sessionStore.awardDemoTokens(rewardTokens);
-				toast.success(`+${rewardTokens} Tokens earned in onboarding walkthrough!`);
+				toast.success(`+${rewardTokens} demo tokens added locally`);
 			}
 			await sessionStore.advanceOnboardingStep('ask-first');
 		} finally {
@@ -60,7 +60,7 @@
 			<span>·</span>
 			<span class="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/15 px-2 py-0.5 font-semibold text-accent">
 				<Zap class="h-3 w-3" />
-				Sponsored (+{rewardTokens} Tokens)
+				Sponsored demo (+{rewardTokens} simulated tokens)
 			</span>
 			<span class="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-foreground">
 				<Link2 class="h-3 w-3 text-primary" />
@@ -69,8 +69,13 @@
 		</div>
 
 		<h1 class="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-			{DEFAULT_SPONSORED_DEMO_QUESTION.text}
+			{demo?.text ?? 'Onboarding demo unavailable'}
 		</h1>
+		{#if !demo}
+			<p class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-muted-foreground">
+				{onboardingManifestStore.error ?? 'Connect to a relay seeded with the onboarding manifest to load this demo.'}
+			</p>
+		{/if}
 
 		<div>
 			<button
@@ -86,16 +91,16 @@
 			{#if showContext}
 				<div class="mt-2 space-y-1.5 rounded-xl border border-border/80 bg-card/90 p-3 text-xs">
 					<p class="leading-relaxed text-muted-foreground">
-						{DEFAULT_SPONSORED_DEMO_QUESTION.referenceSummary}
+						{demo?.referenceSummary}
 					</p>
-					{#if DEFAULT_SPONSORED_DEMO_QUESTION.referenceUrl}
+					{#if demo?.referenceUrl}
 						<a
-							href={DEFAULT_SPONSORED_DEMO_QUESTION.referenceUrl}
+							href={demo.referenceUrl}
 							target="_blank"
 							rel="noopener noreferrer"
 							class="inline-flex items-center gap-1 font-mono text-[11px] text-primary hover:underline"
 						>
-							{DEFAULT_SPONSORED_DEMO_QUESTION.referenceUrl}
+							{demo.referenceUrl}
 							<ExternalLink class="h-3 w-3" />
 						</a>
 					{/if}
@@ -135,10 +140,10 @@
 		<div class="space-y-1 rounded-2xl border border-accent/30 bg-accent/10 p-3.5 text-xs">
 			<p class="flex items-center gap-1.5 font-semibold text-foreground">
 				<Coins class="h-4 w-4 text-accent" />
-				Monetize your choices, not your attention.
+				Walkthrough demo only
 			</p>
 			<p class="text-[11px] leading-relaxed text-muted-foreground">
-				Sponsored questions generate tokens when you answer—powered by an open market that no single entity controls, with a share allocated to ongoing protocol development.
+				This example adds a simulated reward to this browser only. It does not create a sponsored question, real token balance, payment, or relay response.
 			</p>
 		</div>
 	</div>
@@ -159,7 +164,7 @@
 			disabled={isSubmitting}
 			class="h-12 flex-1 cursor-pointer font-semibold"
 		>
-			{isSubmitting ? 'Submitting...' : `Answer & Earn +${rewardTokens} Tokens`}
+			{isSubmitting ? 'Submitting...' : `Answer & Earn +${rewardTokens} Demo Tokens`}
 			<ArrowRight class="ml-2 h-4 w-4" />
 		</Button>
 	</div>

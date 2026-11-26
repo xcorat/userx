@@ -24,6 +24,10 @@ import type {
 	VouchInspection,
 	VouchRequestItem
 } from '$lib/types';
+import {
+	parseOnboardingManifest,
+	type OnboardingManifest
+} from '$lib/config/onboarding.manifest';
 import type { AraliyaWasmApp, WasmEventPoller } from '$wasm/araliya_net_wasm';
 
 type WasmModule = typeof import('$wasm/araliya_net_wasm');
@@ -41,6 +45,7 @@ interface WireQuestionDto {
 	cid: number[];
 	text: string | null;
 	answers: string[] | null;
+	multiple: boolean;
 	author_pubkey: number[];
 	scope: 'Pub' | 'Prv' | { Group: { group_pubkey: number[]; namespace_id: string } };
 	status: 'Published' | 'Redacted';
@@ -946,6 +951,26 @@ class AraliyaService {
 		};
 	}
 
+	async getOnboardingManifest(status?: RelayStatusInfo): Promise<OnboardingManifest> {
+		const app = await this.ensureConnected(status);
+		const raw = (await app.getPublicDoc(
+			'onboarding',
+			new TextEncoder().encode('manifest-v1')
+		)) as Uint8Array | null;
+		if (!raw?.length) {
+			throw new Error(
+				'Onboarding content is missing from this relay. The relay maintainer must start it with the onboarding seed manifest.'
+			);
+		}
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(new TextDecoder().decode(raw));
+		} catch {
+			throw new Error('Relay onboarding manifest is not valid JSON');
+		}
+		return parseOnboardingManifest(parsed);
+	}
+
 	async completeOnboardingStep(stepCursor: string, completed: boolean): Promise<void> {
 		await this.requireApp().completeOnboardingStep(stepCursor, null, completed);
 	}
@@ -978,6 +1003,7 @@ class AraliyaService {
 				cid,
 				text: q.text,
 				options,
+				multiple: q.multiple,
 				ownerType: isGenesis ? 'genesis' : 'community',
 				authorPubkeyHex,
 				authorHandle: isGenesis ? '@araliya' : `@${authorPubkeyHex.slice(0, 8)}`,

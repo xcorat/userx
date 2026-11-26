@@ -13,6 +13,7 @@ import type {
 	QuestionItem,
 	StagedOnboardingDraft
 } from '$lib/types';
+import type { OnboardingManifestProfileField } from '$lib/config/onboarding.manifest';
 
 export interface UserEventHandlers {
 	onVouchIssued?: () => void;
@@ -109,6 +110,7 @@ function createInitialProfile(): ProfileFieldMap {
  */
 class LedgerStore {
 	profile = $state<ProfileFieldMap>(createInitialProfile());
+	private onboardingProfileFields: OnboardingManifestProfileField[] = [];
 	answers = $state<AnsweredQuestionRecord[]>([]);
 	questions = $state<QuestionItem[]>([]);
 	isLoadingQuestions = $state(false);
@@ -123,6 +125,36 @@ class LedgerStore {
 
 	setUserEventHandlers(handlers: UserEventHandlers): void {
 		this.userEventHandlers = handlers;
+	}
+
+	configureOnboardingProfileFields(fields: OnboardingManifestProfileField[]): void {
+		this.onboardingProfileFields = fields;
+		const nextProfile = { ...this.profile };
+		for (const field of fields) {
+			const key = field.id as ProfileFieldKey;
+			const current = nextProfile[key];
+			nextProfile[key] = {
+				...current,
+				label: field.label,
+				required: field.required,
+				visibility: current.value.trim() ? current.visibility : field.default_visibility
+			};
+		}
+		this.profile = nextProfile;
+	}
+
+	private createConfiguredProfile(): ProfileFieldMap {
+		const profile = createInitialProfile();
+		for (const field of this.onboardingProfileFields) {
+			const key = field.id as ProfileFieldKey;
+			profile[key] = {
+				...profile[key],
+				label: field.label,
+				required: field.required,
+				visibility: field.default_visibility
+			};
+		}
+		return profile;
 	}
 
 	answeredCids = $derived(new Set(this.answers.map((a) => a.questionCid)));
@@ -211,7 +243,7 @@ class LedgerStore {
 				araliyaService.listMyPrivateResponses()
 			]);
 
-			const nextProfile = createInitialProfile();
+			const nextProfile = this.createConfiguredProfile();
 			if (fieldsResult.status === 'fulfilled') {
 				for (const field of fieldsResult.value) {
 					if (!isProfileFieldKey(field.key)) continue;

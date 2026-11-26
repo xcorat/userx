@@ -25,6 +25,7 @@ import {
 	saveStoredVault
 } from '$lib/services/vault.storage';
 import { ledgerStore } from '$lib/stores/ledger.svelte';
+import { onboardingManifestStore } from '$lib/stores/onboarding-manifest.svelte';
 import { toast } from 'svelte-sonner';
 import type {
 	AdmissionStatus,
@@ -677,6 +678,21 @@ class SessionStore {
 		try {
 			const status = await araliyaService.resolveRelayStatus();
 			this.relayStatus = status;
+			if (status.connected) {
+				try {
+					const manifest = await araliyaService.getOnboardingManifest(status);
+					onboardingManifestStore.setManifest(manifest);
+					ledgerStore.configureOnboardingProfileFields(manifest.profile_fields);
+				} catch (manifestError) {
+					onboardingManifestStore.setError(
+						manifestError instanceof Error
+							? manifestError.message
+							: 'Failed to load onboarding content from relay'
+					);
+				}
+			} else {
+				onboardingManifestStore.setManifest(null);
+			}
 			return status;
 		} catch (err) {
 			const manual = loadManualRelayOverride();

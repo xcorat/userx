@@ -28,7 +28,7 @@ See [docs/plans/02-onboarding-flow.md](docs/plans/02-onboarding-flow.md) for the
 - **Returning User Gate (`UnlockRecoverScreen`):** Shown automatically when a local vault exists (`araliya_vault_v1`), or via `"Unlock"` on the hero intro bar, supporting password unlock as well as pasting an `araliya-recovery:v1:...` or base64 Ed25519 key for session-only or password-saved unlock.
 - **Full-Bleed Scroll-Up Hero Intro + Identity (`OnboardingHeroFlow`):** 3 vertical full-screen animated SVG hero slides (*Digital Commons*, *Peer-to-Peer Sovereignty*, and *Planting the Seeds*) driven by scroll/wheel, swipe-up, keyboard, or dot controls, stopping on Slide 4 (`KeypairCustodyScreen`, **Step 1 / 8**) for Ed25519 key generation with local password encryption or `"Store secret manually →"`.
 - **Human Vouch & Profile Setup (`Steps 2–5`):** Captures `?vouch=` tokens or `?voucher=<alice_pubkey>` peer invite links (auto-submitting a 72-hour `VouchRequest` to the inviter on the relay), checks for already-submitted relay vouches (`checkInitialVouch`), auto-requests `--genesis` vouches over HTTP when no peer link is present, or lets users **Continue Onboarding While Waiting (72h)** (`HumanVouchScreen`), staging their `@handle` (`ClaimHandleScreen`) and optional details (`PersonalDetailsPreviewScreen`) encrypted locally until the vouch arrives, and displaying `PendingVouchBanner` (during read-only Feed browsing) or `VouchExpiredScreen` if the 72h window expires or is declined.
-- **Interactive Q&A Walkthrough (`Steps 6–8`):** Locked-private public question demo (*"Pepsi or Coke?"*, `PublicQuestionDemoScreen`), sponsored walkthrough demo (*"We don't need nukes."*, `+5 Tokens` UI state, `SponsoredQuestionDemoScreen`), and publishing the user's first real public question to the relay via `qnaCreateQuestion`. After publishing, Genesis asks whether the user would contribute (feedback, invest $5+, help develop, other, or no); a chosen response is saved privately through Q&A, not added to public tallies. The prompt can be skipped. Pending-vouch users can browse read-only from `AskFirstQuestionScreen`.
+- **Interactive Q&A Walkthrough (`Steps 6–8`):** Public-question/private-answer demo (*"Pepsi or Coke?"*, `PublicQuestionDemoScreen`), local-only sponsored-question walkthrough (*"We don't need nukes."*, simulated demo-token state, `SponsoredQuestionDemoScreen`), and publishing the user's first real public question to the relay via `qnaCreateQuestion`. After publishing, Genesis asks whether the user would contribute (feedback, invest $5+, help develop, other, or no); a chosen response is saved privately through Q&A, not added to public tallies. The prompt can be skipped. Pending-vouch users can browse read-only from `AskFirstQuestionScreen`.
 - **In-App Peer Invite & Vouch (`UserDashboard` → `Profile`):** Admitted members get a copyable `/?voucher=<pubkey>` onboarding link, a live **Pending Requests** queue (**Approve & Vouch** with `24h`/`72h`/`7d`/`None` validity, **Decline**, and copyable fallback `VouchCard` tokens/links), and a manual pubkey / offline `VouchCard` issuer.
 
 ---
@@ -58,40 +58,20 @@ cd ../araliya-net
 
 # Using default public Iroh relays + genesis onboarding + seeded onboarding questions:
 cargo run -p araliya-net-relay -- \
-  --genesis --ui --seed-qna ../userx/seed-qna.json \
+  --genesis --ui --seed-qna ./data/seed_qna.json \
   --data-dir /tmp/araliya-genesis --http-addr 127.0.0.1:8080
 
 # Or pin a self-hosted / local iroh-relay instead of public relays:
 cargo run -p araliya-net-relay -- \
-  --genesis --ui --iroh-relay-url http://127.0.0.1:3340 --seed-qna ../userx/seed-qna.json \
+  --genesis --ui --iroh-relay-url http://127.0.0.1:3340 --seed-qna ./data/seed_qna.json \
   --data-dir /tmp/araliya-genesis --http-addr 127.0.0.1:8080
 ```
 
 > **Note on `--local-only`:** `araliyaService.ensureConnected` propagates `local_only` from `GET /status` into `AraliyaWasmApp.connect({ relayPeer, relayUrls, localOnly, onlineTimeoutMs })`. When the relay is started with `--local-only`, `userx` sets `localOnly: true` (`RelayMode::Disabled`) so the browser never issues external Pkarr DNS lookups (`https://dns.iroh.link/...`). However, direct UDP sockets are unavailable in browsers, so `--local-only` relays cannot accept WASM QUIC connections; the relay status header displays a warning banner in `--local-only` mode.
 
-Included [seed-qna.json](seed-qna.json) seeds the Stage 4 walkthrough questions and the Genesis contribution follow-up (root onboarding questions omit `position`):
+The single canonical onboarding manifest is [`../araliya-net/data/seed_qna.json`](../araliya-net/data/seed_qna.json). It contains Q&A content, response visibility, local demo presentation, and profile-field defaults. The relay publishes it as the public doc `onboarding/manifest-v1`; `userx` loads it over Iroh. Only entries marked `relay_seed: true` become public Q&A questions. “Pepsi or Coke?” is a public question with a private onboarding response. The sponsored question is a local-only walkthrough with simulated demo tokens, not a real sponsored question or payment.
 
-```json
-[
-  {
-    "text": "Pepsi or Coke?",
-    "answers": ["Pepsi", "Coke", "No preference"],
-    "multiple": false
-  },
-  {
-    "text": "We don't need nukes.",
-    "answers": ["Agree", "Disagree"],
-    "multiple": false
-  },
-  {
-    "text": "We need help, would you contribute?",
-    "answers": ["Provide feedback", "Invest money ($5+)", "Help Develop", "Other", "No"],
-    "multiple": false
-  }
-]
-```
-
-The follow-up is seeded with the other Genesis questions. To make it available to existing relay data, start the relay with the updated seed file; startup seeding is idempotent. The user's selected option is stored as a private response and does not contribute to public results.
+Seeding is additive/idempotent, not a database reset: older seeded rows are not deleted or rewritten. In particular, a pre-existing sponsored-demo row remains in the relay, and the corrected single-choice Genesis follow-up has a new CID. Back up and use a deliberate reset/migration if you need to remove legacy rows.
 
 ### 2. Rebuild WASM Package (when Rust workspace changes)
 
@@ -156,7 +136,7 @@ curl -s http://127.0.0.1:8080/status | jq '{endpoint_id, root_pubkey, dial_peer_
 
 ### Manual Vouching Against a Local `--genesis` Relay (Direct Iroh Mode)
 
-1. Start `araliya-net-relay --genesis --ui --seed-qna ../userx/seed-qna.json --http-addr 127.0.0.1:8080` **without** `--local-only` so it connects outbound to an Iroh relay.
+1. From the `araliya-net` directory, start `araliya-net-relay --genesis --ui --seed-qna ./data/seed_qna.json --http-addr 127.0.0.1:8080` **without** `--local-only` so it connects outbound to an Iroh relay.
 2. Set `PUBLIC_RELAY_ENDPOINT_ID` (and optionally `PUBLIC_ROOT_PUBKEY`) on Cloudflare — or click the **Settings** gear on the Step 1 (`Your Lock & Key`) or Step 2 (`Human Vouch`) card to configure a custom `EndpointId`.
 3. Open `userx`, scroll through the 3 hero slides (or click **Skip intro →**) to Slide 4 (`KeypairCustodyScreen`) to generate your Ed25519 identity and choose password or manual key custody, then continue to Step 2 (`HumanVouchScreen`).
 4. On Step 2, click **Send Vouch Request to Relay Maintainer** and **Copy curl** (or copy your `userPubkey`), then mint a `VouchCard` locally against your localhost relay:

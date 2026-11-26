@@ -149,6 +149,7 @@ export interface QuestionItem {
 	cid: string;
 	text: string;
 	options: QuestionOption[];
+	multiple?: boolean;
 	ownerType: 'genesis' | 'community';
 	authorPubkeyHex: string;
 	authorHandle: string;
@@ -169,9 +170,9 @@ export interface AnsweredQuestionRecord {
 }
 
 export interface OnboardingDemoQuestion {
-	cid: string;
 	text: string;
 	options: QuestionOption[];
+	multiple: boolean;
 	baselineCounts: Record<string, number>;
 	totalBaselineResponses: number;
 	sponsoredRewardTokens?: number;

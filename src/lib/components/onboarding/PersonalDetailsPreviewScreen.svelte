@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { pubkeyToHex } from '$lib/services/araliya.service';
 	import { buildPseudonymousHandle, ledgerStore } from '$lib/stores/ledger.svelte';
+	import { onboardingManifestStore } from '$lib/stores/onboarding-manifest.svelte';
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import { themeStore } from '$lib/stores/theme.svelte';
 	import type { ThemeId } from '$lib/types';
@@ -20,6 +21,9 @@
 
 	let pronouns = $state(ledgerStore.profile.pronouns.value);
 	let pronounsPublic = $state(ledgerStore.profile.pronouns.visibility === 'public');
+	let nameField = $derived(onboardingManifestStore.profileField('realName'));
+	let dateOfBirthField = $derived(onboardingManifestStore.profileField('dateOfBirth'));
+	let pronounsField = $derived(onboardingManifestStore.profileField('pronouns'));
 
 	let showThemePicker = $state(false);
 	let isSaving = $state(false);
@@ -138,7 +142,10 @@
 			<div class="space-y-1">
 				<div class="flex items-center justify-between gap-2">
 					<Label for="detail-name" class="text-[11px] font-semibold">
-						Name <span class="font-normal text-muted-foreground">(optional)</span>
+						{nameField?.label ?? 'Name'}
+						{#if nameField && !nameField.required}
+							<span class="font-normal text-muted-foreground">(optional)</span>
+						{/if}
 					</Label>
 					<PublicLedgerCheckbox bind:checked={realNamePublic} compact />
 				</div>
@@ -153,7 +160,9 @@
 			<div class="space-y-2.5">
 				<div class="space-y-1">
 					<div class="flex items-center justify-between gap-2">
-						<Label for="detail-dob" class="text-[11px] font-semibold">DoB</Label>
+						<Label for="detail-dob" class="text-[11px] font-semibold">
+							{dateOfBirthField?.label ?? 'Date of Birth'}
+						</Label>
 						<PublicLedgerCheckbox bind:checked={dobPublic} compact />
 					</div>
 					<Input
@@ -166,7 +175,9 @@
 
 				<div class="space-y-1">
 					<div class="flex items-center justify-between gap-2">
-						<Label for="detail-pronouns" class="text-[11px] font-semibold">Pronouns</Label>
+						<Label for="detail-pronouns" class="text-[11px] font-semibold">
+							{pronounsField?.label ?? 'Pronouns'}
+						</Label>
 						<PublicLedgerCheckbox bind:checked={pronounsPublic} compact />
 					</div>
 					<Input

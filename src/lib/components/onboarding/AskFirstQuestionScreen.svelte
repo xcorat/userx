@@ -1,30 +1,24 @@
 <script lang="ts">
 	import { ledgerStore } from '$lib/stores/ledger.svelte';
+	import { onboardingManifestStore } from '$lib/stores/onboarding-manifest.svelte';
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import RelayStatusPill from '$lib/components/onboarding/RelayStatusPill.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { toast } from 'svelte-sonner';
-	import { ArrowRight, Coins, Plus, Sparkles, Trash2, Zap } from 'lucide-svelte';
-
-	const GENESIS_CONTRIBUTION_PROMPT = 'We need help, would you contribute?';
+import { ArrowRight, Coins, Plus, Sparkles, Trash2, Zap } from 'lucide-svelte';
 
 	let questionText = $state('');
 	let choices = $state<string[]>(['', '']);
-	let referenceLink = $state('');
-	let makeSponsored = $state(true);
 	let isPublishing = $state(false);
 	let showGenesisContribution = $state(false);
 	let selectedContribution = $state('');
 
-	const contributionOptions = [
-		'Provide feedback',
-		'Invest money ($5+)',
-		'Help Develop',
-		'Other',
-		'No'
-	];
+	let contributionQuestion = $derived(
+		onboardingManifestStore.question('genesis.contribution')
+	);
+	let contributionOptions = $derived(contributionQuestion?.answers ?? []);
 
 	const MAX_CHOICES = 6;
 
@@ -71,9 +65,6 @@
 			await sessionStore.ensureUnlockedOnRelay();
 			const rootPk = sessionStore.relayStatus?.rootPubkey ?? '';
 			await ledgerStore.createQuestion(cleanedPrompt, cleanedChoices, rootPk);
-			if (makeSponsored && !sessionStore.firstQuestionCreditUsed) {
-				sessionStore.markFirstQuestionCreditUsed();
-			}
 			toast.success('Question published to araliya-net!');
 			showGenesisContribution = true;
 		} catch (err) {
@@ -86,7 +77,14 @@
 	async function finishGenesisContribution(saveResponse = true) {
 		if (saveResponse && selectedContribution) {
 			const question = ledgerStore.questions.find(
-				(item) => item.ownerType === 'genesis' && item.text === GENESIS_CONTRIBUTION_PROMPT
+				(item) =>
+					item.ownerType === 'genesis' &&
+					item.text === contributionQuestion?.text &&
+					item.multiple === contributionQuestion?.multiple &&
+					item.options.length === contributionOptions.length &&
+					item.options.every(
+						(option, index) => option.text === contributionOptions[index]?.text
+					)
 			);
 			const option = question?.options.find((item) => item.text === selectedContribution);
 			if (!question || !option) {
@@ -191,45 +189,17 @@
 				{/if}
 			</div>
 
-			<div class="space-y-1.5 border-t border-border/60 pt-2.5">
-				<Label for="first-question-ref" class="text-[11px]">
-					Reference Link <span class="font-normal text-muted-foreground">(Optional)</span>
-				</Label>
-				<Input
-					id="first-question-ref"
-					type="url"
-					bind:value={referenceLink}
-					placeholder="https://..."
-					class="h-9 bg-background/70 font-mono text-xs"
-				/>
-			</div>
 		</div>
 
-		<!-- Sponsor Question Walkthrough Credit -->
+		<!-- Not yet persisted by the Q&A protocol. -->
 		<div class="space-y-2 rounded-2xl border border-accent/35 bg-accent/10 p-3.5 text-xs">
 			<div class="flex items-center gap-1.5 font-semibold text-foreground">
 				<Zap class="h-3.5 w-3.5 text-accent" />
-				Sponsor This Question?
+				Sponsorship is a preview only
 			</div>
 			<p class="text-[11px] leading-relaxed text-muted-foreground">
-				Sponsored questions appear <span class="font-semibold text-foreground">at least once every 5 questions</span>, priced dynamically by user engagement.
+				Publishing stores the question text and choices only. Reference links, sponsorship, token credits, and payments are not currently saved or processed.
 			</p>
-			<label class="flex cursor-pointer items-start gap-2 rounded-lg border border-border/70 bg-background/60 p-2.5 text-xs">
-				<input
-					type="checkbox"
-					bind:checked={makeSponsored}
-					class="mt-0.5 h-4 w-4 shrink-0 accent-[var(--primary)]"
-				/>
-				<span class="leading-snug text-foreground">
-					Make this a sponsored question —
-					{#if !sessionStore.firstQuestionCreditUsed}
-						<span class="text-muted-foreground line-through">50 Tokens</span>
-						<span class="ml-1 font-semibold text-primary">FREE (First Question Credit)</span>
-					{:else}
-						<span class="font-semibold text-accent">50 Tokens (Demo Preview)</span>
-					{/if}
-				</span>
-			</label>
 		</div>
 	</div>
 
@@ -288,7 +258,7 @@
 					A private question from Genesis
 				</p>
 				<h2 id="genesis-contribution-title" class="font-heading text-xl font-bold">
-					{GENESIS_CONTRIBUTION_PROMPT}
+					{contributionQuestion?.text ?? 'Contribution question unavailable'}
 				</h2>
 				<p class="text-xs leading-relaxed text-muted-foreground">
 					Choose one. Your response will be saved privately and won’t appear on the public ledger.
@@ -297,10 +267,10 @@
 
 			<fieldset class="space-y-2">
 				<legend class="sr-only">Ways you would contribute</legend>
-				{#each contributionOptions as option (option)}
+				{#each contributionOptions as option (option.id)}
 					<label
 						class={`flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 text-sm transition-colors hover:border-primary/50 ${
-							selectedContribution === option
+							selectedContribution === option.text
 								? 'border-primary bg-primary/5'
 								: 'border-border/80 bg-background/50'
 						}`}
@@ -308,11 +278,11 @@
 						<input
 							type="radio"
 							name="genesis-contribution"
-							value={option}
+							value={option.text}
 							bind:group={selectedContribution}
 							class="h-4 w-4 accent-[var(--primary)]"
 						/>
-						<span>{option}</span>
+						<span>{option.text}</span>
 					</label>
 				{/each}
 			</fieldset>
