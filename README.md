@@ -122,7 +122,7 @@ Configure these in **Cloudflare Dashboard → Workers & Pages → `userx` → Se
 
 | Variable | Prod Status | Description / Value Source |
 | :--- | :--- | :--- |
-| `PUBLIC_RELAY_ENDPOINT_ID` | **Required** *(when `PUBLIC_RELAY_HTTP_URL` is unset)* | Relay Iroh `EndpointId` (or full `EndpointAddr` JSON, or comma-separated `EndpointId`s). Probed directly over Iroh WSS via `AraliyaWasmApp.connect` + anonymous `eventHeadSeq`. Can also be overridden per-browser in the login screen's **Configure Relay** drawer. |
+| `PUBLIC_RELAY_ENDPOINT_ID` | **Required** *(when `PUBLIC_RELAY_HTTP_URL` is unset)* | Relay Iroh `EndpointId` (or a versioned `iroh1:` address, or comma-separated `EndpointId`s). Probed directly over Iroh WSS via `AraliyaWasmApp.connect` + anonymous `eventHeadSeq`. Can also be overridden per-browser in the login screen's **Configure Relay** drawer. |
 | `PUBLIC_ROOT_PUBKEY` | **Recommended** | Relay 32-byte Ed25519 `root_pubkey` (64-char hex or base64url) from relay logs / `GET /status`, used to label genesis onboarding questions as `@genesis`. |
 | `PUBLIC_RELAY_HTTP_URL` | **Optional** *(leave unset for now)* | Public HTTP relay URL/proxy. Takes precedence over `PUBLIC_RELAY_ENDPOINT_ID` when set (with automatic fallback to `PUBLIC_RELAY_ENDPOINT_ID` if HTTP fails). Defaults to `'/relay'` only in local `vite dev` and `''` in production. |
 | `PUBLIC_RELAY_URLS` | **Optional** *(leave unset for default Iroh relays)* | Comma-separated custom Iroh/DERP relay URLs; only needed if `araliya-net-relay` was started with `--iroh-relay-url`. |
@@ -137,7 +137,7 @@ curl -s http://127.0.0.1:8080/status | jq '{endpoint_id, root_pubkey, dial_peer_
 ### Manual Vouching Against a Local `--genesis` Relay (Direct Iroh Mode)
 
 1. From the `araliya-net` directory, start `araliya-net-relay --genesis --ui --seed-qna ./data/seed_qna.json --http-addr 127.0.0.1:8080` **without** `--local-only` so it connects outbound to an Iroh relay.
-2. Set `PUBLIC_RELAY_ENDPOINT_ID` (and optionally `PUBLIC_ROOT_PUBKEY`) on Cloudflare — or click the **Settings** gear on the Step 1 (`Your Lock & Key`) or Step 2 (`Human Vouch`) card to configure a custom `EndpointId`.
+2. Set `PUBLIC_RELAY_ENDPOINT_ID` (and optionally `PUBLIC_ROOT_PUBKEY`) on Cloudflare — or click the **Settings** gear on the Step 1 (`Your Lock & Key`) or Step 2 (`Human Vouch`) card to configure a custom `EndpointId` or versioned `iroh1:` address.
 3. Open `userx`, scroll through the 3 hero slides (or click **Skip intro →**) to Slide 4 (`KeypairCustodyScreen`) to generate your Ed25519 identity and choose password or manual key custody, then continue to Step 2 (`HumanVouchScreen`).
 4. On Step 2, click **Send Vouch Request to Relay Maintainer** and **Copy curl** (or copy your `userPubkey`), then mint a `VouchCard` locally against your localhost relay:
    ```bash

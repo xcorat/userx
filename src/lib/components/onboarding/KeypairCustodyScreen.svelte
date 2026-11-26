@@ -245,7 +245,7 @@
 				<input
 					type="text"
 					bind:value={relayEndpointInput}
-					placeholder={'EndpointId or {"id":"..."}'}
+					placeholder="EndpointId or iroh1: address"
 					autocapitalize="none"
 					autocomplete="off"
 					class="w-full rounded-lg border border-white/15 bg-[#101c17] px-3 py-2 font-mono text-[11px] text-[#f4f1ea] placeholder-[#f4f1ea]/35 focus:border-[#6ee7b7] focus:outline-none"

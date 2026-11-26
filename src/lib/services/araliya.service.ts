@@ -408,7 +408,7 @@ class AraliyaService {
 	 * Resolve and check relay connectivity.
 	 *
 	 * Precedence:
-	 * 1. Explicit manual EndpointId override in localStorage (direct Iroh probe).
+	 * 1. Explicit manual peer-address override in localStorage (direct Iroh probe).
 	 * 2. HTTP `/status` when `PUBLIC_RELAY_HTTP_URL` is configured (or `/relay` in Vite dev).
 	 *    If HTTP fails and `PUBLIC_RELAY_ENDPOINT_ID` is also set, falls back to direct Iroh.
 	 * 3. Direct Iroh probe using `PUBLIC_RELAY_ENDPOINT_ID`.
@@ -468,7 +468,7 @@ class AraliyaService {
 			devWriteEnabled: false,
 			genesisMode: false,
 			admissionPolicy: 'vouch',
-			error: 'No relay configured (set PUBLIC_RELAY_ENDPOINT_ID or configure an EndpointId)'
+			error: 'No relay configured (set PUBLIC_RELAY_ENDPOINT_ID or configure a peer address)'
 		};
 	}
 

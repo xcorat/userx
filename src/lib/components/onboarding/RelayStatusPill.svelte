@@ -155,12 +155,12 @@
 			{/if}
 			<div class="space-y-1">
 				<Label for="relay-endpoint-input" class="text-[11px] text-muted-foreground">
-					EndpointId or EndpointAddr JSON
+					EndpointId or versioned iroh1 address
 				</Label>
 				<Input
 					id="relay-endpoint-input"
 					bind:value={relayEndpointInput}
-					placeholder={'EndpointId or {"id":"..."}'}
+					placeholder="EndpointId or iroh1: address"
 					autocapitalize="none"
 					autocomplete="off"
 					class="h-8 bg-background/70 font-mono text-[11px]"

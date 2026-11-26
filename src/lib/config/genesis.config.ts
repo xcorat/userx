@@ -23,27 +23,33 @@ function readPublicEnv(key: `PUBLIC_${string}`): string {
 }
 
 /**
- * Parse one or more peer addresses (bare `EndpointId`s, comma/newline-separated IDs,
- * a single `EndpointAddr` JSON object, or a JSON array of peers) without breaking on
- * commas inside JSON `EndpointAddr` strings.
+ * Parse peer addresses (bare `EndpointId`s or a versioned `iroh1:` address), a
+ * comma/newline-separated list of IDs, or a JSON array of peer-address strings.
  */
 export function parsePeerList(raw: string): string[] {
 	const trimmed = raw.trim();
 	if (!trimmed) return [];
+
+	// The address payload is JSON and contains commas; treat it as one peer.
+	if (trimmed.startsWith('iroh1:')) {
+		return [trimmed];
+	}
 
 	if (trimmed.startsWith('[')) {
 		try {
 			const parsed = JSON.parse(trimmed);
 			if (Array.isArray(parsed)) {
 				return parsed
-					.map((item) => (typeof item === 'string' ? item.trim() : JSON.stringify(item)))
-					.filter((item) => item.length > 0);
+					.filter((item): item is string => typeof item === 'string')
+					.map((item) => item.trim())
+					.filter(Boolean);
 			}
 		} catch {
-			// Fall through to object/list parsing if malformed array syntax
+			// Fall through to delimited peer parsing if malformed array syntax.
 		}
 	}
 
+	// Keep malformed or obsolete JSON intact so the transport can reject it clearly.
 	if (trimmed.startsWith('{')) {
 		return [trimmed];
 	}
@@ -63,14 +69,14 @@ export function parseUrlList(raw: string): string[] {
 
 export function extractEndpointId(peer: string): string {
 	const trimmed = peer.trim();
-	if (trimmed.startsWith('{')) {
+	if (trimmed.startsWith('iroh1:')) {
 		try {
-			const parsed = JSON.parse(trimmed) as { id?: unknown };
+			const parsed = JSON.parse(trimmed.slice('iroh1:'.length)) as { id?: unknown };
 			if (typeof parsed.id === 'string' && parsed.id.trim().length > 0) {
 				return parsed.id.trim();
 			}
 		} catch {
-			// Fall back to trimmed input
+			// Fall back to the original peer string for diagnostics.
 		}
 	}
 	return trimmed;
