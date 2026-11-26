@@ -538,13 +538,22 @@ class SessionStore {
 			if (this.pendingVouchToken) {
 				const info = await araliyaService.inspectVouchTokenAsync(this.pendingVouchToken);
 				const matchesSubject =
-					!info.subjectPubkey ||
-					pubkeyToHex(info.subjectPubkey) === pubkeyToHex(identity.userPubkey);
-				if (info.validFormat && info.isValid !== false && !info.isExpired && matchesSubject) {
+					Boolean(info.subjectPubkey) &&
+					pubkeyToHex(info.subjectPubkey ?? '') === pubkeyToHex(identity.userPubkey);
+				if (
+					info.validFormat &&
+					info.isValid !== false &&
+					!info.isExpired &&
+					matchesSubject
+				) {
 					validToken = info.tokenOrJson;
 					tokenVoucherPk = info.voucherPubkey ?? null;
-				} else if (info.isExpired) {
+				} else {
+					// Vouch tokens are bound to the identity that received them. Never
+					// carry a stale token into a different account or let it suppress
+					// the new identity's relay/genesis vouch check.
 					this.pendingVouchToken = null;
+					this.vouchedByHandle = null;
 				}
 			}
 

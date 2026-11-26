@@ -48,7 +48,7 @@
 			sessionStore.vouchedByHandle ??
 			sessionStore.pendingVouchInviter ??
 			activeRequest?.voucherHandle ??
-			'user-x'
+			null
 	);
 
 	function truncateToken(val: string): string {
@@ -109,20 +109,27 @@
 		return null;
 	}
 
-	async function inspectAndResolveVoucher(token: string) {
+	async function inspectAndResolveVoucher(token: string): Promise<boolean> {
 		mismatchWarning = null;
 		const info = await araliyaService.inspectVouchTokenAsync(token);
-		if (!info.validFormat) return;
+		if (
+			!info.validFormat ||
+			info.isValid === false ||
+			info.isExpired ||
+			!info.subjectPubkey ||
+			!pubkey
+		) {
+			sessionStore.setPendingVouchToken(null);
+			return false;
+		}
 
 		if (
-			info.subjectPubkey &&
-			pubkey &&
 			pubkeyToHex(info.subjectPubkey) !== pubkeyToHex(pubkey)
 		) {
 			mismatchWarning =
 				'Warning: this vouch token targets a different public key than your active identity.';
-		} else if (info.isExpired) {
-			mismatchWarning = 'Warning: this vouch token has expired.';
+			sessionStore.setPendingVouchToken(null);
+			return false;
 		}
 
 		if (info.voucherPubkey) {
@@ -132,6 +139,7 @@
 				sessionStore.setVouchedByHandle(handle);
 			}
 		}
+		return true;
 	}
 
 	async function checkRelayForVouch(silent = true): Promise<boolean> {
@@ -243,8 +251,7 @@
 
 		void (async () => {
 			if (stagedToken) {
-				await inspectAndResolveVoucher(stagedToken);
-				return;
+				if (await inspectAndResolveVoucher(stagedToken)) return;
 			}
 			const foundOnRelay = await checkRelayForVouch(true);
 			if (foundOnRelay) return;
@@ -290,13 +297,29 @@
 			toast.error(info.error ?? 'Invalid vouch token');
 			return;
 		}
+		if (info.isValid === false) {
+			toast.error('This vouch token has an invalid signature.');
+			return;
+		}
 		if (info.isExpired) {
 			toast.error('This vouch token has expired');
 			return;
 		}
+		if (!info.subjectPubkey) {
+			toast.error('This vouch token is not bound to a public key.');
+			return;
+		}
+		if (!pubkey) {
+			toast.error('Unlock or create an identity before applying a vouch token.');
+			return;
+		}
+		if (pubkey && pubkeyToHex(info.subjectPubkey) !== pubkeyToHex(pubkey)) {
+			toast.error('This vouch token belongs to a different public key.');
+			return;
+		}
 		sessionStore.setPendingVouchToken(info.tokenOrJson);
 		vouchPasteInput = '';
-		await inspectAndResolveVoucher(info.tokenOrJson);
+		if (!(await inspectAndResolveVoucher(info.tokenOrJson))) return;
 		toast.success('Vouch token staged for registration');
 	}
 
@@ -405,8 +428,9 @@
 
 				<p class="text-xs leading-relaxed text-foreground">
 					<UserCheck class="mr-1 inline h-3.5 w-3.5 text-primary" />
-					You have been accepted to the network by the recommendation of
-					<span class="font-semibold text-primary">@{displayVoucherHandle}</span>!
+					A valid vouch is ready{#if displayVoucherHandle} from
+						<span class="font-semibold text-primary">@{displayVoucherHandle}</span>{/if}.
+					Choose your handle to finish registration.
 				</p>
 
 				{#if mismatchWarning}
@@ -421,7 +445,7 @@
 				<div class="flex items-center justify-between gap-2">
 					<span class="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
 						<Clock class="h-4 w-4 text-primary" />
-						Vouch Request Sent
+						{activeRequest ? 'Vouch Request Sent' : 'Vouch Request Not Confirmed'}
 					</span>
 					{#if activeRequest}
 						<span class="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-primary">
@@ -491,6 +515,10 @@
 			<div class="space-y-3 rounded-2xl border border-border/80 bg-card/85 p-4">
 				<p class="text-xs leading-relaxed text-muted-foreground">
 					Paste a vouch token if you have one, or share your public key with an existing member:
+				</p>
+				<p class="text-[11px] leading-relaxed text-muted-foreground">
+					Without a specific inviter, sharing this payload does not create a relay-side request;
+					an existing member or maintainer must act on it.
 				</p>
 
 				<form onsubmit={handleApplyVouch} class="space-y-2.5">
