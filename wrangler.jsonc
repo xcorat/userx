@@ -11,11 +11,12 @@
 	// or uncomment below to manage directly in git; note that uncommented keys override Dashboard values):
 	"vars": {
 	// "PUBLIC_RELAY_ENDPOINT_ID": "3725851e17b1fe908bb397b22f45e48dc73e5c88da8d78fed2a9406cf8ce5ecd",
-	 "PUBLIC_RELAY_ENDPOINT_ID": "e42fd3a93b97c9f05389ab4212372a5b56a3f7f2dc8f762a457d959797af0c79",
 		// "PUBLIC_ROOT_PUBKEY": "b30ac5ef017a29c2a6c9a3013f949efc3233cee9e289b1aa213976d427562961",
+
+		"PUBLIC_RELAY_ENDPOINT_ID": "e42fd3a93b97c9f05389ab4212372a5b56a3f7f2dc8f762a457d959797af0c79",
 		"PUBLIC_ROOT_PUBKEY": "029f8ee64bacd33a7630ce2cef661b074eec838c1e74d95f8f16993e4f57062b",
-	// 	"PUBLIC_RELAY_URLS": "",
-	// 	"PUBLIC_RELAY_HTTP_URL": ""
+		"PUBLIC_RELAY_URLS": "https://use1-1.relay.n0.iroh.link/, https://aps1-1.relay.n0.iroh.link/",
+		"PUBLIC_RELAY_HTTP_URL": "https://araliya-net.fly.dev"
 	},
 	"assets": {
 		"binding": "ASSETS",
