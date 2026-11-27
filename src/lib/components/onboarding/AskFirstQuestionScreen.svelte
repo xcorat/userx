@@ -205,7 +205,7 @@ import { ArrowRight, Coins, Plus, Sparkles, Trash2, Zap } from 'lucide-svelte';
 
 	<div class="space-y-2 pb-2">
 		{#if !sessionStore.isAdmitted}
-			<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+			<div class="rounded-xl border border-warning/35 bg-warning/10 p-3 text-xs leading-relaxed text-warning">
 				Your vouch is still pending — you can browse the commons read-only right now, and ask questions once vouched.
 			</div>
 			<Button

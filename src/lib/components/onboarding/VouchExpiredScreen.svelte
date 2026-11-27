@@ -86,7 +86,7 @@
 
 	<div class="my-auto space-y-5 py-2">
 		<div class="space-y-2">
-			<div class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-500/40 bg-amber-500/15 text-amber-400">
+			<div class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-warning/35 bg-warning/15 text-warning">
 				<AlertTriangle class="h-5 w-5" />
 			</div>
 			<h1 class="font-heading text-2xl font-bold tracking-tight">

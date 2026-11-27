@@ -617,7 +617,7 @@
 													{truncatePk(req.subjectPubkey)}
 												</p>
 											</div>
-											<span class="shrink-0 font-mono text-xs text-amber-300">
+											<span class="shrink-0 font-mono text-xs text-warning">
 												{formatTimeRemaining(req.expiresAtMs)} left
 											</span>
 										</div>
@@ -748,14 +748,14 @@
 				</div>
 			{:else if sessionStore.isPendingVouch}
 				<!-- Pending Vouch Status Card (Bob's Profile while waiting) -->
-				<div class="space-y-3 rounded-xl border border-amber-500/35 bg-amber-500/10 p-3.5 text-xs">
+				<div class="space-y-3 rounded-xl border border-warning/35 bg-warning/10 p-3.5 text-xs">
 					<div class="flex items-center justify-between gap-2">
 						<span class="inline-flex items-center gap-1.5 font-semibold text-foreground">
-							<Clock class="h-4 w-4 text-amber-400" />
+							<Clock class="h-4 w-4 text-warning" />
 							Waiting for Human Vouch
 						</span>
 						{#if sessionStore.pendingVouchRequest}
-							<span class="font-mono text-xs text-amber-300">
+							<span class="font-mono text-xs text-warning">
 								{formatTimeRemaining(sessionStore.pendingVouchRequest.expiresAtMs)} left
 							</span>
 						{/if}
@@ -796,7 +796,7 @@
 							Copy Pubkey
 						</Button>
 					</div>
-					<form onsubmit={handleApplyPendingToken} class="flex gap-2 border-t border-amber-500/20 pt-2">
+					<form onsubmit={handleApplyPendingToken} class="flex gap-2 border-t border-warning/25 pt-2">
 						<Input
 							bind:value={pendingTokenPaste}
 							placeholder="araliya-vouch-card:v1:..."

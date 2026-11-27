@@ -195,6 +195,7 @@ export interface VouchInspection {
 }
 
 export type ThemeId =
+	| 'commons'
 	| 'forest'
 	| 'araliya'
 	| 'obsidian'
@@ -202,7 +203,7 @@ export type ThemeId =
 	| 'monolith'
 	| 'friendly';
 
-export type ThemeDecoration = 'grid' | 'editorial' | 'aura' | 'minimal';
+export type ThemeDecoration = 'paper' | 'grid' | 'editorial' | 'aura' | 'minimal';
 
 export interface ThemeSwatches {
 	bg: string;

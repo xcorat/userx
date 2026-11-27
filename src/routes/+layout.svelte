@@ -22,4 +22,4 @@
 	{@render children()}
 </MobileViewport>
 
-<Toaster richColors position="top-center" />
+<Toaster richColors position="top-center" theme={themeStore.currentTheme.colorScheme} />

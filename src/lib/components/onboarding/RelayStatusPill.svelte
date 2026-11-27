@@ -95,7 +95,7 @@
 			>
 				<span
 					class={`h-2 w-2 rounded-full ${
-						relay?.connected ? 'bg-emerald-400' : 'bg-destructive'
+						relay?.connected ? 'bg-primary' : 'bg-destructive'
 					}`}
 				></span>
 				{relay?.connected
@@ -127,7 +127,7 @@
 	</div>
 
 	{#if relay?.connected && relay.localOnly}
-		<div class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-200">
+		<div class="flex items-start gap-2 rounded-lg border border-warning/35 bg-warning/10 px-2.5 py-2 text-xs text-warning">
 			<AlertTriangle class="mt-0.5 h-3.5 w-3.5 shrink-0" />
 			<span>
 				Relay is running with <span class="font-mono">--local-only</span>; browser WASM requires Iroh relay connectivity.

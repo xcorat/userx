@@ -63,6 +63,8 @@
 		<div class="theme-deco-aura pointer-events-none absolute inset-0"></div>
 	{:else if decoration === 'editorial'}
 		<div class="theme-deco-editorial pointer-events-none absolute inset-0"></div>
+	{:else if decoration === 'paper'}
+		<div class="theme-deco-paper pointer-events-none absolute inset-0"></div>
 	{/if}
 
 	<!-- Mobile-First Fullscreen Column (Full-bleed during hero intro) -->
@@ -71,7 +73,7 @@
 			fullBleed
 				? ''
 				: `max-w-5xl ${
-						decoration === 'editorial'
+						decoration === 'editorial' || decoration === 'paper'
 							? 'sm:border-x sm:border-border/80'
 							: 'sm:border-x sm:border-border/40'
 					}`

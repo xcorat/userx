@@ -150,8 +150,8 @@
 			{/if}
 
 			{#if ledgerStore.isLiveSyncActive}
-				<span class="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-xs text-emerald-400">
-					<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400"></span>
+				<span class="inline-flex items-center gap-1 rounded-full border border-primary/35 bg-primary/10 px-2 py-0.5 font-mono text-xs text-primary">
+					<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"></span>
 					Live
 				</span>
 			{/if}
@@ -308,7 +308,7 @@
 				<!-- Card Footer -->
 				<div class="flex items-center justify-between gap-2 border-t border-border/60 pt-3">
 					{#if sessionStore.isPendingVouch}
-						<span class="font-mono text-xs text-amber-300">Read-only preview</span>
+						<span class="font-mono text-xs text-warning">Read-only preview</span>
 						<button
 							type="button"
 							onclick={() => skipQuestionReadOnly(question)}

@@ -4,6 +4,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import type { TransitionConfig } from 'svelte/transition';
 	import { sessionStore } from '$lib/stores/session.svelte';
+	import { themeStore } from '$lib/stores/theme.svelte';
 	import KeypairCustodyScreen from '$lib/components/onboarding/KeypairCustodyScreen.svelte';
 	import OnboardingExplainerDeck, {
 		type ExplainerTopic
@@ -37,6 +38,7 @@
 	let custodyChosenInIntro = $state(false);
 
 	let isExtractiveScreen = $derived(currentIndex === 1 && activeExplainer === null);
+	let decoration = $derived(themeStore.currentTheme.decoration);
 
 	const COMMONS_POINTS = [
 		{
@@ -44,21 +46,21 @@
 			prefix: 'where ',
 			highlight: 'YOU',
 			suffix: ' own your data,',
-			highlightClass: 'text-[#f5b841]'
+			highlightClass: 'text-accent'
 		},
 		{
 			id: 'collective-infra',
 			prefix: 'where we manage infrastructure ',
 			highlight: 'collectively,',
 			suffix: '',
-			highlightClass: 'text-[#6ee7b7]'
+			highlightClass: 'text-primary'
 		},
 		{
 			id: 'democratic-value',
 			prefix: 'And ',
 			highlight: 'democratically',
 			suffix: ' manage the value we create',
-			highlightClass: 'text-[#f5b841]'
+			highlightClass: 'text-info'
 		}
 	] as const;
 
@@ -274,21 +276,32 @@
 <svelte:window onkeydown={handleKeyDown} />
 
 <div
-	class={`hero-root relative h-dvh w-full overflow-hidden text-[#f4f1ea] select-none transition-colors duration-700 ${
-		isExtractiveScreen ? 'bg-[#080c1d]' : 'bg-[#0b120f]'
+	class={`hero-root relative h-dvh w-full overflow-hidden select-none transition-colors duration-700 ${
+		isExtractiveScreen ? 'bg-[#ffffff] text-[#0f2347]' : 'bg-background text-foreground'
 	}`}
 	onwheel={handleWheel}
 	ontouchstart={handleTouchStart}
 	ontouchend={handleTouchEnd}
 >
-	<!-- Ambient Background Glows (Forest Sage vs Screen 2 Blue/Indigo) -->
+	<!-- Ambient Background Layers (Theme Surface vs Screen 2 White-Red-Blue Corporate Grid) -->
 	<div
-		class={`bg-glow pointer-events-none fixed inset-0 z-0 transition-opacity duration-700 ${
+		class={`pointer-events-none fixed inset-0 z-0 transition-opacity duration-700 ${
 			isExtractiveScreen ? 'opacity-0' : 'opacity-100'
 		}`}
-	></div>
+	>
+		{#if decoration === 'grid'}
+			<div class="theme-deco-grid absolute inset-0 opacity-35"></div>
+		{:else if decoration === 'aura'}
+			<div class="theme-deco-aura absolute inset-0"></div>
+		{:else if decoration === 'editorial'}
+			<div class="theme-deco-editorial absolute inset-0"></div>
+		{:else if decoration === 'paper'}
+			<div class="theme-deco-paper absolute inset-0"></div>
+		{/if}
+		<div class="bg-glow absolute inset-0"></div>
+	</div>
 	<div
-		class={`bg-glow-indigo pointer-events-none fixed inset-0 z-0 transition-opacity duration-700 ${
+		class={`bg-glow-corp pointer-events-none fixed inset-0 z-0 transition-opacity duration-700 ${
 			isExtractiveScreen ? 'opacity-100' : 'opacity-0'
 		}`}
 	></div>
@@ -301,22 +314,45 @@
 			class="pointer-events-auto flex cursor-pointer items-center gap-2.5 text-left"
 		>
 			<svg class="h-7 w-7" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-				<circle
-					cx="16"
-					cy="16"
-					r="14"
-					stroke={isExtractiveScreen ? '#818cf8' : '#34d399'}
-					stroke-opacity="0.4"
-					stroke-width="1.5"
-				/>
-				<path d="M16 7C18.5 10.5 18.5 14 16 16C13.5 14 13.5 10.5 16 7Z" fill="#f5b841" />
-				<path d="M24.5 13C21.8 16.2 18.5 17 16 16C17.2 13.4 20.6 11.7 24.5 13Z" fill="#6ee7b7" />
-				<path d="M21.2 23.2C17.5 21.8 15.8 18.8 16 16C18.8 16.4 21.2 19.2 21.2 23.2Z" fill="#34d399" />
-				<path d="M10.8 23.2C10.8 19.2 13.2 16.4 16 16C16.2 18.8 14.5 21.8 10.8 23.2Z" fill="#6ee7b7" />
-				<path d="M7.5 13C11.4 11.7 14.8 13.4 16 16C13.5 17 10.2 16.2 7.5 13Z" fill="#f5b841" fill-opacity="0.85" />
-				<circle cx="16" cy="16" r="2.2" fill="#0b120f" />
+				{#if isExtractiveScreen}
+					<circle
+						cx="16"
+						cy="16"
+						r="14"
+						stroke="#2563eb"
+						stroke-opacity="0.5"
+						stroke-width="1.5"
+					/>
+					<path d="M16 7C18.5 10.5 18.5 14 16 16C13.5 14 13.5 10.5 16 7Z" fill="#dc2626" />
+					<path d="M24.5 13C21.8 16.2 18.5 17 16 16C17.2 13.4 20.6 11.7 24.5 13Z" fill="#2563eb" />
+					<path d="M21.2 23.2C17.5 21.8 15.8 18.8 16 16C18.8 16.4 21.2 19.2 21.2 23.2Z" fill="#1d4ed8" />
+					<path d="M10.8 23.2C10.8 19.2 13.2 16.4 16 16C16.2 18.8 14.5 21.8 10.8 23.2Z" fill="#60a5fa" />
+					<path d="M7.5 13C11.4 11.7 14.8 13.4 16 16C13.5 17 10.2 16.2 7.5 13Z" fill="#ef4444" fill-opacity="0.9" />
+					<circle cx="16" cy="16" r="2.2" fill="#0f2347" />
+				{:else}
+					<circle
+						cx="16"
+						cy="16"
+						r="14"
+						stroke="var(--primary)"
+						stroke-opacity="0.5"
+						stroke-width="1.5"
+					/>
+					<path d="M16 7C18.5 10.5 18.5 14 16 16C13.5 14 13.5 10.5 16 7Z" fill="var(--illus-earth)" />
+					<path d="M24.5 13C21.8 16.2 18.5 17 16 16C17.2 13.4 20.6 11.7 24.5 13Z" fill="var(--illus-green)" />
+					<path d="M21.2 23.2C17.5 21.8 15.8 18.8 16 16C18.8 16.4 21.2 19.2 21.2 23.2Z" fill="var(--primary)" />
+					<path d="M10.8 23.2C10.8 19.2 13.2 16.4 16 16C16.2 18.8 14.5 21.8 10.8 23.2Z" fill="var(--illus-blue)" />
+					<path d="M7.5 13C11.4 11.7 14.8 13.4 16 16C13.5 17 10.2 16.2 7.5 13Z" fill="var(--accent)" fill-opacity="0.9" />
+					<circle cx="16" cy="16" r="2.2" fill="var(--foreground)" />
+				{/if}
 			</svg>
-			<span class="font-serif-hero text-lg tracking-wide text-[#f4f1ea]/90">Araliya</span>
+			<span
+				class={`font-serif-hero text-lg tracking-wide transition-colors duration-500 ${
+					isExtractiveScreen ? 'text-[#0f2347]' : 'text-foreground'
+				}`}
+			>
+				Araliya
+			</span>
 		</button>
 
 		<div class="pointer-events-auto flex items-center gap-2 sm:gap-3">
@@ -326,8 +362,8 @@
 					onclick={() => sessionStore.openUnlockScreen()}
 					class={`cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
 						isExtractiveScreen
-							? 'border-indigo-400/35 bg-[#111836]/80 text-[#c7d2fe] hover:bg-[#1a2550]'
-							: 'border-emerald-400/25 bg-[#101c17]/75 text-[#a7f3d0] hover:bg-[#182b23]'
+							? 'border-[#2563eb]/35 bg-white/95 text-[#1d4ed8] hover:bg-[#eff6ff]'
+							: 'border-primary/35 bg-card/90 text-foreground hover:bg-secondary'
 					}`}
 				>
 					Unlock
@@ -338,8 +374,8 @@
 					onclick={() => sessionStore.setOnboardingStep('feed')}
 					class={`cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
 						isExtractiveScreen
-							? 'border-indigo-400/35 bg-[#111836]/80 text-[#c7d2fe] hover:bg-[#1a2550]'
-							: 'border-emerald-400/25 bg-[#101c17]/75 text-[#a7f3d0] hover:bg-[#182b23]'
+							? 'border-[#2563eb]/35 bg-white/95 text-[#1d4ed8] hover:bg-[#eff6ff]'
+							: 'border-primary/35 bg-card/90 text-foreground hover:bg-secondary'
 					}`}
 				>
 					Feed →
@@ -349,7 +385,11 @@
 			<button
 				type="button"
 				onclick={() => goToSlide(LAST_SLIDE)}
-				class={`cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-medium text-[#f4f1ea]/75 transition hover:bg-white/5 hover:text-[#f4f1ea] ${
+				class={`cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
+					isExtractiveScreen
+						? 'text-[#334e73] hover:bg-[#1d4ed8]/5 hover:text-[#0f2347]'
+						: 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground'
+				} ${
 					currentIndex === LAST_SLIDE ? 'pointer-events-none opacity-0' : 'opacity-100'
 				}`}
 			>
@@ -372,9 +412,11 @@
 				class={`cursor-pointer rounded-full transition-all duration-300 ${
 					currentIndex === idx
 						? isExtractiveScreen
-							? 'h-6 w-2.5 bg-[#818cf8]'
-							: 'h-6 w-2.5 bg-[#6ee7b7]'
-						: 'h-2.5 w-2.5 bg-white/25 hover:bg-white/50'
+							? 'h-6 w-2.5 bg-[#dc2626]'
+							: 'h-6 w-2.5 bg-primary'
+						: isExtractiveScreen
+							? 'h-2.5 w-2.5 bg-[#1d4ed8]/25 hover:bg-[#1d4ed8]/50'
+							: 'h-2.5 w-2.5 bg-foreground/25 hover:bg-foreground/50'
 				}`}
 			></button>
 		{/each}
@@ -404,13 +446,14 @@
 					>
 						<defs>
 							<radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
-								<stop offset="0%" stop-color="#f5b841" stop-opacity="0.45" />
-								<stop offset="60%" stop-color="#34d399" stop-opacity="0.14" />
-								<stop offset="100%" stop-color="#0b120f" stop-opacity="0" />
+								<stop offset="0%" style="stop-color: var(--illus-green); stop-opacity: 0.32;" />
+								<stop offset="58%" style="stop-color: var(--illus-earth); stop-opacity: 0.16;" />
+								<stop offset="100%" style="stop-color: var(--background); stop-opacity: 0;" />
 							</radialGradient>
 							<linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-								<stop offset="0%" stop-color="#6ee7b7" />
-								<stop offset="100%" stop-color="#f5b841" />
+								<stop offset="0%" style="stop-color: var(--illus-green);" />
+								<stop offset="50%" style="stop-color: var(--illus-blue);" />
+								<stop offset="100%" style="stop-color: var(--accent);" />
 							</linearGradient>
 						</defs>
 
@@ -421,9 +464,9 @@
 							r="88"
 							fill="none"
 							stroke="url(#ringGrad)"
-							stroke-width="1"
+							stroke-width="1.25"
 							stroke-dasharray="4 6"
-							stroke-opacity="0.45"
+							stroke-opacity="0.65"
 							class="spin-slow"
 						/>
 						<circle
@@ -431,42 +474,42 @@
 							cy="140"
 							r="56"
 							fill="none"
-							stroke="#6ee7b7"
-							stroke-width="1"
-							stroke-opacity="0.28"
+							stroke="var(--illus-blue)"
+							stroke-width="1.2"
+							stroke-opacity="0.55"
 							class="halo-pulse-delayed"
 						/>
 
 						<path
 							d="M115 170 Q200 115 285 170"
 							fill="none"
-							stroke="#6ee7b7"
-							stroke-opacity="0.35"
-							stroke-width="1.5"
+							stroke="var(--primary)"
+							stroke-opacity="0.45"
+							stroke-width="1.6"
 							stroke-dasharray="3 5"
 						/>
 						<path
 							d="M140 98 Q200 140 260 98"
 							fill="none"
-							stroke="#f5b841"
-							stroke-opacity="0.35"
-							stroke-width="1.5"
+							stroke="var(--accent)"
+							stroke-opacity="0.45"
+							stroke-width="1.6"
 							stroke-dasharray="3 5"
 						/>
 
 						<!-- Center Commons Emblem (Araliya Blossom) -->
 						<g transform="translate(200, 140)">
-							<circle r="19" fill="#101c17" stroke="#6ee7b7" stroke-opacity="0.5" stroke-width="1.5" />
+							<circle r="19" fill="var(--card)" stroke="var(--primary)" stroke-opacity="0.7" stroke-width="1.6" />
 							<g class="spin-slow" style="transform-origin: 0px 0px;">
-								<ellipse cx="0" cy="-9" rx="4" ry="7" fill="#f5b841" fill-opacity="0.9" />
+								<ellipse cx="0" cy="-9" rx="4" ry="7" fill="var(--illus-earth)" fill-opacity="0.92" />
 								<ellipse
 									cx="8.5"
 									cy="-3"
 									rx="4"
 									ry="7"
 									transform="rotate(72 8.5 -3)"
-									fill="#6ee7b7"
-									fill-opacity="0.85"
+									fill="var(--illus-green)"
+									fill-opacity="0.95"
 								/>
 								<ellipse
 									cx="5.2"
@@ -474,8 +517,8 @@
 									rx="4"
 									ry="7"
 									transform="rotate(144 5.2 7.5)"
-									fill="#34d399"
-									fill-opacity="0.85"
+									fill="var(--primary)"
+									fill-opacity="0.9"
 								/>
 								<ellipse
 									cx="-5.2"
@@ -483,8 +526,8 @@
 									rx="4"
 									ry="7"
 									transform="rotate(216 -5.2 7.5)"
-									fill="#6ee7b7"
-									fill-opacity="0.85"
+									fill="var(--illus-blue)"
+									fill-opacity="0.9"
 								/>
 								<ellipse
 									cx="-8.5"
@@ -492,79 +535,79 @@
 									rx="4"
 									ry="7"
 									transform="rotate(288 -8.5 -3)"
-									fill="#f5b841"
-									fill-opacity="0.85"
+									fill="var(--accent)"
+									fill-opacity="0.9"
 								/>
 							</g>
-							<circle r="4" fill="#0b120f" stroke="#f5b841" stroke-width="1.5" />
+							<circle r="4" fill="var(--foreground)" stroke="var(--card)" stroke-width="1.4" />
 						</g>
 
 						<g class="human-bob-1" transform="translate(105, 165)">
-							<circle cx="0" cy="-16" r="10" fill="#182b23" stroke="#6ee7b7" stroke-width="2" />
+							<circle cx="0" cy="-16" r="10" fill="var(--card)" stroke="var(--primary)" stroke-width="2" />
 							<path
 								d="M-16 14 C-16 0, 16 0, 16 14"
-								fill="#182b23"
-								stroke="#6ee7b7"
+								fill="var(--secondary)"
+								stroke="var(--primary)"
 								stroke-width="2"
 								stroke-linecap="round"
 							/>
 						</g>
 
 						<g class="human-bob-2" transform="translate(295, 165)">
-							<circle cx="0" cy="-16" r="10" fill="#182b23" stroke="#f5b841" stroke-width="2" />
+							<circle cx="0" cy="-16" r="10" fill="var(--card)" stroke="var(--accent)" stroke-width="2" />
 							<path
 								d="M-16 14 C-16 0, 16 0, 16 14"
-								fill="#182b23"
-								stroke="#f5b841"
+								fill="var(--secondary)"
+								stroke="var(--accent)"
 								stroke-width="2"
 								stroke-linecap="round"
 							/>
 						</g>
 
 						<g class="human-bob-3" transform="translate(142, 86)">
-							<circle cx="0" cy="-12" r="7.5" fill="#182b23" stroke="#a7f3d0" stroke-width="1.75" />
+							<circle cx="0" cy="-12" r="7.5" fill="var(--card)" stroke="var(--info)" stroke-width="1.8" />
 							<path
 								d="M-12 10 C-12 0, 12 0, 12 10"
-								fill="#182b23"
-								stroke="#a7f3d0"
-								stroke-width="1.75"
+								fill="var(--secondary)"
+								stroke="var(--info)"
+								stroke-width="1.8"
 								stroke-linecap="round"
 							/>
 						</g>
 
 						<g class="human-bob-1" transform="translate(258, 86)">
-							<circle cx="0" cy="-12" r="7.5" fill="#182b23" stroke="#a7f3d0" stroke-width="1.75" />
+							<circle cx="0" cy="-12" r="7.5" fill="var(--card)" stroke="var(--foreground)" stroke-width="1.8" />
 							<path
 								d="M-12 10 C-12 0, 12 0, 12 10"
-								fill="#182b23"
-								stroke="#a7f3d0"
-								stroke-width="1.75"
+								fill="var(--secondary)"
+								stroke="var(--foreground)"
+								stroke-width="1.8"
 								stroke-linecap="round"
 							/>
 						</g>
 
-						<circle cx="80" cy="95" r="2.5" fill="#f5b841" class="mote-1" />
-						<circle cx="322" cy="105" r="2" fill="#6ee7b7" class="mote-2" />
-						<circle cx="205" cy="48" r="2.5" fill="#a7f3d0" class="mote-3" />
-						<circle cx="165" cy="215" r="2" fill="#f5b841" class="mote-2" />
-						<circle cx="242" cy="212" r="2.5" fill="#34d399" class="mote-1" />
+						<circle cx="80" cy="95" r="2.5" fill="var(--illus-earth)" class="mote-1" />
+						<circle cx="322" cy="105" r="2" fill="var(--illus-green)" class="mote-2" />
+						<circle cx="205" cy="48" r="2.5" fill="var(--illus-blue)" class="mote-3" />
+						<circle cx="165" cy="215" r="2" fill="var(--accent)" class="mote-2" />
+						<circle cx="242" cy="212" r="2.5" fill="var(--primary)" class="mote-1" />
 					</svg>
 				</div>
 
-				<p class="reveal-item delay-1 mb-3 text-xs font-medium tracking-[0.24em] text-[#6ee7b7]/85 uppercase sm:text-sm">
+				<p class="reveal-item delay-1 mb-3 text-xs font-medium tracking-[0.24em] text-primary uppercase sm:text-sm">
 					Welcome to Araliya
 				</p>
-				<h1 class="reveal-item delay-2 font-serif-hero text-[clamp(2.85rem,8vw,5.75rem)] leading-[1.04] font-semibold tracking-tight text-[#f4f1ea]">
+				<h1 class="reveal-item delay-2 font-serif-hero text-[clamp(2.85rem,8vw,5.75rem)] leading-[1.04] font-semibold tracking-tight text-foreground">
 					Digital Commons
 				</h1>
-				<p class="reveal-item delay-3 mt-3 text-[clamp(1.35rem,3.4vw,2.35rem)] font-light tracking-wide text-[#f5b841] sm:mt-4">
+				<p class="reveal-item delay-3 mt-3 text-[clamp(1.35rem,3.4vw,2.35rem)] font-light tracking-wide text-accent sm:mt-4">
 					Built for humans..!
 				</p>
 
 				<button
 					type="button"
 					onclick={nextSlide}
-					class="reveal-item delay-3 mt-8 inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#6ee7b7]/30 bg-[#182b23]/90 px-6 py-3 text-sm font-medium text-[#f4f1ea] shadow-lg shadow-black/30 transition hover:bg-[#244034] sm:mt-10"
+					class="reveal-item delay-3 mt-8 inline-flex cursor-pointer items-center gap-2 rounded-full border border-primary/35 bg-card/95 px-6 py-3 text-sm font-medium text-foreground shadow-sm transition hover:bg-secondary sm:mt-10"
 				>
 					<span>Continue</span>
 					<svg class="chevron-bounce h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -575,7 +618,7 @@
 		</section>
 
 		<!-- ===================================================================
-		     SLIDE 1 (Screen 2): From centralized, gated and extractive internet
+		     SLIDE 1 (Screen 2): From centralized, gated and extractive internet (WHITE-RED-BLUE)
 		     =================================================================== -->
 		<section
 			class="screen"
@@ -591,54 +634,54 @@
 						aria-label="Illustration of a centralized gated corporate silo extracting data and attention from users"
 					>
 						<defs>
-							<radialGradient id="indigoCoreGlow" cx="50%" cy="46%" r="50%">
-								<stop offset="0%" stop-color="#6366f1" stop-opacity="0.38" />
-								<stop offset="65%" stop-color="#38bdf8" stop-opacity="0.12" />
-								<stop offset="100%" stop-color="#080c1d" stop-opacity="0" />
+							<radialGradient id="corpCoreGlow" cx="50%" cy="46%" r="50%">
+								<stop offset="0%" stop-color="#fee2e2" stop-opacity="0.78" />
+								<stop offset="60%" stop-color="#dbeafe" stop-opacity="0.45" />
+								<stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
 							</radialGradient>
 						</defs>
 
-						<circle cx="200" cy="135" r="115" fill="url(#indigoCoreGlow)" class="halo-pulse" />
+						<circle cx="200" cy="135" r="115" fill="url(#corpCoreGlow)" class="halo-pulse" />
 						<circle
 							cx="200"
 							cy="135"
 							r="96"
 							fill="none"
-							stroke="#818cf8"
-							stroke-opacity="0.28"
-							stroke-width="1"
+							stroke="#2563eb"
+							stroke-opacity="0.3"
+							stroke-width="1.2"
 							stroke-dasharray="4 7"
 							class="spin-slow"
 						/>
 
 						<!-- Inward Extraction Streams -->
 						<g stroke-linecap="round" fill="none">
-							<line x1="68" y1="110" x2="156" y2="118" stroke="#38bdf8" stroke-opacity="0.55" stroke-width="2" class="mesh-flow" />
-							<line x1="332" y1="110" x2="244" y2="118" stroke="#818cf8" stroke-opacity="0.55" stroke-width="2" class="mesh-flow" />
-							<line x1="96" y1="215" x2="162" y2="170" stroke="#6366f1" stroke-opacity="0.5" stroke-width="2" class="mesh-flow" />
-							<line x1="304" y1="215" x2="238" y2="170" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="2" class="mesh-flow" />
+							<line x1="68" y1="110" x2="156" y2="118" stroke="#dc2626" stroke-opacity="0.78" stroke-width="2" class="mesh-flow" />
+							<line x1="332" y1="110" x2="244" y2="118" stroke="#2563eb" stroke-opacity="0.7" stroke-width="2" class="mesh-flow" />
+							<line x1="96" y1="215" x2="162" y2="170" stroke="#2563eb" stroke-opacity="0.7" stroke-width="2" class="mesh-flow" />
+							<line x1="304" y1="215" x2="238" y2="170" stroke="#dc2626" stroke-opacity="0.78" stroke-width="2" class="mesh-flow" />
 						</g>
 
 						<!-- Outer Users Outside the Gate -->
 						<g class="human-bob-1" transform="translate(56, 108)">
-							<circle r="16" fill="#0f1736" stroke="#38bdf8" stroke-opacity="0.7" stroke-width="1.6" />
-							<circle cx="0" cy="-3" r="4.5" fill="#93c5fd" />
-							<path d="M-7 8 C-7 2, 7 2, 7 8" fill="#93c5fd" />
+							<circle r="16" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8" />
+							<circle cx="0" cy="-3" r="4.5" fill="#1e40af" />
+							<path d="M-7 8 C-7 2, 7 2, 7 8" fill="#1e40af" />
 						</g>
 						<g class="human-bob-2" transform="translate(344, 108)">
-							<circle r="16" fill="#0f1736" stroke="#818cf8" stroke-opacity="0.7" stroke-width="1.6" />
-							<circle cx="0" cy="-3" r="4.5" fill="#c7d2fe" />
-							<path d="M-7 8 C-7 2, 7 2, 7 8" fill="#c7d2fe" />
+							<circle r="16" fill="#ffffff" stroke="#2563eb" stroke-width="1.8" />
+							<circle cx="0" cy="-3" r="4.5" fill="#dc2626" />
+							<path d="M-7 8 C-7 2, 7 2, 7 8" fill="#dc2626" />
 						</g>
 						<g class="human-bob-3" transform="translate(88, 220)">
-							<circle r="14" fill="#0f1736" stroke="#6366f1" stroke-opacity="0.65" stroke-width="1.5" />
-							<circle cx="0" cy="-2.5" r="4" fill="#a5b4fc" />
-							<path d="M-6 7 C-6 2, 6 2, 6 7" fill="#a5b4fc" />
+							<circle r="14" fill="#ffffff" stroke="#2563eb" stroke-width="1.7" />
+							<circle cx="0" cy="-2.5" r="4" fill="#1e40af" />
+							<path d="M-6 7 C-6 2, 6 2, 6 7" fill="#1e40af" />
 						</g>
 						<g class="human-bob-1" transform="translate(312, 220)">
-							<circle r="14" fill="#0f1736" stroke="#38bdf8" stroke-opacity="0.65" stroke-width="1.5" />
-							<circle cx="0" cy="-2.5" r="4" fill="#7dd3fc" />
-							<path d="M-6 7 C-6 2, 6 2, 6 7" fill="#7dd3fc" />
+							<circle r="14" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.7" />
+							<circle cx="0" cy="-2.5" r="4" fill="#dc2626" />
+							<path d="M-6 7 C-6 2, 6 2, 6 7" fill="#dc2626" />
 						</g>
 
 						<!-- Central Gated Corporate Silo -->
@@ -648,48 +691,51 @@
 							width="88"
 							height="156"
 							rx="14"
-							fill="#0f1736"
-							stroke="#6366f1"
-							stroke-width="2"
+							fill="#ffffff"
+							stroke="#1d4ed8"
+							stroke-width="2.2"
 						/>
 						<!-- Rack Bars -->
-						<rect x="172" y="68" width="56" height="9" rx="3" fill="#1e2b5c" stroke="#818cf8" stroke-opacity="0.45" />
-						<rect x="172" y="85" width="56" height="9" rx="3" fill="#1e2b5c" stroke="#818cf8" stroke-opacity="0.45" />
-						<rect x="172" y="102" width="56" height="9" rx="3" fill="#1e2b5c" stroke="#38bdf8" stroke-opacity="0.45" />
+						<rect x="172" y="68" width="56" height="9" rx="3" fill="#eff6ff" stroke="#2563eb" stroke-opacity="0.55" />
+						<circle cx="179" cy="72.5" r="2.2" fill="#dc2626" />
+						<rect x="172" y="85" width="56" height="9" rx="3" fill="#eff6ff" stroke="#2563eb" stroke-opacity="0.55" />
+						<circle cx="179" cy="89.5" r="2.2" fill="#2563eb" />
+						<rect x="172" y="102" width="56" height="9" rx="3" fill="#eff6ff" stroke="#2563eb" stroke-opacity="0.55" />
+						<circle cx="179" cy="106.5" r="2.2" fill="#dc2626" />
 
 						<!-- Locked Gate Emblem -->
 						<g transform="translate(200, 154)">
-							<circle r="22" fill="#080c1d" stroke="#38bdf8" stroke-opacity="0.7" stroke-width="1.75" />
-							<rect x="-8" y="-2" width="16" height="12" rx="2.5" fill="#818cf8" />
+							<circle r="22" fill="#ffffff" stroke="#dc2626" stroke-width="2" />
+							<rect x="-8" y="-2" width="16" height="12" rx="2.5" fill="#dc2626" />
 							<path
 								d="M-4.5 -2 V-6.5 A4.5 4.5 0 0 1 4.5 -6.5 V-2"
 								fill="none"
-								stroke="#818cf8"
-								stroke-width="2"
+								stroke="#dc2626"
+								stroke-width="2.2"
 								stroke-linecap="round"
 							/>
-							<circle cx="0" cy="4" r="1.7" fill="#080c1d" />
+							<circle cx="0" cy="4" r="1.7" fill="#ffffff" />
 						</g>
 
 						<!-- Gate Barrier Line -->
-						<line x1="142" y1="204" x2="258" y2="204" stroke="#818cf8" stroke-opacity="0.55" stroke-width="2" />
+						<line x1="142" y1="204" x2="258" y2="204" stroke="#dc2626" stroke-width="2.4" stroke-linecap="round" />
 					</svg>
 				</div>
 
-				<p class="reveal-item delay-1 mb-3 text-xs font-medium tracking-[0.24em] text-[#93c5fd]/85 uppercase sm:text-sm">
+				<p class="reveal-item delay-1 mb-3 text-xs font-semibold tracking-[0.24em] text-[#dc2626] uppercase sm:text-sm">
 					The Internet Today
 				</p>
-				<h2 class="reveal-item delay-2 font-serif-hero text-[clamp(2.1rem,6vw,4.5rem)] leading-[1.08] font-semibold tracking-tight text-[#eef2ff]">
+				<h2 class="reveal-item delay-2 font-serif-hero text-[clamp(2.1rem,6vw,4.5rem)] leading-[1.08] font-semibold tracking-tight text-[#0f2347]">
 					From centralized, gated and extractive internet.
 				</h2>
-				<p class="reveal-item delay-3 mt-3 max-w-2xl text-[clamp(1.1rem,2.7vw,1.75rem)] font-light text-[#c7d2fe]/90 sm:mt-4">
+				<p class="reveal-item delay-3 mt-3 max-w-2xl text-[clamp(1.1rem,2.7vw,1.75rem)] font-normal text-[#334e73] sm:mt-4">
 					where companies own your data, and profit off of your attention,
 				</p>
 
 				<button
 					type="button"
 					onclick={nextSlide}
-					class="reveal-item delay-3 mt-8 inline-flex cursor-pointer items-center gap-2 rounded-full border border-indigo-400/35 bg-[#121a3a]/90 px-6 py-3 text-sm font-medium text-[#eef2ff] shadow-lg shadow-black/35 transition hover:bg-[#1c2856] sm:mt-10"
+					class="reveal-item delay-3 mt-8 inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#1d4ed8] bg-[#1d4ed8] px-6 py-3 text-sm font-medium text-white shadow-md shadow-[#1d4ed8]/20 transition hover:bg-[#1e40af] sm:mt-10"
 				>
 					<span>Continue</span>
 					<svg class="chevron-bounce h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -716,74 +762,74 @@
 						aria-label="Illustration of peer-to-peer nodes with personal cryptographic keys forming a resilient mesh"
 					>
 						<g stroke-linecap="round" fill="none">
-							<line x1="90" y1="90" x2="200" y2="55" stroke="#34d399" stroke-opacity="0.4" stroke-width="2" class="mesh-flow" />
-							<line x1="200" y1="55" x2="310" y2="95" stroke="#f5b841" stroke-opacity="0.45" stroke-width="2" class="mesh-flow-reverse" />
-							<line x1="90" y1="90" x2="120" y2="205" stroke="#6ee7b7" stroke-opacity="0.35" stroke-width="2" class="mesh-flow-reverse" />
-							<line x1="310" y1="95" x2="280" y2="205" stroke="#34d399" stroke-opacity="0.4" stroke-width="2" class="mesh-flow" />
-							<line x1="120" y1="205" x2="280" y2="205" stroke="#f5b841" stroke-opacity="0.45" stroke-width="2" class="mesh-flow" />
-							<line x1="90" y1="90" x2="280" y2="205" stroke="#6ee7b7" stroke-opacity="0.25" stroke-width="1.5" class="mesh-flow" />
-							<line x1="310" y1="95" x2="120" y2="205" stroke="#6ee7b7" stroke-opacity="0.25" stroke-width="1.5" class="mesh-flow-reverse" />
-							<line x1="200" y1="55" x2="120" y2="205" stroke="#34d399" stroke-opacity="0.22" stroke-width="1.5" class="mesh-flow" />
-							<line x1="200" y1="55" x2="280" y2="205" stroke="#34d399" stroke-opacity="0.22" stroke-width="1.5" class="mesh-flow-reverse" />
+							<line x1="90" y1="90" x2="200" y2="55" stroke="var(--illus-green)" stroke-opacity="0.7" stroke-width="2" class="mesh-flow" />
+							<line x1="200" y1="55" x2="310" y2="95" stroke="var(--illus-earth)" stroke-opacity="0.7" stroke-width="2" class="mesh-flow-reverse" />
+							<line x1="90" y1="90" x2="120" y2="205" stroke="var(--illus-blue)" stroke-opacity="0.7" stroke-width="2" class="mesh-flow-reverse" />
+							<line x1="310" y1="95" x2="280" y2="205" stroke="var(--illus-green)" stroke-opacity="0.7" stroke-width="2" class="mesh-flow" />
+							<line x1="120" y1="205" x2="280" y2="205" stroke="var(--illus-earth)" stroke-opacity="0.7" stroke-width="2" class="mesh-flow" />
+							<line x1="90" y1="90" x2="280" y2="205" stroke="var(--illus-blue)" stroke-opacity="0.45" stroke-width="1.5" class="mesh-flow" />
+							<line x1="310" y1="95" x2="120" y2="205" stroke="var(--illus-blue)" stroke-opacity="0.45" stroke-width="1.5" class="mesh-flow-reverse" />
+							<line x1="200" y1="55" x2="120" y2="205" stroke="var(--illus-green)" stroke-opacity="0.45" stroke-width="1.5" class="mesh-flow" />
+							<line x1="200" y1="55" x2="280" y2="205" stroke="var(--illus-green)" stroke-opacity="0.45" stroke-width="1.5" class="mesh-flow-reverse" />
 						</g>
 
 						<!-- Top Center Node (Your Node with Lock) -->
 						<g transform="translate(200, 55)">
-							<circle r="28" fill="#101c17" stroke="#f5b841" stroke-width="2" />
-							<circle r="35" fill="none" stroke="#f5b841" stroke-opacity="0.25" stroke-width="1.5" class="peer-core" />
-							<rect x="-8" y="-3" width="16" height="12" rx="3" fill="#f5b841" />
-							<path d="M-4.5 -3 V-7.5 A4.5 4.5 0 0 1 4.5 -7.5 V-3" fill="none" stroke="#f5b841" stroke-width="2.2" stroke-linecap="round" />
-							<circle cx="0" cy="3" r="1.8" fill="#0b120f" />
+							<circle r="28" fill="var(--card)" stroke="var(--accent)" stroke-width="2" />
+							<circle r="35" fill="none" stroke="var(--accent)" stroke-opacity="0.3" stroke-width="1.5" class="peer-core" />
+							<rect x="-8" y="-3" width="16" height="12" rx="3" fill="var(--accent)" />
+							<path d="M-4.5 -3 V-7.5 A4.5 4.5 0 0 1 4.5 -7.5 V-3" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" />
+							<circle cx="0" cy="3" r="1.8" fill="var(--card)" />
 						</g>
 
 						<g transform="translate(90, 90)">
-							<circle r="20" fill="#182b23" stroke="#6ee7b7" stroke-width="2" />
-							<circle r="7" fill="#6ee7b7" class="peer-core-2" />
+							<circle r="20" fill="var(--secondary)" stroke="var(--primary)" stroke-width="2" />
+							<circle r="7" fill="var(--primary)" class="peer-core-2" />
 						</g>
 
 						<g transform="translate(310, 95)">
-							<circle r="20" fill="#182b23" stroke="#6ee7b7" stroke-width="2" />
-							<circle r="7" fill="#6ee7b7" class="peer-core" />
+							<circle r="20" fill="var(--secondary)" stroke="var(--info)" stroke-width="2" />
+							<circle r="7" fill="var(--info)" class="peer-core" />
 						</g>
 
 						<g transform="translate(120, 205)">
-							<circle r="22" fill="#182b23" stroke="#34d399" stroke-width="2" />
-							<polygon points="0,-8 8,-3 8,5 0,10 -8,5 -8,-3" fill="none" stroke="#a7f3d0" stroke-width="1.6" />
-							<polyline points="-8,-3 0,2 8,-3" fill="none" stroke="#a7f3d0" stroke-width="1.4" />
-							<line x1="0" y1="2" x2="0" y2="10" stroke="#a7f3d0" stroke-width="1.4" />
+							<circle r="22" fill="var(--card)" stroke="var(--info)" stroke-width="2" />
+							<polygon points="0,-8 8,-3 8,5 0,10 -8,5 -8,-3" fill="none" stroke="var(--foreground)" stroke-width="1.6" />
+							<polyline points="-8,-3 0,2 8,-3" fill="none" stroke="var(--foreground)" stroke-width="1.4" />
+							<line x1="0" y1="2" x2="0" y2="10" stroke="var(--foreground)" stroke-width="1.4" />
 						</g>
 
 						<g transform="translate(280, 205)">
-							<circle r="22" fill="#182b23" stroke="#34d399" stroke-width="2" />
-							<circle cx="-3" cy="0" r="4.5" fill="none" stroke="#f5b841" stroke-width="1.8" />
-							<path d="M1.5 0 H9 M6.5 0 V3.5 M9 0 V2.5" stroke="#f5b841" stroke-width="1.8" stroke-linecap="round" />
+							<circle r="22" fill="var(--card)" stroke="var(--primary)" stroke-width="2" />
+							<circle cx="-3" cy="0" r="4.5" fill="none" stroke="var(--accent)" stroke-width="1.8" />
+							<path d="M1.5 0 H9 M6.5 0 V3.5 M9 0 V2.5" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" />
 						</g>
 
 						<g transform="translate(200, 146)">
-							<rect x="-46" y="-12" width="92" height="24" rx="12" fill="#0b120f" fill-opacity="0.88" stroke="#34d399" stroke-opacity="0.4" />
-							<text x="0" y="4" text-anchor="middle" fill="#a7f3d0" font-family="JetBrains Mono, monospace" font-size="10">araliya-net</text>
+							<rect x="-46" y="-12" width="92" height="24" rx="12" fill="var(--card)" fill-opacity="0.96" stroke="var(--foreground)" stroke-opacity="0.35" />
+							<text x="0" y="4" text-anchor="middle" fill="var(--foreground)" font-family="JetBrains Mono, monospace" font-size="10">araliya-net</text>
 						</g>
 					</svg>
 				</div>
 
-				<p class="reveal-item delay-1 mb-2 text-xs font-medium tracking-[0.24em] text-[#6ee7b7]/85 uppercase sm:text-sm">
+				<p class="reveal-item delay-1 mb-2 text-xs font-medium tracking-[0.24em] text-info uppercase sm:text-sm">
 					Peer-to-Peer Sovereignty
 				</p>
-				<h2 class="reveal-item delay-2 font-serif-hero text-[clamp(1.75rem,4.8vw,3.35rem)] leading-[1.1] font-semibold tracking-tight text-[#f4f1ea]">
+				<h2 class="reveal-item delay-2 font-serif-hero text-[clamp(1.75rem,4.8vw,3.35rem)] leading-[1.1] font-semibold tracking-tight text-foreground">
 					Towards a digital public commons
 				</h2>
 
 				<!-- Settled Compact Bullet List -->
 				{#if screen3Stage > 0}
-					<ul class="mt-4 flex w-full max-w-xl flex-col items-start gap-2 rounded-2xl border border-[#6ee7b7]/20 bg-[#101c17]/75 px-4 py-3 text-left sm:px-5 sm:py-3.5">
+					<ul class="mt-4 flex w-full max-w-xl flex-col items-start gap-2 rounded-2xl border border-border bg-card/90 px-4 py-3 text-left shadow-sm sm:px-5 sm:py-3.5">
 						{#each COMMONS_POINTS.slice(0, screen3Stage) as pt (pt.id)}
 							<li
 								in:receivePoint={{ key: pt.id }}
 								out:sendPoint={{ key: pt.id }}
 								animate:flip={{ duration: 420 }}
-								class="flex items-start gap-2.5 text-sm leading-snug text-[#d1fae5]/90 sm:text-base"
+								class="flex items-start gap-2.5 text-sm leading-snug text-foreground sm:text-base"
 							>
-								<span class="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#6ee7b7]"></span>
+								<span class="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary"></span>
 								<span>
 									{pt.prefix}<strong class={`font-semibold ${pt.highlightClass}`}>{pt.highlight}</strong>{pt.suffix}
 								</span>
@@ -800,7 +846,7 @@
 								<p
 									in:receivePoint={{ key: activeScreen3Point.id }}
 									out:sendPoint={{ key: activeScreen3Point.id }}
-									class="font-serif-hero text-[clamp(1.35rem,3.6vw,2.35rem)] leading-snug font-medium text-[#f4f1ea]"
+									class="font-serif-hero text-[clamp(1.35rem,3.6vw,2.35rem)] leading-snug font-medium text-foreground"
 								>
 									{activeScreen3Point.prefix}<span class={activeScreen3Point.highlightClass}>{activeScreen3Point.highlight}</span>{activeScreen3Point.suffix}
 								</p>
@@ -815,10 +861,10 @@
 						<span
 							class={`h-1.5 rounded-full transition-all duration-300 ${
 								idx < screen3Stage
-									? 'w-5 bg-[#6ee7b7]'
+									? 'w-5 bg-primary'
 									: idx === screen3Stage
-										? 'w-6 bg-[#f5b841]'
-										: 'w-2 bg-white/20'
+										? 'w-6 bg-accent'
+										: 'w-2 bg-foreground/20'
 							}`}
 						></span>
 					{/each}
@@ -827,7 +873,7 @@
 				<button
 					type="button"
 					onclick={nextSlide}
-					class="reveal-item delay-3 mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#6ee7b7]/30 bg-[#182b23]/90 px-6 py-2.5 text-sm font-medium text-[#f4f1ea] shadow-lg shadow-black/30 transition hover:bg-[#244034] sm:mt-6 sm:py-3"
+					class="reveal-item delay-3 mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full border border-primary/35 bg-card/95 px-6 py-2.5 text-sm font-medium text-foreground shadow-sm transition hover:bg-secondary sm:mt-6 sm:py-3"
 				>
 					<span>
 						{screen3Stage < 3 ? `Swipe up · Next (${screen3Stage + 1}/3)` : 'Continue'}
@@ -857,8 +903,8 @@
 					>
 						<defs>
 							<linearGradient id="soilGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-								<stop offset="0%" stop-color="#244034" stop-opacity="0.65" />
-								<stop offset="100%" stop-color="#0b120f" stop-opacity="0" />
+								<stop offset="0%" style="stop-color: var(--illus-earth); stop-opacity: 0.42;" />
+								<stop offset="100%" style="stop-color: var(--background); stop-opacity: 0;" />
 							</linearGradient>
 						</defs>
 
@@ -866,70 +912,71 @@
 						<path
 							d="M40 220 Q200 192 360 220"
 							fill="none"
-							stroke="#34d399"
-							stroke-opacity="0.45"
+							stroke="var(--accent)"
+							stroke-opacity="0.7"
 							stroke-width="2"
 							stroke-linecap="round"
 						/>
 
-						<ellipse cx="128" cy="212" rx="4" ry="6" fill="#f5b841" opacity="0" class="seed-drop-1" />
-						<ellipse cx="200" cy="205" rx="5" ry="7" fill="#f5b841" opacity="0" class="seed-drop-2" />
-						<ellipse cx="272" cy="212" rx="4" ry="6" fill="#f5b841" opacity="0" class="seed-drop-3" />
+						<ellipse cx="128" cy="212" rx="4" ry="6" fill="var(--accent)" opacity="0" class="seed-drop-1" />
+						<ellipse cx="200" cy="205" rx="5" ry="7" fill="var(--foreground)" opacity="0" class="seed-drop-2" />
+						<ellipse cx="272" cy="212" rx="4" ry="6" fill="var(--accent)" opacity="0" class="seed-drop-3" />
 
 						<path
 							d="M128 212 Q125 170 112 145"
 							fill="none"
-							stroke="#6ee7b7"
+							stroke="var(--primary)"
 							stroke-width="2.5"
 							stroke-linecap="round"
 							class="draw-stem"
 						/>
-						<path d="M120 165 C102 158, 98 142, 114 146" fill="#34d399" class="grow-leaf leaf-d1" />
-						<path d="M123 175 C140 166, 144 152, 128 158" fill="#6ee7b7" class="grow-leaf leaf-d2" />
+						<path d="M120 165 C102 158, 98 142, 114 146" fill="var(--illus-green)" class="grow-leaf leaf-d1" />
+						<path d="M123 175 C140 166, 144 152, 128 158" fill="var(--illus-green-soft)" class="grow-leaf leaf-d2" />
 
 						<path
 							d="M200 205 Q196 140 200 84"
 							fill="none"
-							stroke="#34d399"
+							stroke="var(--primary)"
 							stroke-width="3.2"
 							stroke-linecap="round"
 							class="draw-stem"
 						/>
-						<path d="M198 160 C170 152, 164 128, 195 138" fill="#34d399" class="grow-leaf leaf-d1" />
-						<path d="M200 144 C228 136, 234 112, 202 122" fill="#6ee7b7" class="grow-leaf leaf-d2" />
-						<path d="M198 118 C176 110, 174 92, 197 100" fill="#a7f3d0" class="grow-leaf leaf-d3" />
+						<path d="M198 160 C170 152, 164 128, 195 138" fill="var(--illus-green)" class="grow-leaf leaf-d1" />
+						<path d="M200 144 C228 136, 234 112, 202 122" fill="var(--illus-green)" class="grow-leaf leaf-d2" />
+						<path d="M198 118 C176 110, 174 92, 197 100" fill="var(--illus-green-soft)" class="grow-leaf leaf-d3" />
 
 						<path
 							d="M272 212 Q276 172 288 148"
 							fill="none"
-							stroke="#6ee7b7"
+							stroke="var(--primary)"
 							stroke-width="2.5"
 							stroke-linecap="round"
 							class="draw-stem"
 						/>
-						<path d="M280 168 C298 160, 302 145, 286 150" fill="#34d399" class="grow-leaf leaf-d2" />
-						<path d="M276 180 C260 172, 256 158, 272 164" fill="#6ee7b7" class="grow-leaf leaf-d3" />
+						<path d="M280 168 C298 160, 302 145, 286 150" fill="var(--illus-green)" class="grow-leaf leaf-d2" />
+						<path d="M276 180 C260 172, 256 158, 272 164" fill="var(--illus-green-soft)" class="grow-leaf leaf-d3" />
 
 						<g transform="translate(200, 76)" class="bloom-flower">
-							<circle r="24" fill="#f5b841" fill-opacity="0.14" />
-							<ellipse cx="0" cy="-12" rx="6" ry="11" fill="#f4f1ea" />
-							<ellipse cx="11.5" cy="-4" rx="6" ry="11" transform="rotate(72 11.5 -4)" fill="#f4f1ea" />
-							<ellipse cx="7" cy="9.5" rx="6" ry="11" transform="rotate(144 7 9.5)" fill="#f4f1ea" />
-							<ellipse cx="-7" cy="9.5" rx="6" ry="11" transform="rotate(216 -7 9.5)" fill="#f4f1ea" />
-							<ellipse cx="-11.5" cy="-4" rx="6" ry="11" transform="rotate(288 -11.5 -4)" fill="#f4f1ea" />
-							<circle r="6" fill="#f5b841" />
+							<circle r="24" fill="var(--illus-blue)" fill-opacity="0.22" />
+							<ellipse cx="0" cy="-12" rx="6" ry="11" fill="var(--illus-petal)" stroke="var(--accent)" stroke-width="1" />
+							<ellipse cx="11.5" cy="-4" rx="6" ry="11" transform="rotate(72 11.5 -4)" fill="var(--illus-petal)" stroke="var(--accent)" stroke-width="1" />
+							<ellipse cx="7" cy="9.5" rx="6" ry="11" transform="rotate(144 7 9.5)" fill="var(--illus-petal)" stroke="var(--accent)" stroke-width="1" />
+							<ellipse cx="-7" cy="9.5" rx="6" ry="11" transform="rotate(216 -7 9.5)" fill="var(--illus-petal)" stroke="var(--accent)" stroke-width="1" />
+							<ellipse cx="-11.5" cy="-4" rx="6" ry="11" transform="rotate(288 -11.5 -4)" fill="var(--illus-petal)" stroke="var(--accent)" stroke-width="1" />
+							<circle r="6" fill="var(--accent)" />
+							<circle r="2.2" fill="var(--foreground)" />
 						</g>
 
-						<circle cx="155" cy="86" r="2" fill="#f5b841" class="mote-1" />
-						<circle cx="248" cy="94" r="2.2" fill="#a7f3d0" class="mote-2" />
-						<circle cx="200" cy="36" r="2" fill="#6ee7b7" class="mote-3" />
+						<circle cx="155" cy="86" r="2" fill="var(--illus-earth)" class="mote-1" />
+						<circle cx="248" cy="94" r="2.2" fill="var(--illus-blue)" class="mote-2" />
+						<circle cx="200" cy="36" r="2" fill="var(--illus-green)" class="mote-3" />
 					</svg>
 				</div>
 
-				<h2 class="reveal-item delay-1 font-serif-hero text-[clamp(1.85rem,5vw,3.35rem)] leading-[1.08] font-semibold tracking-tight text-[#f4f1ea]">
+				<h2 class="reveal-item delay-1 font-serif-hero text-[clamp(1.85rem,5vw,3.35rem)] leading-[1.08] font-semibold tracking-tight text-foreground">
 					We are planting the seeds,
 				</h2>
-				<p class="reveal-item delay-2 mt-1.5 font-serif-hero text-[clamp(1.2rem,3vw,1.95rem)] text-[#f5b841]">
+				<p class="reveal-item delay-2 mt-1.5 font-serif-hero text-[clamp(1.2rem,3vw,1.95rem)] text-accent">
 					Tools are here:
 				</p>
 
@@ -938,26 +985,26 @@
 					<button
 						type="button"
 						onclick={() => openExplainer('pki')}
-						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-[#6ee7b7]/25 bg-[#101c17]/85 px-4 py-3 transition hover:border-[#6ee7b7]/60 hover:bg-[#182b23]"
+						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-border bg-card/90 px-4 py-3 transition hover:border-primary hover:bg-card"
 					>
 						<div class="min-w-0">
-							<p class="text-sm font-semibold text-[#f4f1ea]">
+							<p class="text-sm font-semibold text-foreground">
 								Explain PKI (Public Key Infrastructure)
 							</p>
-							<p class="text-xs text-[#f4f1ea]/65">
+							<p class="text-xs text-muted-foreground">
 								Keys, local signing &amp; secret storage choice
 							</p>
 						</div>
 						<div class="flex shrink-0 items-center gap-2">
 							{#if custodyChosenInIntro}
-								<span class="rounded-full bg-[#6ee7b7]/15 px-2 py-0.5 font-mono text-xs text-[#a7f3d0]">
+								<span class="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-xs text-primary">
 									{selectedCustodyMode === 'manual-no-store' ? 'Manual Key' : 'Browser Password'}
 								</span>
 							{/if}
 							{#if visitedExplainers.pki}
-								<Check class="h-4 w-4 text-[#6ee7b7]" />
+								<Check class="h-4 w-4 text-primary" />
 							{:else}
-								<span class="text-sm text-[#a7f3d0]">→</span>
+								<span class="text-sm text-primary">→</span>
 							{/if}
 						</div>
 					</button>
@@ -965,21 +1012,21 @@
 					<button
 						type="button"
 						onclick={() => openExplainer('storage')}
-						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-[#6ee7b7]/25 bg-[#101c17]/85 px-4 py-3 transition hover:border-[#6ee7b7]/60 hover:bg-[#182b23]"
+						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-border bg-card/90 px-4 py-3 transition hover:border-info hover:bg-card"
 					>
 						<div class="min-w-0">
-							<p class="text-sm font-semibold text-[#f4f1ea]">
+							<p class="text-sm font-semibold text-foreground">
 								Explain decentralized storage
 							</p>
-							<p class="text-xs text-[#f4f1ea]/65">
+							<p class="text-xs text-muted-foreground">
 								Araliya net &amp; encrypted relays
 							</p>
 						</div>
 						<div class="shrink-0">
 							{#if visitedExplainers.storage}
-								<Check class="h-4 w-4 text-[#6ee7b7]" />
+								<Check class="h-4 w-4 text-info" />
 							{:else}
-								<span class="text-sm text-[#a7f3d0]">→</span>
+								<span class="text-sm text-info">→</span>
 							{/if}
 						</div>
 					</button>
@@ -987,21 +1034,21 @@
 					<button
 						type="button"
 						onclick={() => openExplainer('value')}
-						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-[#f5b841]/25 bg-[#101c17]/85 px-4 py-3 transition hover:border-[#f5b841]/60 hover:bg-[#182b23]"
+						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-border bg-card/90 px-4 py-3 transition hover:border-accent hover:bg-card"
 					>
 						<div class="min-w-0">
-							<p class="text-sm font-semibold text-[#f4f1ea]">
+							<p class="text-sm font-semibold text-foreground">
 								Explain Choice-centered value creation
 							</p>
-							<p class="text-xs text-[#f4f1ea]/65">
+							<p class="text-xs text-muted-foreground">
 								Question–answer model vs. plain ads
 							</p>
 						</div>
 						<div class="shrink-0">
 							{#if visitedExplainers.value}
-								<Check class="h-4 w-4 text-[#f5b841]" />
+								<Check class="h-4 w-4 text-accent" />
 							{:else}
-								<span class="text-sm text-[#f5b841]">→</span>
+								<span class="text-sm text-accent">→</span>
 							{/if}
 						</div>
 					</button>
@@ -1010,7 +1057,7 @@
 				<button
 					type="button"
 					onclick={() => goToSlide(LAST_SLIDE)}
-					class="reveal-item delay-3 mt-5 inline-flex cursor-pointer items-center gap-2.5 rounded-full bg-[#6ee7b7] px-7 py-3 text-sm font-semibold text-[#0b120f] shadow-xl shadow-emerald-950/50 transition hover:bg-[#a7f3d0] sm:mt-6 sm:py-3.5 sm:text-base"
+					class="reveal-item delay-3 mt-5 inline-flex cursor-pointer items-center gap-2.5 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 sm:mt-6 sm:py-3.5 sm:text-base"
 				>
 					<span>Generate Identity</span>
 					<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
@@ -1078,14 +1125,19 @@
 
 	.bg-glow {
 		background:
-			radial-gradient(circle at 20% 20%, rgba(52, 211, 153, 0.09), transparent 45%),
-			radial-gradient(circle at 80% 75%, rgba(245, 184, 65, 0.08), transparent 45%);
+			radial-gradient(circle at 18% 18%, color-mix(in oklab, var(--illus-green) 20%, transparent), transparent 48%),
+			radial-gradient(circle at 82% 24%, color-mix(in oklab, var(--illus-blue) 16%, transparent), transparent 46%),
+			radial-gradient(circle at 72% 82%, color-mix(in oklab, var(--illus-earth) 14%, transparent), transparent 48%);
 	}
 
-	.bg-glow-indigo {
-		background:
-			radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.14), transparent 46%),
-			radial-gradient(circle at 82% 76%, rgba(99, 102, 241, 0.2), transparent 48%);
+	.bg-glow-corp {
+		background-color: #ffffff;
+		background-image:
+			radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.09), transparent 46%),
+			radial-gradient(circle at 82% 76%, rgba(220, 38, 38, 0.07), transparent 48%),
+			linear-gradient(to right, rgba(29, 78, 216, 0.05) 1px, transparent 1px),
+			linear-gradient(to bottom, rgba(29, 78, 216, 0.05) 1px, transparent 1px);
+		background-size: 100% 100%, 100% 100%, 28px 28px, 28px 28px;
 	}
 
 	.reveal-item {

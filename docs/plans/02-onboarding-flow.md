@@ -120,7 +120,7 @@ The relay `users` table requires a unique plaintext `username` during `RegisterA
   - Calls `setProfileField('username', cleanedUsername, false)` so the user's chosen `@username` is stored **only** in encrypted `UserPrivate` `profile_fields`.
   - If the user already registered earlier in the session and returns to Screen 5, updates `profile_fields` and `updateProfile` accordingly (respecting privacy when switching back to Private).
 
-### 3.4 Screen 7 All-Optional Details, Live Namespace Preview & `Forest Dark` Default Theme
+### 3.4 Screen 7 All-Optional Details, Live Namespace Preview & `Araliya Commons` Default Theme
 
 - **All Details Optional:** Relax `realName.required` from `true` to `false` in `ledger.svelte.ts` (`createInitialProfile()`). **Name**, **Date of Birth**, and **Pronouns** are all optional and default to `visibility: 'private'`.
 - **Live Relay Storage Preview:** Displays a reactive monospace tree reflecting the user's actual key and Screen 5/7 choices:
@@ -129,9 +129,9 @@ The relay `users` table requires a unique plaintext `username` during `RegisterA
   ├── /public   → { "username": "alice" | "gardener_<pk8>", "vouched_by": "@genesis" }
   └── /private  → 🔒 [XChaCha20-Poly1305 · encrypted on device]
   ```
-- **`Forest Dark` Default Theme:**
-  - Add `forest` (**`Forest Dark`**) to `src/lib/config/themes.config.ts` and set `DEFAULT_THEME_ID = 'forest'`.
-  - Palette tokens (`Forest Dark`): deep mossy forest background (`#08120e`), dark pine card (`#0f1f18`), botanical emerald primary (`#34d399`), warm golden amber accent (`#f59e0b`), soft sage foreground (`#ecfdf5`), subtle aura/organic border styling, keeping `araliya`, `obsidian`, `solaris`, and `monolith` selectable via the inline `[Change Theme]` drawer/sheet.
+- **`Araliya Commons` Default Theme:**
+  - Add `commons` (**`Araliya Commons`**) to `src/lib/config/themes.config.ts` and set `DEFAULT_THEME_ID = 'commons'`.
+  - Palette tokens (`Araliya Commons`): textured cream lightly-brownish paper background (`#f3ede2`), warm ivory card (`#faf6ee`), flat sage-green primary (`#476e5a`), warm earthy brown accent (`#7d593a`), dark-brown ink foreground (`#2e221b`), subtle paper grain decoration (`paper`), with `forest` (**`Forest Dark`**), `araliya`, `obsidian`, `solaris`, `monolith`, and `friendly` remaining selectable via the inline `[Change Theme]` drawer/sheet.
 
 ### 3.5 Stage 4 Default Intro Questions (Screens 8–9) & First Question Creation (Screen 10)
 
@@ -175,7 +175,7 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
 | **Waiting Banner** | `feed` *(when `isPendingVouch`)* | `PendingVouchBanner.svelte` | Live 72h countdown above read-only `QuestionFeed` / `UserDashboard`; manual **Check** (`checkAndAutoCompleteVouch`) | **Vouch** → `'vouch'` |
 | **Step 3 / 8** | `'handle'` | `ClaimHandleScreen.svelte` | `ledgerStore.saveUsername` (`registerWithVouchCard` / `registerWithSubmittedVouch` / `registerUser`) or `stageUsernameDraft` + `syncRequestedHandleToVoucher` when `isPendingVouch`; `advanceOnboardingStep('custody')` | `← Back` → `'vouch'` |
 | **Step 4 / 8** | `'custody'` | `StorageCustodyScreen.svelte` | `sessionStore.applyCustodySelection(mode, password?)` (`deleteStoredVault` for options 2/3 with backup check, or `createVaultJson` if upgrading from manual); `advanceOnboardingStep('details')` | `← Back` → `'handle'` |
-| **Step 5 / 8** | `'details'` | `PersonalDetailsPreviewScreen.svelte` | Optional `Name`, `DoB`, `Pronouns` → `ledgerStore.saveIdentityDetails(...)`; live `/public` & `/private` tree; `themeStore.setTheme(...)` (`Forest Dark` default); `advanceOnboardingStep('demo-public')` | `← Back` → `'custody'` |
+| **Step 5 / 8** | `'details'` | `PersonalDetailsPreviewScreen.svelte` | Optional `Name`, `DoB`, `Pronouns` → `ledgerStore.saveIdentityDetails(...)`; live `/public` & `/private` tree; `themeStore.setTheme(...)` (`Araliya Commons` default); `advanceOnboardingStep('demo-public')` | `← Back` → `'custody'` |
 | **Step 6 / 8** | `'demo-public'` | `PublicQuestionDemoScreen.svelte` | Locked `🔒 Private`; if question exists on relay, `ledgerStore.submitAnswer(..., false)` (`qnaSetAnswerVisibility`); reveal results + privacy note; `advanceOnboardingStep('demo-sponsored')` | `← Back` → `'details'`; `[Skip Question]` |
 | **Step 7 / 8** | `'demo-sponsored'` | `SponsoredQuestionDemoScreen.svelte` | Preview external link; `[Answer & Earn +5 Demo Tokens →]` increments local-only `demoTokenBalance`; no relay response/payment | `← Back` → `'demo-public'`; `[Skip]` |
 | **Step 8 / 8** | `'ask-first'` | `AskFirstQuestionScreen.svelte` | `ledgerStore.createQuestion(text, choices)` (`qnaCreateQuestion`); marks `firstQuestionCreditUsed`; then optionally saves a private Genesis contribution response before `sessionStore.completeOnboarding()` → `'feed'` | `← Back` → `'demo-sponsored'`; `[Skip & Enter App →]` |
@@ -184,16 +184,16 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
 
 ## 5. File-by-File Implementation Plan (Ordered Vertical Slices)
 
-### Slice 1 — Types, `Forest Dark` Theme & Default Onboarding Questions
+### Slice 1 — Types, `Araliya Commons` Theme & Default Onboarding Questions
 1. **`src/lib/types/index.ts`**
    - Update `OnboardingStep` to:
      `'unlock' | 'welcome' | 'network' | 'keypair' | 'vouch' | 'handle' | 'custody' | 'details' | 'demo-public' | 'demo-sponsored' | 'ask-first' | 'feed'`.
    - Add `export type KeyCustodyMode = 'browser-encrypted' | 'password-vault-wiped' | 'manual-no-store';`
-   - Update `ThemeId` to `'forest' | 'araliya' | 'obsidian' | 'solaris' | 'monolith'`.
+   - Update `ThemeId` to `'commons' | 'forest' | 'araliya' | 'obsidian' | 'solaris' | 'monolith' | 'friendly'`.
    - Add `OnboardingDemoQuestion` and `VouchInspection` interfaces.
 2. **`src/lib/config/themes.config.ts` & `src/app.css`**
-   - Add **`Forest Dark`** (`id: 'forest'`) as the first entry in `THEMES` and set `DEFAULT_THEME_ID: ThemeId = 'forest'`.
-   - Update `:root` fallback CSS variables in `src/app.css` to match `Forest Dark` so there is zero flash of cosmic indigo on first paint before hydration.
+   - Add **`Araliya Commons`** (`id: 'commons'`) as the first entry in `THEMES` and set `DEFAULT_THEME_ID: ThemeId = 'commons'` (keeping **`Forest Dark`** selectable).
+   - Update `:root` fallback CSS variables in `src/app.css` to match `Araliya Commons` so there is zero flash of unaligned colors on first paint before hydration.
 3. **`araliya-net/data/seed_qna.json` — single onboarding source**
    - Define the public preference demo and its private response mode, the local-only sponsored walkthrough (5 simulated demo tokens and background reference), the Genesis contribution prompt, and onboarding profile-field visibility defaults.
    - Relay startup rejects unsupported schema versions and private/group plaintext content. Only relay-enabled public questions are persisted; baseline counts and demo rewards are never inserted as real responses or balances.
@@ -230,7 +230,7 @@ Inspection of `/data/p2p/araliya-net/data/araliya-relay/store.db` confirms the `
 14. **`src/lib/components/onboarding/StorageCustodyScreen.svelte` *(new — Screen 6)***
     - Displays connected relay + encryption-at-rest copy and the 3 custody options, adapting smoothly whether the user arrived with `'browser-encrypted'` or `'manual-no-store'` from Screen 3 and enforcing a backup confirmation check before wiping `araliya_vault_v1`.
 15. **`src/lib/components/onboarding/PersonalDetailsPreviewScreen.svelte` *(new — Screen 7)***
-    - Optional `Name`, `Date of Birth`, `Pronouns` inputs (all private by default), live `/public` & `/private` relay tree preview updating reactively, and `Selected Theme: Forest Dark` with inline `[Change Theme]` picker.
+    - Optional `Name`, `Date of Birth`, `Pronouns` inputs (all private by default), live `/public` & `/private` relay tree preview updating reactively, and `Selected Theme: Araliya Commons` with inline `[Change Theme]` picker.
 16. **`src/lib/components/onboarding/PublicQuestionDemoScreen.svelte` *(new — Screen 8)***
     - Renders `"Pepsi or Coke?"` with locked `🔒 Private` answer mode, submits privately to relay if the seeded CID exists (or local walkthrough state otherwise), reveals the result bars + privacy callout, and advances.
 17. **`src/lib/components/onboarding/SponsoredQuestionDemoScreen.svelte` *(new — Screen 9)***

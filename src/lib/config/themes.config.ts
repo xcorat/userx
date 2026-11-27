@@ -7,6 +7,55 @@ import type { ThemeConfig, ThemeId } from '$lib/types';
  */
 export const THEMES: ThemeConfig[] = [
 	{
+		id: 'commons',
+		name: 'Araliya Commons',
+		description: 'Textured cream paper, flat sage-green, muted blue & warm dark-brown ink.',
+		colorScheme: 'light',
+		fonts: {
+			body: "'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif",
+			display: "'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif",
+			serif: "'Fraunces', Georgia, 'Times New Roman', serif",
+			mono: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+			preview: 'Inter + Plus Jakarta Sans'
+		},
+		decoration: 'paper',
+		swatches: {
+			bg: '#f3ede2',
+			card: '#faf6ee',
+			primary: '#476e5a',
+			accent: '#7d593a',
+			fg: '#2e221b'
+		},
+		cssVars: {
+			'--background': '#f3ede2',
+			'--foreground': '#2e221b',
+			'--card': '#faf6ee',
+			'--card-foreground': '#2e221b',
+			'--popover': '#faf6ee',
+			'--popover-foreground': '#2e221b',
+			'--primary': '#476e5a',
+			'--primary-foreground': '#f9f6f0',
+			'--secondary': '#e8dfd0',
+			'--secondary-foreground': '#2e221b',
+			'--muted': '#ebe3d5',
+			'--muted-foreground': '#615043',
+			'--accent': '#7d593a',
+			'--accent-foreground': '#faf6ee',
+			'--destructive': '#b83b36',
+			'--border': '#d3c4b0',
+			'--input': '#d3c4b0',
+			'--ring': '#476e5a',
+			'--radius': '1rem',
+			'--info': '#4a6a7d',
+			'--warning': '#8a5310',
+			'--illus-green': '#8eb099',
+			'--illus-green-soft': '#adc6b4',
+			'--illus-blue': '#8aa5b5',
+			'--illus-earth': '#a68260',
+			'--illus-petal': '#fffdf8'
+		}
+	},
+	{
 		id: 'forest',
 		name: 'Forest Dark',
 		description: 'Deep canopy slate, botanical emerald highlights & warm golden-hour accents.',
@@ -45,7 +94,14 @@ export const THEMES: ThemeConfig[] = [
 			'--border': '#213d31',
 			'--input': '#213d31',
 			'--ring': '#34d399',
-			'--radius': '1rem'
+			'--radius': '1rem',
+			'--info': '#67e8f9',
+			'--warning': '#fbbf24',
+			'--illus-green': '#34d399',
+			'--illus-green-soft': '#a7f3d0',
+			'--illus-blue': '#67e8f9',
+			'--illus-earth': '#f5b841',
+			'--illus-petal': '#f4f1ea'
 		}
 	},
 	{
@@ -87,7 +143,14 @@ export const THEMES: ThemeConfig[] = [
 			'--border': '#27272f',
 			'--input': '#27272f',
 			'--ring': '#22d3ee',
-			'--radius': '0.5rem'
+			'--radius': '0.5rem',
+			'--info': '#38bdf8',
+			'--warning': '#fbbf24',
+			'--illus-green': '#22d3ee',
+			'--illus-green-soft': '#a5f3fc',
+			'--illus-blue': '#60a5fa',
+			'--illus-earth': '#a78bfa',
+			'--illus-petal': '#f4f4f5'
 		}
 	},
 	{
@@ -129,7 +192,14 @@ export const THEMES: ThemeConfig[] = [
 			'--border': '#e2d7c5',
 			'--input': '#e2d7c5',
 			'--ring': '#d9480f',
-			'--radius': '1rem'
+			'--radius': '1rem',
+			'--info': '#2b6cb0',
+			'--warning': '#945200',
+			'--illus-green': '#5b8a6b',
+			'--illus-green-soft': '#96b9a1',
+			'--illus-blue': '#6b95c4',
+			'--illus-earth': '#d97736',
+			'--illus-petal': '#ffffff'
 		}
 	},
 	{
@@ -171,7 +241,14 @@ export const THEMES: ThemeConfig[] = [
 			'--border': '#2e225c',
 			'--input': '#2e225c',
 			'--ring': '#00d2a0',
-			'--radius': '1.25rem'
+			'--radius': '1.25rem',
+			'--info': '#38bdf8',
+			'--warning': '#fbbf24',
+			'--illus-green': '#00d2a0',
+			'--illus-green-soft': '#99f6e4',
+			'--illus-blue': '#818cf8',
+			'--illus-earth': '#c084fc',
+			'--illus-petal': '#f8f5ff'
 		}
 	},
 	{
@@ -213,7 +290,14 @@ export const THEMES: ThemeConfig[] = [
 			'--border': '#cbd5e1',
 			'--input': '#cbd5e1',
 			'--ring': '#0f172a',
-			'--radius': '0.375rem'
+			'--radius': '0.375rem',
+			'--info': '#1d4ed8',
+			'--warning': '#945200',
+			'--illus-green': '#059669',
+			'--illus-green-soft': '#6ee7b7',
+			'--illus-blue': '#64748b',
+			'--illus-earth': '#475569',
+			'--illus-petal': '#ffffff'
 		}
 	},
 	{
@@ -255,12 +339,19 @@ export const THEMES: ThemeConfig[] = [
 			'--border': '#31504c',
 			'--input': '#31504c',
 			'--ring': '#5eead4',
-			'--radius': '1.25rem'
+			'--radius': '1.25rem',
+			'--info': '#7dd3fc',
+			'--warning': '#fcd34d',
+			'--illus-green': '#5eead4',
+			'--illus-green-soft': '#99f6e4',
+			'--illus-blue': '#7dd3fc',
+			'--illus-earth': '#fbbf24',
+			'--illus-petal': '#ecfdfb'
 		}
 	}
 ];
 
-export const DEFAULT_THEME_ID: ThemeId = 'forest';
+export const DEFAULT_THEME_ID: ThemeId = 'commons';
 
 export function getThemeById(id: ThemeId): ThemeConfig {
 	return THEMES.find((t) => t.id === id) ?? THEMES[0];

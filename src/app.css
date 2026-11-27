@@ -1,32 +1,41 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@custom-variant dark (&:where([data-color-scheme="dark"], [data-color-scheme="dark"] *));
+
 :root {
-	color-scheme: dark;
+	color-scheme: light;
 	--radius: 1rem;
 	--font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
 	--font-display: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--font-serif-family: 'Fraunces', Georgia, 'Times New Roman', serif;
 	--font-mono-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-	--background: #08120e;
-	--foreground: #ecfdf5;
-	--card: #0f1f18;
-	--card-foreground: #ecfdf5;
-	--popover: #0f1f18;
-	--popover-foreground: #ecfdf5;
-	--primary: #34d399;
-	--primary-foreground: #032015;
-	--secondary: #162b22;
-	--secondary-foreground: #d1fae5;
-	--muted: #14271f;
-	--muted-foreground: #9ab8ab;
-	--accent: #f59e0b;
-	--accent-foreground: #1c1002;
-	--destructive: #ef4444;
-	--border: #213d31;
-	--input: #213d31;
-	--ring: #34d399;
+	--background: #f3ede2;
+	--foreground: #2e221b;
+	--card: #faf6ee;
+	--card-foreground: #2e221b;
+	--popover: #faf6ee;
+	--popover-foreground: #2e221b;
+	--primary: #476e5a;
+	--primary-foreground: #f9f6f0;
+	--secondary: #e8dfd0;
+	--secondary-foreground: #2e221b;
+	--muted: #ebe3d5;
+	--muted-foreground: #615043;
+	--accent: #7d593a;
+	--accent-foreground: #faf6ee;
+	--destructive: #b83b36;
+	--border: #d3c4b0;
+	--input: #d3c4b0;
+	--ring: #476e5a;
+	--info: #4a6a7d;
+	--warning: #8a5310;
+	--illus-green: #8eb099;
+	--illus-green-soft: #adc6b4;
+	--illus-blue: #8aa5b5;
+	--illus-earth: #a68260;
+	--illus-petal: #fffdf8;
 }
 
 @theme inline {
@@ -62,6 +71,8 @@
 	--color-border: var(--border);
 	--color-input: var(--input);
 	--color-ring: var(--ring);
+	--color-info: var(--info);
+	--color-warning: var(--warning);
 }
 
 * {
@@ -88,6 +99,18 @@ body {
 }
 
 /* Theme UI Decorations */
+.theme-deco-paper {
+	background-color: transparent;
+	background-image:
+		radial-gradient(circle at 14% 16%, color-mix(in oklab, var(--illus-green) 14%, transparent), transparent 52%),
+		radial-gradient(circle at 86% 20%, color-mix(in oklab, var(--illus-blue) 12%, transparent), transparent 48%),
+		radial-gradient(circle at 75% 85%, color-mix(in oklab, var(--illus-earth) 14%, transparent), transparent 52%),
+		radial-gradient(ellipse at 50% 50%, transparent 58%, color-mix(in oklab, var(--accent) 8%, transparent) 100%),
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cfilter id='paperGrain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.45 0 0 0 0 0.34 0 0 0 0 0.23 0 0 0 0.055 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23paperGrain)'/%3E%3C/svg%3E");
+	background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+	background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 240px 240px;
+}
+
 .theme-deco-grid {
 	background-image:
 		linear-gradient(to right, color-mix(in oklab, var(--primary) 16%, transparent) 1px, transparent 1px),

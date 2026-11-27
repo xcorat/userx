@@ -188,11 +188,11 @@
 </script>
 
 <div class="mx-auto w-full max-w-lg">
-	<div class="rounded-3xl border border-[#6ee7b7]/20 bg-[#101c17]/90 p-5 text-[#f4f1ea] shadow-2xl shadow-black/60 backdrop-blur-md sm:p-8">
+	<div class="rounded-3xl border border-border bg-card/95 p-5 text-card-foreground shadow-xl shadow-black/10 backdrop-blur-md sm:p-8">
 		<!-- Top Badge & Replay / Relay Controls -->
 		<div class="mb-4 flex items-center justify-between gap-2">
-			<span class="inline-flex items-center gap-1.5 rounded-full border border-[#6ee7b7]/20 bg-[#182b23] px-2.5 py-1 font-mono text-xs text-[#a7f3d0]">
-				<span class="h-1.5 w-1.5 rounded-full bg-[#6ee7b7]"></span>
+			<span class="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 font-mono text-xs text-primary">
+				<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 				Step 1 / 8 · Local Identity
 			</span>
 
@@ -202,11 +202,11 @@
 					onclick={() => (showRelayConfig = !showRelayConfig)}
 					title={relay?.connected ? 'Relay Connected — Configure' : 'Relay Offline — Configure'}
 					aria-label="Configure Relay Endpoint"
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-[#0b120f]/75 px-2.5 py-1 text-xs text-[#f4f1ea]/70 transition hover:border-[#6ee7b7]/40 hover:text-[#f4f1ea]"
+					class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-background/80 px-2.5 py-1 text-xs text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
 				>
 					<span
 						class={`h-1.5 w-1.5 rounded-full ${
-							relay?.connected ? 'bg-[#34d399]' : 'bg-rose-400'
+							relay?.connected ? 'bg-primary' : 'bg-destructive'
 						}`}
 					></span>
 					<Settings class="h-3 w-3" />
@@ -216,7 +216,7 @@
 					<button
 						type="button"
 						onclick={onBackToTools}
-						class="cursor-pointer text-xs text-[#a7f3d0]/80 transition hover:text-[#a7f3d0]"
+						class="cursor-pointer text-xs text-primary transition hover:underline"
 					>
 						← Tools
 					</button>
@@ -226,7 +226,7 @@
 					<button
 						type="button"
 						onclick={onReplayIntro}
-						class="cursor-pointer text-xs text-[#f4f1ea]/60 transition hover:text-[#f4f1ea]"
+						class="cursor-pointer text-xs text-muted-foreground transition hover:text-foreground"
 					>
 						↑ Replay intro
 					</button>
@@ -235,10 +235,10 @@
 		</div>
 
 		{#if showRelayConfig}
-			<div class="mb-4 space-y-2.5 rounded-2xl border border-[#6ee7b7]/20 bg-[#0b120f]/85 p-3.5 text-xs">
+			<div class="mb-4 space-y-2.5 rounded-2xl border border-primary/25 bg-background/85 p-3.5 text-xs">
 				<div class="flex items-center justify-between">
-					<span class="font-medium text-[#a7f3d0]">Direct Iroh Relay Override</span>
-					<span class="font-mono text-xs text-[#f4f1ea]/50">
+					<span class="font-medium text-primary">Direct Iroh Relay Override</span>
+					<span class="font-mono text-xs text-muted-foreground">
 						mode: {relay?.source ?? 'none'}
 					</span>
 				</div>
@@ -248,7 +248,7 @@
 					placeholder="EndpointId or iroh1: address"
 					autocapitalize="none"
 					autocomplete="off"
-					class="w-full rounded-lg border border-white/15 bg-[#101c17] px-3 py-2 font-mono text-xs text-[#f4f1ea] placeholder-[#f4f1ea]/35 focus:border-[#6ee7b7] focus:outline-none"
+					class="w-full rounded-lg border border-input bg-card px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
 				/>
 				<div class="grid grid-cols-2 gap-2">
 					<input
@@ -257,7 +257,7 @@
 						placeholder="Relay URLs (optional)"
 						autocapitalize="none"
 						autocomplete="off"
-						class="w-full rounded-lg border border-white/15 bg-[#101c17] px-3 py-2 font-mono text-xs text-[#f4f1ea] placeholder-[#f4f1ea]/35 focus:border-[#6ee7b7] focus:outline-none"
+						class="w-full rounded-lg border border-input bg-card px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
 					/>
 					<input
 						type="text"
@@ -265,7 +265,7 @@
 						placeholder="Root Pubkey (optional)"
 						autocapitalize="none"
 						autocomplete="off"
-						class="w-full rounded-lg border border-white/15 bg-[#101c17] px-3 py-2 font-mono text-xs text-[#f4f1ea] placeholder-[#f4f1ea]/35 focus:border-[#6ee7b7] focus:outline-none"
+						class="w-full rounded-lg border border-input bg-card px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
 					/>
 				</div>
 				<div class="flex gap-2">
@@ -273,7 +273,7 @@
 						type="button"
 						onclick={handleSaveRelayOverride}
 						disabled={sessionStore.isConnectingRelay}
-						class="flex-1 cursor-pointer rounded-lg bg-[#6ee7b7] px-3 py-1.5 text-xs font-semibold text-[#0b120f] transition hover:bg-[#a7f3d0] disabled:opacity-50"
+						class="flex-1 cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
 					>
 						{sessionStore.isConnectingRelay ? 'Probing Iroh…' : 'Save & Connect'}
 					</button>
@@ -281,7 +281,7 @@
 						type="button"
 						onclick={handleResetRelayOverride}
 						disabled={sessionStore.isConnectingRelay}
-						class="cursor-pointer rounded-lg border border-white/15 px-3 py-1.5 text-xs text-[#f4f1ea]/80 transition hover:bg-white/5"
+						class="cursor-pointer rounded-lg border border-border px-3 py-1.5 text-xs text-foreground/80 transition hover:bg-secondary/70"
 					>
 						Reset
 					</button>
@@ -289,22 +289,22 @@
 			</div>
 		{/if}
 
-		<h2 class="font-serif-hero text-2xl font-semibold text-[#f4f1ea] sm:text-3xl">
+		<h2 class="font-serif-hero text-2xl font-semibold text-foreground sm:text-3xl">
 			Your Lock &amp; Key
 		</h2>
-		<p class="mt-2 text-sm leading-relaxed text-[#f4f1ea]/70">
+		<p class="mt-2 text-sm leading-relaxed text-muted-foreground">
 			Your account is a cryptographic keypair stored in this browser. Your
-			<span class="font-medium text-[#a7f3d0]">public key</span> is your identity; your
-			<span class="font-medium text-[#f5b841]">private key</span> unlocks and signs your data.
+			<span class="font-medium text-primary">public key</span> is your identity; your
+			<span class="font-medium text-accent">private key</span> unlocks and signs your data.
 		</p>
 
 		{#if initError}
-			<div class="mt-4 flex items-center justify-between gap-2 rounded-xl border border-rose-400/35 bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-200">
+			<div class="mt-4 flex items-center justify-between gap-2 rounded-xl border border-destructive/35 bg-destructive/10 px-3.5 py-2.5 text-xs text-destructive">
 				<span class="truncate">{initError}</span>
 				<button
 					type="button"
 					onclick={() => loadDraftKeypair(true)}
-					class="shrink-0 cursor-pointer font-semibold text-[#a7f3d0] hover:underline"
+					class="shrink-0 cursor-pointer font-semibold text-primary hover:underline"
 				>
 					Retry
 				</button>
@@ -313,8 +313,8 @@
 
 		<!-- Generated Keypair Preview -->
 		<div class="mt-5 space-y-3">
-			<div class="rounded-2xl border border-white/10 bg-[#0b120f]/80 p-3.5">
-				<div class="mb-1 flex items-center justify-between text-xs text-[#f4f1ea]/60">
+			<div class="rounded-2xl border border-border bg-background/85 p-3.5">
+				<div class="mb-1 flex items-center justify-between text-xs text-muted-foreground">
 					<span>Public Key (Identity)</span>
 					<div class="flex items-center gap-3">
 						{#if !sessionStore.isLoggedIn}
@@ -324,7 +324,7 @@
 								disabled={isLoadingKeypair}
 								aria-label="Generate new keypair"
 								title="Generate new keypair"
-								class="inline-flex cursor-pointer items-center gap-1 text-[#f4f1ea]/60 hover:text-[#f4f1ea]"
+								class="inline-flex cursor-pointer items-center gap-1 text-muted-foreground hover:text-foreground"
 							>
 								<RefreshCw class={`h-3 w-3 ${isLoadingKeypair ? 'animate-spin' : ''}`} />
 							</button>
@@ -333,25 +333,25 @@
 							type="button"
 							onclick={() => copyText('Public key', publicKey)}
 							disabled={!publicKey}
-							class="cursor-pointer font-medium text-[#a7f3d0] hover:text-[#6ee7b7] disabled:opacity-40"
+							class="cursor-pointer font-medium text-primary hover:underline disabled:opacity-40"
 						>
 							Copy
 						</button>
 					</div>
 				</div>
-				<code class="block truncate font-mono text-xs text-[#a7f3d0]" title={publicKey}>
+				<code class="block truncate font-mono text-xs text-primary" title={publicKey}>
 					{displayPublicKey}
 				</code>
 			</div>
 
-			<div class="rounded-2xl border border-[#f5b841]/25 bg-[#0b120f]/80 p-3.5">
-				<div class="mb-1 flex items-center justify-between text-xs text-[#f4f1ea]/60">
+			<div class="rounded-2xl border border-accent/35 bg-background/85 p-3.5">
+				<div class="mb-1 flex items-center justify-between text-xs text-muted-foreground">
 					<span>Private Key (Save this safely)</span>
 					<div class="flex items-center gap-3">
 						<button
 							type="button"
 							onclick={() => (revealPrivate = !revealPrivate)}
-							class="cursor-pointer font-medium text-[#f4f1ea]/70 hover:text-[#f4f1ea]"
+							class="cursor-pointer font-medium text-muted-foreground hover:text-foreground"
 						>
 							{revealPrivate ? 'Hide' : 'Reveal'}
 						</button>
@@ -359,13 +359,13 @@
 							type="button"
 							onclick={() => copyText('Private key', recoveryKey)}
 							disabled={!recoveryKey}
-							class="cursor-pointer font-medium text-[#f5b841] hover:text-amber-300 disabled:opacity-40"
+							class="cursor-pointer font-medium text-accent hover:underline disabled:opacity-40"
 						>
 							Copy
 						</button>
 					</div>
 				</div>
-				<code class="block truncate font-mono text-xs text-[#f5b841]" title={revealPrivate ? recoveryKey : ''}>
+				<code class="block truncate font-mono text-xs text-accent" title={revealPrivate ? recoveryKey : ''}>
 					{#if isLoadingKeypair}
 						Generating…
 					{:else if revealPrivate}
@@ -378,7 +378,7 @@
 		</div>
 
 		{#if custodyChosenInIntro}
-			<div class="mt-4 flex items-center justify-between gap-2 rounded-xl border border-[#6ee7b7]/20 bg-[#182b23]/70 px-3 py-2 text-xs text-[#a7f3d0]">
+			<div class="mt-4 flex items-center justify-between gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2 text-xs text-primary">
 				<span>
 					From PKI setup: {manualMode
 						? 'Store secret manually'
@@ -391,7 +391,7 @@
 		<form onsubmit={handleSubmit} class="mt-5 space-y-4">
 			{#if !manualMode}
 				<div class="space-y-2">
-					<label for="local-pass" class="block text-xs font-medium text-[#f4f1ea]/80">
+					<label for="local-pass" class="block text-xs font-medium text-foreground">
 						Encrypt Private Key with a Local Password
 					</label>
 					<div class="relative">
@@ -403,13 +403,13 @@
 							minlength={8}
 							autocomplete="new-password"
 							placeholder="Create a local password (min 8 chars)"
-							class="w-full rounded-xl border border-white/15 bg-[#0b120f] py-3 pr-10 pl-4 text-sm text-[#f4f1ea] placeholder-[#f4f1ea]/35 transition focus:border-[#6ee7b7] focus:outline-none"
+							class="w-full rounded-xl border border-input bg-background py-3 pr-10 pl-4 text-sm text-foreground placeholder:text-muted-foreground/60 transition focus:border-primary focus:outline-none"
 						/>
 						<button
 							type="button"
 							onclick={() => (showPassword = !showPassword)}
 							aria-label={showPassword ? 'Hide password' : 'Show password'}
-							class="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-[#f4f1ea]/55 hover:text-[#f4f1ea]"
+							class="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
 						>
 							{#if showPassword}
 								<EyeOff class="h-4 w-4" />
@@ -423,7 +423,7 @@
 						<button
 							type="button"
 							onclick={() => switchCustodyMode('manual-no-store')}
-							class="cursor-pointer text-xs font-medium text-[#a7f3d0]/85 hover:text-[#6ee7b7] hover:underline"
+							class="cursor-pointer text-xs font-medium text-primary hover:underline"
 						>
 							Store secret manually →
 						</button>
@@ -433,15 +433,15 @@
 				<button
 					type="submit"
 					disabled={isLoadingKeypair || sessionStore.isAuthenticating}
-					class="w-full cursor-pointer rounded-xl bg-[#6ee7b7] py-3.5 text-sm font-semibold text-[#0b120f] shadow-lg shadow-emerald-950/40 transition hover:bg-[#a7f3d0] disabled:opacity-50"
+					class="w-full cursor-pointer rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md shadow-black/10 transition hover:bg-primary/90 disabled:opacity-50"
 				>
 					{sessionStore.isAuthenticating
 						? 'Encrypting Locally…'
 						: 'Save Key & Continue to Vouch →'}
 				</button>
 			{:else}
-				<div class="space-y-3 rounded-2xl border border-[#f5b841]/30 bg-[#f5b841]/10 p-3.5 text-xs">
-					<p class="leading-relaxed text-[#f4f1ea]/85">
+				<div class="space-y-3 rounded-2xl border border-accent/35 bg-accent/10 p-3.5 text-xs">
+					<p class="leading-relaxed text-foreground/90">
 						Your private key stays in active tab memory only and is never saved to browser storage. Paste it whenever you open a new session.
 					</p>
 
@@ -452,7 +452,7 @@
 								revealPrivate = true;
 								void copyText('Private key', recoveryKey);
 							}}
-							class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#f5b841]/40 bg-[#0b120f]/75 px-3 py-1.5 text-xs font-medium text-[#f5b841] hover:bg-[#0b120f]"
+							class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-accent/40 bg-background/85 px-3 py-1.5 text-xs font-medium text-accent hover:bg-background"
 						>
 							<Copy class="h-3.5 w-3.5" />
 							Copy Private Key
@@ -461,19 +461,19 @@
 						<button
 							type="button"
 							onclick={() => switchCustodyMode('browser-encrypted')}
-							class="cursor-pointer text-xs font-medium text-[#a7f3d0] hover:underline"
+							class="cursor-pointer text-xs font-medium text-primary hover:underline"
 						>
 							← Encrypt with password instead
 						</button>
 					</div>
 
-					<label class="flex cursor-pointer items-start gap-2 rounded-xl border border-white/10 bg-[#0b120f]/70 p-2.5 text-xs">
+					<label class="flex cursor-pointer items-start gap-2 rounded-xl border border-border bg-background/80 p-2.5 text-xs">
 						<input
 							type="checkbox"
 							bind:checked={manualConfirmed}
-							class="mt-0.5 h-4 w-4 shrink-0 accent-[#6ee7b7]"
+							class="mt-0.5 h-4 w-4 shrink-0 accent-[var(--primary)]"
 						/>
-						<span class="text-[#f4f1ea]/90">
+						<span class="text-foreground">
 							I saved my Private Key somewhere safe (I will paste it each session)
 						</span>
 					</label>
@@ -482,14 +482,14 @@
 				<button
 					type="submit"
 					disabled={isLoadingKeypair || sessionStore.isAuthenticating}
-					class="w-full cursor-pointer rounded-xl bg-[#6ee7b7] py-3.5 text-sm font-semibold text-[#0b120f] shadow-lg shadow-emerald-950/40 transition hover:bg-[#a7f3d0] disabled:opacity-50"
+					class="w-full cursor-pointer rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md shadow-black/10 transition hover:bg-primary/90 disabled:opacity-50"
 				>
 					{sessionStore.isAuthenticating ? 'Preparing Session…' : 'Continue to Vouch →'}
 				</button>
 			{/if}
 		</form>
 
-		<p class="mt-4 text-center text-xs text-[#f4f1ea]/45">
+		<p class="mt-4 text-center text-xs text-muted-foreground">
 			So far your account exists only in this browser window.
 		</p>
 	</div>

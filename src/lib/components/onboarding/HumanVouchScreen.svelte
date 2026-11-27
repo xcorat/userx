@@ -434,7 +434,7 @@
 				</p>
 
 				{#if mismatchWarning}
-					<p class="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-200">
+					<p class="rounded-lg border border-warning/35 bg-warning/10 p-2 text-xs text-warning">
 						{mismatchWarning}
 					</p>
 				{/if}

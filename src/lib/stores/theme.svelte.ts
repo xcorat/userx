@@ -42,6 +42,7 @@ class ThemeStore {
 		const root = document.documentElement;
 		root.dataset.theme = theme.id;
 		root.dataset.decoration = theme.decoration;
+		root.dataset.colorScheme = theme.colorScheme;
 		root.style.colorScheme = theme.colorScheme;
 
 		for (const [token, value] of Object.entries(theme.cssVars)) {

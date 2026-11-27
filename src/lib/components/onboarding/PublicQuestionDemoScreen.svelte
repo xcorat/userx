@@ -123,7 +123,7 @@
 			{demo?.text ?? 'Onboarding question unavailable'}
 		</h1>
 		{#if !demo}
-			<p class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-muted-foreground">
+			<p class="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs text-muted-foreground">
 				{onboardingManifestStore.error ?? 'Connect to a relay seeded with the onboarding manifest to load this question.'}
 			</p>
 		{/if}

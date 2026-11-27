@@ -249,9 +249,9 @@
 			{/if}
 
 			{#if requiresExternalBackupCheck}
-				<div class="space-y-2 rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 text-xs">
+				<div class="space-y-2 rounded-xl border border-warning/35 bg-warning/10 p-3 text-xs">
 					<div class="flex items-center justify-between gap-2">
-						<span class="text-xs font-semibold text-amber-200">
+						<span class="text-xs font-semibold text-warning">
 							Back up your key before wiping browser vault
 						</span>
 						<Button
