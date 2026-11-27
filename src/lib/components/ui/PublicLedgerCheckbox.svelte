@@ -54,7 +54,7 @@
 	<span>{label}</span>
 
 	<span
-		class={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+		class={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wider ${
 			checked
 				? 'bg-primary/20 text-primary'
 				: 'bg-background/70 text-muted-foreground'

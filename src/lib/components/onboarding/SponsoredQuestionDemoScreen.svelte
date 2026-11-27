@@ -55,7 +55,7 @@
 	/>
 
 	<div class="my-auto space-y-4 py-2">
-		<div class="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+		<div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
 			<span class="font-mono font-semibold text-primary">Question #2</span>
 			<span>·</span>
 			<span class="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/15 px-2 py-0.5 font-semibold text-accent">
@@ -98,7 +98,7 @@
 							href={demo.referenceUrl}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="inline-flex items-center gap-1 font-mono text-[11px] text-primary hover:underline"
+							class="inline-flex items-center gap-1 font-mono text-xs text-primary hover:underline"
 						>
 							{demo.referenceUrl}
 							<ExternalLink class="h-3 w-3" />
@@ -142,7 +142,7 @@
 				<Coins class="h-4 w-4 text-accent" />
 				Walkthrough demo only
 			</p>
-			<p class="text-[11px] leading-relaxed text-muted-foreground">
+			<p class="text-xs leading-relaxed text-muted-foreground">
 				This example adds a simulated reward to this browser only. It does not create a sponsored question, real token balance, payment, or relay response.
 			</p>
 		</div>

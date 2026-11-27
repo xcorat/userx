@@ -4,14 +4,14 @@
 	import { onboardingManifestStore } from '$lib/stores/onboarding-manifest.svelte';
 	import { sessionStore } from '$lib/stores/session.svelte';
 	import { themeStore } from '$lib/stores/theme.svelte';
-	import type { ThemeId } from '$lib/types';
 	import RelayStatusPill from '$lib/components/onboarding/RelayStatusPill.svelte';
+	import ThemePicker from '$lib/components/theme/ThemePicker.svelte';
 	import PublicLedgerCheckbox from '$lib/components/ui/PublicLedgerCheckbox.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { toast } from 'svelte-sonner';
-	import { ArrowRight, Check, Palette } from 'lucide-svelte';
+	import { ArrowRight, Palette } from 'lucide-svelte';
 
 	let realName = $state(ledgerStore.profile.realName.value);
 	let realNamePublic = $state(ledgerStore.profile.realName.visibility === 'public');
@@ -83,10 +83,6 @@
 		return `0x${p1}${p2.slice(0, 4)}…${p2.slice(4)}`;
 	});
 
-	function selectTheme(id: ThemeId) {
-		themeStore.setTheme(id);
-	}
-
 	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
 		isSaving = true;
@@ -117,7 +113,7 @@
 
 <form
 	onsubmit={handleSubmit}
-	class="flex h-full flex-col justify-between gap-3 overflow-y-auto px-5 py-6"
+	class="flex h-full flex-col justify-between gap-3 overflow-y-auto px-5 py-4 md:px-8"
 >
 	<RelayStatusPill
 		stepLabel="Step 5 / 8"
@@ -126,13 +122,13 @@
 
 	<div class="my-auto space-y-3.5 py-1">
 		<div class="space-y-1">
-			<p class="font-mono text-[11px] uppercase tracking-widest text-primary">
+			<p class="font-mono text-xs uppercase tracking-widest text-primary">
 				Stage 3 · Profile &amp; Relay Preview
 			</p>
-			<h1 class="font-heading text-xl font-bold tracking-tight">
+			<h1 class="font-heading text-2xl font-bold tracking-tight">
 				Optional Details &amp; Look
 			</h1>
-			<p class="text-[11px] text-muted-foreground">
+			<p class="text-sm text-muted-foreground">
 				Encrypted in your <span class="font-mono text-foreground">/private</span> namespace by default.
 			</p>
 		</div>
@@ -141,7 +137,7 @@
 		<div class="space-y-2.5 rounded-2xl border border-border/80 bg-card/80 p-3.5">
 			<div class="space-y-1">
 				<div class="flex items-center justify-between gap-2">
-					<Label for="detail-name" class="text-[11px] font-semibold">
+					<Label for="detail-name" class="text-xs font-semibold">
 						{nameField?.label ?? 'Name'}
 						{#if nameField && !nameField.required}
 							<span class="font-normal text-muted-foreground">(optional)</span>
@@ -153,14 +149,14 @@
 					id="detail-name"
 					bind:value={realName}
 					placeholder="Alice"
-					class="h-9 bg-background/70 text-xs"
+					class="h-11 bg-background/70 text-sm"
 				/>
 			</div>
 
 			<div class="space-y-2.5">
 				<div class="space-y-1">
 					<div class="flex items-center justify-between gap-2">
-						<Label for="detail-dob" class="text-[11px] font-semibold">
+						<Label for="detail-dob" class="text-xs font-semibold">
 							{dateOfBirthField?.label ?? 'Date of Birth'}
 						</Label>
 						<PublicLedgerCheckbox bind:checked={dobPublic} compact />
@@ -169,13 +165,13 @@
 						id="detail-dob"
 						type="date"
 						bind:value={dob}
-						class="h-9 bg-background/70 text-xs"
+						class="h-11 bg-background/70 text-sm"
 					/>
 				</div>
 
 				<div class="space-y-1">
 					<div class="flex items-center justify-between gap-2">
-						<Label for="detail-pronouns" class="text-[11px] font-semibold">
+						<Label for="detail-pronouns" class="text-xs font-semibold">
 							{pronounsField?.label ?? 'Pronouns'}
 						</Label>
 						<PublicLedgerCheckbox bind:checked={pronounsPublic} compact />
@@ -184,7 +180,7 @@
 						id="detail-pronouns"
 						bind:value={pronouns}
 						placeholder="they/them"
-						class="h-9 bg-background/70 text-xs"
+						class="h-11 bg-background/70 text-sm"
 					/>
 				</div>
 			</div>
@@ -194,7 +190,7 @@
 					<button
 						type="button"
 						onclick={() => (pronouns = preset)}
-						class={`cursor-pointer rounded-full border px-2.5 py-0.5 text-[10px] transition-colors ${
+						class={`cursor-pointer rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
 							pronouns === preset
 								? 'border-primary bg-primary/15 text-foreground'
 								: 'border-border bg-background/60 text-muted-foreground hover:text-foreground'
@@ -208,10 +204,10 @@
 
 		<!-- Live Relay Storage Preview -->
 		<div class="space-y-1.5 rounded-2xl border border-border/80 bg-card/85 p-3">
-			<p class="text-[11px] font-semibold text-foreground">
+			<p class="text-xs font-semibold text-foreground">
 				How Your Data Looks on the Relay (Encrypted at Rest)
 			</p>
-			<pre class="overflow-x-auto rounded-lg bg-background/80 p-2.5 font-mono text-[10px] leading-relaxed text-muted-foreground">Namespace: araliya.{pk8}
+			<pre class="overflow-x-auto rounded-lg bg-background/80 p-2.5 font-mono text-xs leading-relaxed text-muted-foreground">Namespace: araliya.{pk8}
 ├── /public  → {publicProjectionJson}
 └── /private → 🔒 [{privateCipherPreview}]</pre>
 		</div>
@@ -229,46 +225,16 @@
 					size="sm"
 					variant="outline"
 					onclick={() => (showThemePicker = !showThemePicker)}
-					class="h-7 cursor-pointer text-[11px]"
+					class="h-7 cursor-pointer text-xs"
 				>
 					{showThemePicker ? 'Done' : 'Change Theme'}
 				</Button>
 			</div>
 
 			{#if showThemePicker}
-				<div class="grid grid-cols-1 gap-1.5 border-t border-border/60 pt-2">
-					{#each themeStore.availableThemes as theme (theme.id)}
-						{@const isSelected = themeStore.themeId === theme.id}
-						<button
-							type="button"
-							onclick={() => selectTheme(theme.id)}
-							class={`flex w-full cursor-pointer items-center justify-between rounded-lg border px-2.5 py-2 text-left text-xs transition-colors ${
-								isSelected
-									? 'border-primary bg-primary/15 text-foreground'
-									: 'border-border bg-background/60 text-muted-foreground hover:text-foreground'
-							}`}
-						>
-							<span class="font-medium">{theme.name}</span>
-							<span class="flex items-center gap-1.5">
-								<span
-									class="h-3 w-3 rounded-full border border-white/15"
-									style={`background-color: ${theme.swatches.bg};`}
-								></span>
-								<span
-									class="h-3 w-3 rounded-full"
-									style={`background-color: ${theme.swatches.primary};`}
-								></span>
-								<span
-									class="h-3 w-3 rounded-full"
-									style={`background-color: ${theme.swatches.accent};`}
-								></span>
-								{#if isSelected}
-									<Check class="ml-1 h-3.5 w-3.5 text-primary" />
-								{/if}
-							</span>
-						</button>
-					{/each}
-					<p class="text-[10px] text-muted-foreground">
+				<div class="border-t border-border/60 pt-2">
+					<ThemePicker />
+					<p class="text-xs text-muted-foreground">
 						Saved strictly locally on this device — never published to the relay.
 					</p>
 				</div>

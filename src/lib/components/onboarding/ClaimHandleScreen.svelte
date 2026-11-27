@@ -111,7 +111,7 @@
 
 	<div class="my-auto space-y-5 py-2">
 		<div class="space-y-1.5">
-			<p class="font-mono text-[11px] uppercase tracking-widest text-primary">
+			<p class="font-mono text-xs uppercase tracking-widest text-primary">
 				Stage 3 · Public Identity
 			</p>
 			<h1 class="font-heading text-2xl font-bold tracking-tight">
@@ -164,7 +164,7 @@
 					size="sm"
 					variant="outline"
 					onclick={() => (keepPublic = !keepPublic)}
-					class="h-7 cursor-pointer text-[11px]"
+					class="h-7 cursor-pointer text-xs"
 				>
 					{keepPublic ? 'Make Private' : 'Make Public'}
 				</Button>

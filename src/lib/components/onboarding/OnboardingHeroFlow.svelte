@@ -950,7 +950,7 @@
 						</div>
 						<div class="flex shrink-0 items-center gap-2">
 							{#if custodyChosenInIntro}
-								<span class="rounded-full bg-[#6ee7b7]/15 px-2 py-0.5 font-mono text-[10px] text-[#a7f3d0]">
+								<span class="rounded-full bg-[#6ee7b7]/15 px-2 py-0.5 font-mono text-xs text-[#a7f3d0]">
 									{selectedCustodyMode === 'manual-no-store' ? 'Manual Key' : 'Browser Password'}
 								</span>
 							{/if}

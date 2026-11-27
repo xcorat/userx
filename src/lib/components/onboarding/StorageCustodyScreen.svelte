@@ -87,7 +87,7 @@
 
 	<div class="my-auto space-y-4 py-2">
 		<div class="space-y-1.5">
-			<p class="font-mono text-[11px] uppercase tracking-widest text-primary">
+			<p class="font-mono text-xs uppercase tracking-widest text-primary">
 				Stage 3 · Storage &amp; Key Custody
 			</p>
 			<h1 class="font-heading text-2xl font-bold tracking-tight">
@@ -102,14 +102,14 @@
 					<Server class="h-3.5 w-3.5 text-primary" />
 					Connected araliya-net Relay
 				</span>
-				<span class="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-[10px] text-primary">
+				<span class="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-xs text-primary">
 					{formatRelayLabel()}
 				</span>
 			</div>
-			<p class="text-[11px] leading-relaxed text-muted-foreground">
+			<p class="text-xs leading-relaxed text-muted-foreground">
 				You can run your own relay anytime—soon with granular controls over exactly which data you host.
 			</p>
-			<div class="flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/10 p-2.5 text-[11px] leading-relaxed text-foreground">
+			<div class="flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/10 p-2.5 text-xs leading-relaxed text-foreground">
 				<LockKeyhole class="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
 				<span>
 					Your private data is locked on your device (<span class="font-mono">XChaCha20-Poly1305</span>) with keys derived from your Private Key before hitting the relay. Even relay operators cannot read it.
@@ -145,7 +145,7 @@
 						1. Keep encrypted in this browser
 						<span class="font-normal text-primary">(Default)</span>
 					</p>
-					<p class="text-[11px] text-muted-foreground">
+					<p class="text-xs text-muted-foreground">
 						Fast unlock with your local password.
 					</p>
 				</div>
@@ -171,7 +171,7 @@
 					<p class="text-xs font-semibold text-foreground">
 						2. Save in a Password Vault &amp; wipe from browser
 					</p>
-					<p class="text-[11px] text-muted-foreground">
+					<p class="text-xs text-muted-foreground">
 						Removes the local encrypted vault after you copy your key.
 					</p>
 				</div>
@@ -197,7 +197,7 @@
 					<p class="text-xs font-semibold text-foreground">
 						3. Do not store — I will copy and paste it every session
 					</p>
-					<p class="text-[11px] text-muted-foreground">
+					<p class="text-xs text-muted-foreground">
 						{sessionStore.custodyMode === 'manual-no-store'
 							? 'Active from Step 3 — no vault stored in this browser.'
 							: 'Keeps key only in active tab memory until closed.'}
@@ -207,7 +207,7 @@
 
 			{#if needsNewVaultPassword}
 				<div class="space-y-2 rounded-xl border border-primary/30 bg-card/85 p-3">
-					<p class="text-[11px] font-semibold text-foreground">
+					<p class="text-xs font-semibold text-foreground">
 						Set a Local Password to Encrypt in This Browser
 					</p>
 					<div class="relative">
@@ -251,7 +251,7 @@
 			{#if requiresExternalBackupCheck}
 				<div class="space-y-2 rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 text-xs">
 					<div class="flex items-center justify-between gap-2">
-						<span class="text-[11px] font-semibold text-amber-200">
+						<span class="text-xs font-semibold text-amber-200">
 							Back up your key before wiping browser vault
 						</span>
 						<Button
@@ -259,13 +259,13 @@
 							size="sm"
 							variant="outline"
 							onclick={copyRecoveryKey}
-							class="h-7 cursor-pointer text-[10px]"
+							class="h-7 cursor-pointer text-xs"
 						>
 							<Copy class="mr-1 h-3 w-3" />
 							Copy Private Key
 						</Button>
 					</div>
-					<label class="flex cursor-pointer items-start gap-2 text-[11px] text-foreground">
+					<label class="flex cursor-pointer items-start gap-2 text-xs text-foreground">
 						<input
 							type="checkbox"
 							bind:checked={backupConfirmed}
@@ -276,7 +276,7 @@
 				</div>
 			{/if}
 
-			<p class="text-[10px] leading-relaxed text-muted-foreground">
+			<p class="text-xs leading-relaxed text-muted-foreground">
 				Coming soon: optional encrypted key backup on storage relays protected by your password.
 			</p>
 		</div>

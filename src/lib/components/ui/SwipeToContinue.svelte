@@ -111,7 +111,7 @@
 		<button
 			type="button"
 			onclick={completeSwipe}
-			class="text-[11px] font-medium text-muted-foreground/80 underline-offset-4 hover:text-foreground hover:underline cursor-pointer"
+			class="text-xs font-medium text-muted-foreground/80 underline-offset-4 hover:text-foreground hover:underline cursor-pointer"
 		>
 			Or tap here to continue
 		</button>

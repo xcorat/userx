@@ -114,7 +114,7 @@
 		<div class="space-y-3 rounded-2xl border border-border/80 bg-card/85 p-4">
 			<form onsubmit={handleApplyVouchToken} class="space-y-2.5">
 				<div class="space-y-1">
-					<Label for="expired-vouch-paste" class="text-[11px]">Have a Vouch Token or JSON?</Label>
+					<Label for="expired-vouch-paste" class="text-xs">Have a Vouch Token or JSON?</Label>
 					<Input
 						id="expired-vouch-paste"
 						bind:value={vouchPasteInput}

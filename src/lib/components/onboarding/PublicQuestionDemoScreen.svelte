@@ -108,7 +108,7 @@
 	/>
 
 	<div class="my-auto space-y-4 py-2">
-		<div class="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+		<div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
 			<span class="font-mono font-semibold text-primary">Question #1</span>
 			<span>·</span>
 			<span class="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-foreground">
@@ -194,7 +194,7 @@
 				Your response is encrypted and does not contribute to the public totals above.
 			</div>
 		{:else}
-			<p class="text-[11px] leading-relaxed text-muted-foreground">
+			<p class="text-xs leading-relaxed text-muted-foreground">
 				The question is public, but this intro response is private. Baseline results are display-only; your private response does not change them.
 			</p>
 		{/if}

@@ -81,7 +81,7 @@
 			{/if}
 
 			{#if stepLabel}
-				<span class="rounded-full border border-border/80 bg-secondary/60 px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+				<span class="rounded-full border border-border/80 bg-secondary/60 px-2 py-0.5 font-mono text-xs text-muted-foreground">
 					{stepLabel}
 				</span>
 			{/if}
@@ -91,7 +91,7 @@
 			<button
 				type="button"
 				onclick={() => sessionStore.refreshRelayStatus()}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card/85 px-2.5 py-1 font-mono text-[10px] transition-colors hover:border-primary/40"
+				class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card/85 px-2.5 py-1 font-mono text-xs transition-colors hover:border-primary/40"
 			>
 				<span
 					class={`h-2 w-2 rounded-full ${
@@ -127,14 +127,14 @@
 	</div>
 
 	{#if relay?.connected && relay.localOnly}
-		<div class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-[11px] text-amber-200">
+		<div class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-200">
 			<AlertTriangle class="mt-0.5 h-3.5 w-3.5 shrink-0" />
 			<span>
 				Relay is running with <span class="font-mono">--local-only</span>; browser WASM requires Iroh relay connectivity.
 			</span>
 		</div>
 	{:else if !relay?.connected && relay?.error && showRelayConfig}
-		<p class="text-[11px] text-destructive">{relay.error}</p>
+		<p class="text-xs text-destructive">{relay.error}</p>
 	{/if}
 
 	{#if showRelayConfig}
@@ -144,17 +144,17 @@
 		>
 			<div class="flex items-center justify-between">
 				<span class="font-semibold">Direct Iroh Relay Override</span>
-				<span class="font-mono text-[10px] text-muted-foreground">
+				<span class="font-mono text-xs text-muted-foreground">
 					mode: {relay?.source ?? 'none'}
 				</span>
 			</div>
 			{#if relay?.endpointId}
-				<p class="truncate font-mono text-[10px] text-muted-foreground">
+				<p class="truncate font-mono text-xs text-muted-foreground">
 					active: {truncateKey(relay.endpointId)}
 				</p>
 			{/if}
 			<div class="space-y-1">
-				<Label for="relay-endpoint-input" class="text-[11px] text-muted-foreground">
+				<Label for="relay-endpoint-input" class="text-xs text-muted-foreground">
 					EndpointId or versioned iroh1 address
 				</Label>
 				<Input
@@ -163,12 +163,12 @@
 					placeholder="EndpointId or iroh1: address"
 					autocapitalize="none"
 					autocomplete="off"
-					class="h-8 bg-background/70 font-mono text-[11px]"
+					class="h-8 bg-background/70 font-mono text-xs"
 				/>
 			</div>
 			<div class="grid grid-cols-2 gap-2">
 				<div class="space-y-1">
-					<Label for="relay-urls-input" class="text-[11px] text-muted-foreground">
+					<Label for="relay-urls-input" class="text-xs text-muted-foreground">
 						Iroh Relay URLs
 					</Label>
 					<Input
@@ -177,11 +177,11 @@
 						placeholder="https://..."
 						autocapitalize="none"
 						autocomplete="off"
-						class="h-8 bg-background/70 font-mono text-[11px]"
+						class="h-8 bg-background/70 font-mono text-xs"
 					/>
 				</div>
 				<div class="space-y-1">
-					<Label for="relay-root-input" class="text-[11px] text-muted-foreground">
+					<Label for="relay-root-input" class="text-xs text-muted-foreground">
 						Root Pubkey
 					</Label>
 					<Input
@@ -190,7 +190,7 @@
 						placeholder="hex or base64url"
 						autocapitalize="none"
 						autocomplete="off"
-						class="h-8 bg-background/70 font-mono text-[11px]"
+						class="h-8 bg-background/70 font-mono text-xs"
 					/>
 				</div>
 			</div>
@@ -199,7 +199,7 @@
 					type="submit"
 					size="sm"
 					disabled={sessionStore.isConnectingRelay}
-					class="h-7 flex-1 cursor-pointer text-[11px]"
+					class="h-7 flex-1 cursor-pointer text-xs"
 				>
 					{sessionStore.isConnectingRelay ? 'Probing Iroh...' : 'Save & Connect'}
 				</Button>
@@ -209,7 +209,7 @@
 					variant="outline"
 					onclick={handleResetRelayOverride}
 					disabled={sessionStore.isConnectingRelay}
-					class="h-7 cursor-pointer text-[11px]"
+					class="h-7 cursor-pointer text-xs"
 				>
 					Reset
 				</Button>

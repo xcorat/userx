@@ -202,7 +202,7 @@
 					onclick={() => (showRelayConfig = !showRelayConfig)}
 					title={relay?.connected ? 'Relay Connected — Configure' : 'Relay Offline — Configure'}
 					aria-label="Configure Relay Endpoint"
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-[#0b120f]/75 px-2.5 py-1 text-[11px] text-[#f4f1ea]/70 transition hover:border-[#6ee7b7]/40 hover:text-[#f4f1ea]"
+					class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-[#0b120f]/75 px-2.5 py-1 text-xs text-[#f4f1ea]/70 transition hover:border-[#6ee7b7]/40 hover:text-[#f4f1ea]"
 				>
 					<span
 						class={`h-1.5 w-1.5 rounded-full ${
@@ -238,7 +238,7 @@
 			<div class="mb-4 space-y-2.5 rounded-2xl border border-[#6ee7b7]/20 bg-[#0b120f]/85 p-3.5 text-xs">
 				<div class="flex items-center justify-between">
 					<span class="font-medium text-[#a7f3d0]">Direct Iroh Relay Override</span>
-					<span class="font-mono text-[10px] text-[#f4f1ea]/50">
+					<span class="font-mono text-xs text-[#f4f1ea]/50">
 						mode: {relay?.source ?? 'none'}
 					</span>
 				</div>
@@ -248,7 +248,7 @@
 					placeholder="EndpointId or iroh1: address"
 					autocapitalize="none"
 					autocomplete="off"
-					class="w-full rounded-lg border border-white/15 bg-[#101c17] px-3 py-2 font-mono text-[11px] text-[#f4f1ea] placeholder-[#f4f1ea]/35 focus:border-[#6ee7b7] focus:outline-none"
+					class="w-full rounded-lg border border-white/15 bg-[#101c17] px-3 py-2 font-mono text-xs text-[#f4f1ea] placeholder-[#f4f1ea]/35 focus:border-[#6ee7b7] focus:outline-none"
 				/>
 				<div class="grid grid-cols-2 gap-2">
 					<input
@@ -257,7 +257,7 @@
 						placeholder="Relay URLs (optional)"
 						autocapitalize="none"
 						autocomplete="off"
-						class="w-full rounded-lg border border-white/15 bg-[#101c17] px-3 py-2 font-mono text-[11px] text-[#f4f1ea] placeholder-[#f4f1ea]/35 focus:border-[#6ee7b7] focus:outline-none"
+						class="w-full rounded-lg border border-white/15 bg-[#101c17] px-3 py-2 font-mono text-xs text-[#f4f1ea] placeholder-[#f4f1ea]/35 focus:border-[#6ee7b7] focus:outline-none"
 					/>
 					<input
 						type="text"
@@ -265,7 +265,7 @@
 						placeholder="Root Pubkey (optional)"
 						autocapitalize="none"
 						autocomplete="off"
-						class="w-full rounded-lg border border-white/15 bg-[#101c17] px-3 py-2 font-mono text-[11px] text-[#f4f1ea] placeholder-[#f4f1ea]/35 focus:border-[#6ee7b7] focus:outline-none"
+						class="w-full rounded-lg border border-white/15 bg-[#101c17] px-3 py-2 font-mono text-xs text-[#f4f1ea] placeholder-[#f4f1ea]/35 focus:border-[#6ee7b7] focus:outline-none"
 					/>
 				</div>
 				<div class="flex gap-2">
@@ -273,7 +273,7 @@
 						type="button"
 						onclick={handleSaveRelayOverride}
 						disabled={sessionStore.isConnectingRelay}
-						class="flex-1 cursor-pointer rounded-lg bg-[#6ee7b7] px-3 py-1.5 text-[11px] font-semibold text-[#0b120f] transition hover:bg-[#a7f3d0] disabled:opacity-50"
+						class="flex-1 cursor-pointer rounded-lg bg-[#6ee7b7] px-3 py-1.5 text-xs font-semibold text-[#0b120f] transition hover:bg-[#a7f3d0] disabled:opacity-50"
 					>
 						{sessionStore.isConnectingRelay ? 'Probing Iroh…' : 'Save & Connect'}
 					</button>
@@ -281,7 +281,7 @@
 						type="button"
 						onclick={handleResetRelayOverride}
 						disabled={sessionStore.isConnectingRelay}
-						class="cursor-pointer rounded-lg border border-white/15 px-3 py-1.5 text-[11px] text-[#f4f1ea]/80 transition hover:bg-white/5"
+						class="cursor-pointer rounded-lg border border-white/15 px-3 py-1.5 text-xs text-[#f4f1ea]/80 transition hover:bg-white/5"
 					>
 						Reset
 					</button>
@@ -378,7 +378,7 @@
 		</div>
 
 		{#if custodyChosenInIntro}
-			<div class="mt-4 flex items-center justify-between gap-2 rounded-xl border border-[#6ee7b7]/20 bg-[#182b23]/70 px-3 py-2 text-[11px] text-[#a7f3d0]">
+			<div class="mt-4 flex items-center justify-between gap-2 rounded-xl border border-[#6ee7b7]/20 bg-[#182b23]/70 px-3 py-2 text-xs text-[#a7f3d0]">
 				<span>
 					From PKI setup: {manualMode
 						? 'Store secret manually'
@@ -423,7 +423,7 @@
 						<button
 							type="button"
 							onclick={() => switchCustodyMode('manual-no-store')}
-							class="cursor-pointer text-[11px] font-medium text-[#a7f3d0]/85 hover:text-[#6ee7b7] hover:underline"
+							class="cursor-pointer text-xs font-medium text-[#a7f3d0]/85 hover:text-[#6ee7b7] hover:underline"
 						>
 							Store secret manually →
 						</button>
@@ -452,7 +452,7 @@
 								revealPrivate = true;
 								void copyText('Private key', recoveryKey);
 							}}
-							class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#f5b841]/40 bg-[#0b120f]/75 px-3 py-1.5 text-[11px] font-medium text-[#f5b841] hover:bg-[#0b120f]"
+							class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#f5b841]/40 bg-[#0b120f]/75 px-3 py-1.5 text-xs font-medium text-[#f5b841] hover:bg-[#0b120f]"
 						>
 							<Copy class="h-3.5 w-3.5" />
 							Copy Private Key
@@ -461,13 +461,13 @@
 						<button
 							type="button"
 							onclick={() => switchCustodyMode('browser-encrypted')}
-							class="cursor-pointer text-[11px] font-medium text-[#a7f3d0] hover:underline"
+							class="cursor-pointer text-xs font-medium text-[#a7f3d0] hover:underline"
 						>
 							← Encrypt with password instead
 						</button>
 					</div>
 
-					<label class="flex cursor-pointer items-start gap-2 rounded-xl border border-white/10 bg-[#0b120f]/70 p-2.5 text-[11px]">
+					<label class="flex cursor-pointer items-start gap-2 rounded-xl border border-white/10 bg-[#0b120f]/70 p-2.5 text-xs">
 						<input
 							type="checkbox"
 							bind:checked={manualConfirmed}
@@ -489,7 +489,7 @@
 			{/if}
 		</form>
 
-		<p class="mt-4 text-center text-[11px] text-[#f4f1ea]/45">
+		<p class="mt-4 text-center text-xs text-[#f4f1ea]/45">
 			So far your account exists only in this browser window.
 		</p>
 	</div>

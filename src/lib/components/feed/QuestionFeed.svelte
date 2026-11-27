@@ -131,7 +131,7 @@
 	}
 </script>
 
-<div class="relative flex h-full flex-col justify-between overflow-hidden px-4 pt-3 pb-3">
+<div class="relative flex h-full flex-col justify-between overflow-hidden px-5 pt-4 pb-4 md:px-8">
 	<!-- Top Feed Status Bar -->
 	<header class="flex items-center justify-between gap-2 px-1">
 		<div class="flex items-center gap-2">
@@ -150,7 +150,7 @@
 			{/if}
 
 			{#if ledgerStore.isLiveSyncActive}
-				<span class="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] text-emerald-400">
+				<span class="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-xs text-emerald-400">
 					<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400"></span>
 					Live
 				</span>
@@ -167,7 +167,7 @@
 					}
 					sessionStore.setOnboardingStep('ask-first');
 				}}
-				class="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20"
+				class="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
 			>
 				<Plus class="h-3 w-3" />
 				Ask
@@ -187,7 +187,7 @@
 	</header>
 
 	<!-- Fullscreen Question Card Stage -->
-	<div class="relative my-3 flex flex-1 items-stretch justify-center overflow-hidden">
+	<div class="relative my-2 flex flex-1 items-stretch justify-center overflow-hidden">
 		{#if (ledgerStore.isLoadingQuestions || ledgerStore.isHydrating) && ledgerStore.questions.length === 0}
 			<div class="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border/80 bg-card/85 p-6 text-center">
 				<RefreshCw class="h-6 w-6 animate-spin text-primary" />
@@ -248,30 +248,30 @@
 					}
 				}}
 				style={cardTransformStyle()}
-				class="flex w-full flex-col justify-between rounded-2xl border border-border/80 bg-card/90 p-5 shadow-xl backdrop-blur-md select-none"
+				class="flex w-full max-w-3xl flex-col justify-between rounded-2xl border border-border/80 bg-card/90 p-5 shadow-lg backdrop-blur-md select-none md:p-7"
 			>
 				<!-- Card Metadata -->
 				<div class="space-y-3">
 					<div class="flex items-center justify-between gap-2">
-						<span class="font-mono text-[11px] uppercase tracking-wider text-primary">
+						<span class="font-mono text-xs uppercase tracking-wider text-primary">
 							{question.ownerType === 'genesis' ? 'Genesis Root' : 'Public Question'}
 						</span>
-						<span class="font-mono text-[11px] text-muted-foreground">
+						<span class="font-mono text-xs text-muted-foreground">
 							{question.authorHandle}
 						</span>
 					</div>
 
-					<h2 class="font-heading text-xl leading-snug font-bold tracking-tight text-card-foreground sm:text-2xl">
+					<h2 class="font-heading text-2xl leading-snug font-bold tracking-tight text-card-foreground sm:text-3xl">
 						{question.text}
 					</h2>
 
-					<p class="font-mono text-[10px] text-muted-foreground">
+					<p class="font-mono text-xs text-muted-foreground">
 						cid: {question.cid.slice(0, 18)}… · {votes} relay votes
 					</p>
 				</div>
 
 				<!-- Answer Options -->
-				<div class="my-auto space-y-2.5 py-4" data-no-drag>
+				<div class="my-auto space-y-3 py-4" data-no-drag>
 					{#each question.options as option, idx (option.id)}
 						{@const isSelected = selectedOptionId === option.id}
 						{@const optionVotes = question.communityCounts[option.id] ?? 0}
@@ -285,17 +285,17 @@
 									option.id,
 									isBinarySwipeable ? (idx === 0 ? 'right' : 'left') : 'up'
 								)}
-							class={`group relative flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border px-4 py-3.5 text-left transition-all active:scale-[0.985] ${
+							class={`group relative flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border px-5 py-4 text-left transition-all active:scale-[0.985] ${
 								isSelected
 									? 'border-primary bg-primary text-primary-foreground shadow-md'
 									: 'border-border bg-background/60 text-foreground hover:border-primary/60 hover:bg-secondary/70'
 							}`}
 						>
-							<span class="relative z-10 text-sm font-medium leading-snug">
+							<span class="relative z-10 text-base font-medium leading-snug">
 								{option.text}
 							</span>
 							<span
-								class={`relative z-10 shrink-0 font-mono text-[11px] ${
+								class={`relative z-10 shrink-0 font-mono text-xs ${
 									isSelected ? 'text-primary-foreground/85' : 'text-muted-foreground'
 								}`}
 							>
@@ -308,17 +308,17 @@
 				<!-- Card Footer -->
 				<div class="flex items-center justify-between gap-2 border-t border-border/60 pt-3">
 					{#if sessionStore.isPendingVouch}
-						<span class="font-mono text-[10px] text-amber-300">Read-only preview</span>
+						<span class="font-mono text-xs text-amber-300">Read-only preview</span>
 						<button
 							type="button"
 							onclick={() => skipQuestionReadOnly(question)}
-							class="cursor-pointer rounded-md border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] font-semibold text-foreground hover:border-primary/50"
+							class="cursor-pointer rounded-md border border-border/70 bg-background/70 px-2.5 py-1 text-xs font-semibold text-foreground hover:border-primary/50"
 						>
 							Next Question →
 						</button>
 					{:else}
 						<PublicLedgerCheckbox bind:checked={keepPublic} label="keep public" compact />
-						<span class="text-[11px] text-muted-foreground">
+						<span class="text-xs text-muted-foreground">
 							{#if isBinarySwipeable}
 								Tap or swipe card
 							{:else}
@@ -371,7 +371,7 @@
 	</div>
 
 	{#if currentQuestion}
-		<div class="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+		<div class="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
 			<Sparkles class="h-3 w-3 text-primary" />
 			{#if ledgerStore.remainingGenesisCount > 0}
 				<span>

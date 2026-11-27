@@ -366,7 +366,7 @@
 
 	<div class="my-auto space-y-5 py-2">
 		<div class="space-y-1.5">
-			<p class="font-mono text-[11px] uppercase tracking-widest text-primary">
+			<p class="font-mono text-xs uppercase tracking-widest text-primary">
 				Stage 2 · Join araliya-net
 			</p>
 			<h1 class="font-heading text-2xl font-bold tracking-tight">
@@ -401,7 +401,7 @@
 								resolvedVoucherHandle = null;
 								mismatchWarning = null;
 							}}
-							class="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground"
+							class="cursor-pointer text-xs text-muted-foreground hover:text-foreground"
 						>
 							Use different token
 						</button>
@@ -409,7 +409,7 @@
 				</div>
 
 				{#if stagedToken}
-					<div class="flex items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/70 px-3 py-2 font-mono text-[11px]">
+					<div class="flex items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/70 px-3 py-2 font-mono text-xs">
 						<span class="truncate text-foreground">{truncateToken(stagedToken)}</span>
 						<button
 							type="button"
@@ -421,7 +421,7 @@
 						</button>
 					</div>
 				{:else if resolvedRelayVouch}
-					<div class="rounded-lg border border-border/70 bg-background/70 px-3 py-2 font-mono text-[11px] text-foreground">
+					<div class="rounded-lg border border-border/70 bg-background/70 px-3 py-2 font-mono text-xs text-foreground">
 						Recorded directly on relay by {truncatePk(resolvedRelayVouch.voucherPubkey)}
 					</div>
 				{/if}
@@ -434,7 +434,7 @@
 				</p>
 
 				{#if mismatchWarning}
-					<p class="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-200">
+					<p class="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-200">
 						{mismatchWarning}
 					</p>
 				{/if}
@@ -448,7 +448,7 @@
 						{activeRequest ? 'Vouch Request Sent' : 'Vouch Request Not Confirmed'}
 					</span>
 					{#if activeRequest}
-						<span class="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-primary">
+						<span class="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-mono text-xs font-semibold text-primary">
 							{formatTimeRemaining(activeRequest.expiresAtMs)} left
 						</span>
 					{/if}
@@ -464,7 +464,7 @@
 				</p>
 
 				{#if requestError}
-					<p class="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive">
+					<p class="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
 						{requestError}
 					</p>
 				{/if}
@@ -486,7 +486,7 @@
 						variant="ghost"
 						size="sm"
 						onclick={() => (showTokenPaste = !showTokenPaste)}
-						class="h-8 cursor-pointer text-[11px] text-muted-foreground"
+						class="h-8 cursor-pointer text-xs text-muted-foreground"
 					>
 						{showTokenPaste ? 'Hide Token' : 'Paste Token'}
 					</Button>
@@ -494,7 +494,7 @@
 
 				{#if showTokenPaste}
 					<form onsubmit={handleApplyVouch} class="space-y-2 border-t border-border/60 pt-3">
-						<Label for="vouch-paste-invited" class="text-[11px]">Vouch Token or JSON</Label>
+						<Label for="vouch-paste-invited" class="text-xs">Vouch Token or JSON</Label>
 						<Input
 							id="vouch-paste-invited"
 							bind:value={vouchPasteInput}
@@ -516,14 +516,14 @@
 				<p class="text-xs leading-relaxed text-muted-foreground">
 					Paste a vouch token if you have one, or share your public key with an existing member:
 				</p>
-				<p class="text-[11px] leading-relaxed text-muted-foreground">
+				<p class="text-xs leading-relaxed text-muted-foreground">
 					Without a specific inviter, sharing this payload does not create a relay-side request;
 					an existing member or maintainer must act on it.
 				</p>
 
 				<form onsubmit={handleApplyVouch} class="space-y-2.5">
 					<div class="space-y-1">
-						<Label for="vouch-paste-input" class="text-[11px]">Vouch Token or JSON</Label>
+						<Label for="vouch-paste-input" class="text-xs">Vouch Token or JSON</Label>
 						<Input
 							id="vouch-paste-input"
 							bind:value={vouchPasteInput}
@@ -561,7 +561,7 @@
 				</div>
 
 				{#if showMaintainerRequest && pubkey}
-					<div class="space-y-2 rounded-xl border border-border/70 bg-background/75 p-3 text-[11px]">
+					<div class="space-y-2 rounded-xl border border-border/70 bg-background/75 p-3 text-xs">
 						<div class="flex items-center justify-between gap-2">
 							<span class="flex items-center gap-1.5 font-semibold text-foreground">
 								<Terminal class="h-3.5 w-3.5 text-primary" />
@@ -570,16 +570,16 @@
 							<button
 								type="button"
 								onclick={() => copyText('genesis curl command', buildGenesisCurl(pubkey))}
-								class="inline-flex cursor-pointer items-center gap-1 text-[10px] text-primary hover:underline"
+								class="inline-flex cursor-pointer items-center gap-1 text-xs text-primary hover:underline"
 							>
 								<Copy class="h-3 w-3" />
 								Copy curl
 							</button>
 						</div>
-						<p class="text-[10px] text-muted-foreground">
+						<p class="text-xs text-muted-foreground">
 							Share your Public Key with an existing member (or relay maintainer) to vouch for you on the relay or mint an <span class="font-mono">araliya-vouch-card:v1</span>:
 						</p>
-						<div class="flex items-center justify-between gap-2 rounded-md bg-card px-2 py-1.5 font-mono text-[10px]">
+						<div class="flex items-center justify-between gap-2 rounded-md bg-card px-2 py-1.5 font-mono text-xs">
 							<span class="truncate text-foreground">{pubkey}</span>
 							<button
 								type="button"

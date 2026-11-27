@@ -6,8 +6,8 @@
 	import { araliyaService, pubkeyToHex } from '$lib/services/araliya.service';
 	import { ledgerStore } from '$lib/stores/ledger.svelte';
 	import { sessionStore } from '$lib/stores/session.svelte';
-	import { themeStore } from '$lib/stores/theme.svelte';
-	import type { IssuedVouchCard, ProfileFieldKey, ThemeId } from '$lib/types';
+	import type { IssuedVouchCard, ProfileFieldKey } from '$lib/types';
+	import ThemePicker from '$lib/components/theme/ThemePicker.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -15,12 +15,10 @@
 	import { toast } from 'svelte-sonner';
 	import {
 		Activity,
-		Check,
 		Clock,
 		Copy,
 		Database,
 		Globe,
-		HardDrive,
 		KeyRound,
 		Link2,
 		Lock,
@@ -317,11 +315,6 @@
 		}
 	}
 
-	function handleSelectTheme(id: ThemeId) {
-		themeStore.setTheme(id);
-		toast.success('Theme updated locally (not saved to ledger)');
-	}
-
 	function handleRevisitOnboarding() {
 		exportedRecoveryKey = null;
 		sessionStore.setOnboardingStep('welcome');
@@ -392,20 +385,20 @@
 	}
 </script>
 
-<div class="flex h-full flex-col overflow-hidden px-4 pt-3 pb-2">
+<div class="flex h-full flex-col overflow-hidden px-5 pt-4 pb-3 md:px-8">
 	<!-- Header -->
 	<header class="flex items-center justify-between gap-2 pb-3">
 		<div>
-			<h1 class="font-heading text-lg font-bold tracking-tight">
+			<h1 class="font-heading text-xl font-bold tracking-tight">
 				{ledgerStore.profile.username.value
 					? `@${ledgerStore.profile.username.value}`
 					: 'User Dashboard'}
 			</h1>
-			<p class="font-mono text-[11px] text-muted-foreground">
+			<p class="font-mono text-xs text-muted-foreground">
 				pk: {sessionStore.identity?.userPubkey.slice(0, 18) ?? '—'}…
 			</p>
 		</div>
-		<Badge variant="outline" class="gap-1 font-mono text-[10px]">
+		<Badge variant="outline" class="gap-1 font-mono text-xs">
 			<Shield class="h-3 w-3 text-primary" />
 			{sessionStore.relayStatus?.connected ? 'Iroh Connected' : 'Offline'}
 		</Badge>
@@ -416,7 +409,7 @@
 		<button
 			type="button"
 			onclick={() => switchSection('activity')}
-			class={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-colors ${
+			class={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-colors ${
 				activeSection === 'activity'
 					? 'bg-card text-foreground shadow-sm'
 					: 'text-muted-foreground hover:text-foreground'
@@ -428,7 +421,7 @@
 		<button
 			type="button"
 			onclick={() => switchSection('profile')}
-			class={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-colors ${
+			class={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-colors ${
 				activeSection === 'profile'
 					? 'bg-card text-foreground shadow-sm'
 					: 'text-muted-foreground hover:text-foreground'
@@ -437,7 +430,7 @@
 			<User class="h-3.5 w-3.5" />
 			Profile
 			{#if sessionStore.incomingVouchRequests.length > 0}
-				<span class="rounded-full bg-primary px-1.5 py-0.2 font-mono text-[10px] font-bold text-primary-foreground">
+				<span class="rounded-full bg-primary px-1.5 py-0.2 font-mono text-xs font-bold text-primary-foreground">
 					{sessionStore.incomingVouchRequests.length}
 				</span>
 			{/if}
@@ -445,7 +438,7 @@
 		<button
 			type="button"
 			onclick={() => switchSection('settings')}
-			class={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-colors ${
+			class={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-colors ${
 				activeSection === 'settings'
 					? 'bg-card text-foreground shadow-sm'
 					: 'text-muted-foreground hover:text-foreground'
@@ -461,20 +454,20 @@
 		{#if activeSection === 'activity'}
 			<div class="grid grid-cols-3 gap-2">
 				<div class="rounded-xl border border-border/70 bg-card/80 p-3 text-center">
-					<p class="font-heading text-lg font-bold">{ledgerStore.answers.length}</p>
-					<p class="text-[11px] text-muted-foreground">Answered</p>
+					<p class="font-heading text-2xl font-bold">{ledgerStore.answers.length}</p>
+					<p class="text-xs text-muted-foreground">Answered</p>
 				</div>
 				<div class="rounded-xl border border-border/70 bg-card/80 p-3 text-center">
-					<p class="font-heading text-lg font-bold text-primary">
+					<p class="font-heading text-2xl font-bold text-primary">
 						{publicProjection.answers.length}
 					</p>
-					<p class="text-[11px] text-muted-foreground">Public</p>
+					<p class="text-xs text-muted-foreground">Public</p>
 				</div>
 				<div class="rounded-xl border border-border/70 bg-card/80 p-3 text-center">
-					<p class="font-heading text-lg font-bold">
+					<p class="font-heading text-2xl font-bold">
 						{ledgerStore.answers.length - publicProjection.answers.length}
 					</p>
-					<p class="text-[11px] text-muted-foreground">Private</p>
+					<p class="text-xs text-muted-foreground">Private</p>
 				</div>
 			</div>
 
@@ -498,13 +491,13 @@
 					{#each ledgerStore.answers as answer (answer.questionCid)}
 						<div class="space-y-2 rounded-xl border border-border/75 bg-card/85 p-3.5">
 							<div class="flex items-center justify-between gap-2">
-								<Badge variant="outline" class="text-[10px] capitalize">
+								<Badge variant="outline" class="text-xs capitalize">
 									{answer.ownerType === 'genesis' ? 'Genesis Root' : 'Community'}
 								</Badge>
 								<button
 									type="button"
 									onclick={() => handleToggleAnswerVisibility(answer.questionCid)}
-									class={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+									class={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ${
 										answer.visibility === 'public'
 											? 'border-primary/40 bg-primary/15 text-primary'
 											: 'border-border bg-secondary text-muted-foreground'
@@ -542,7 +535,7 @@
 							type="button"
 							disabled={sessionStore.isLoadingIncomingVouches}
 							onclick={() => sessionStore.refreshIncomingVouchRequests()}
-							class="inline-flex cursor-pointer items-center gap-1 text-[11px] text-primary hover:underline"
+							class="inline-flex cursor-pointer items-center gap-1 text-xs text-primary hover:underline"
 						>
 							<RefreshCw
 								class={`h-3 w-3 ${sessionStore.isLoadingIncomingVouches ? 'animate-spin' : ''}`}
@@ -555,30 +548,30 @@
 					{#if myInviteLink}
 						<div class="space-y-1.5 rounded-lg border border-border/70 bg-background/60 p-2.5">
 							<div class="flex items-center justify-between gap-2">
-								<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground">
+								<span class="inline-flex items-center gap-1 text-xs font-semibold text-foreground">
 									<Link2 class="h-3 w-3 text-primary" />
 									Your Onboarding Link
 								</span>
 								<button
 									type="button"
 									onclick={() => copyLabelledText('invite link', myInviteLink)}
-									class="inline-flex cursor-pointer items-center gap-1 text-[10px] font-semibold text-primary hover:underline"
+									class="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-primary hover:underline"
 								>
 									<Copy class="h-3 w-3" />
 									Copy Link
 								</button>
 							</div>
-							<p class="truncate font-mono text-[10px] text-muted-foreground">
+							<p class="truncate font-mono text-xs text-muted-foreground">
 								{myInviteLink}
 							</p>
-							<p class="text-[10px] leading-relaxed text-muted-foreground">
+							<p class="text-xs leading-relaxed text-muted-foreground">
 								Share this link — anyone who opens it sends their 72-hour vouch request straight to you.
 							</p>
 						</div>
 					{/if}
 
 					<!-- Expiry Selector for Issued Vouches -->
-					<div class="flex items-center justify-between gap-2 text-[11px]">
+					<div class="flex items-center justify-between gap-2 text-xs">
 						<span class="text-muted-foreground">Vouch validity:</span>
 						<div class="flex items-center gap-1">
 							{#each [
@@ -590,7 +583,7 @@
 								<button
 									type="button"
 									onclick={() => (vouchTtlHours = opt.hours)}
-									class={`cursor-pointer rounded-md border px-2 py-0.5 font-mono text-[10px] transition-colors ${
+									class={`cursor-pointer rounded-md border px-2 py-0.5 font-mono text-xs transition-colors ${
 										vouchTtlHours === opt.hours
 											? 'border-primary bg-primary/15 font-semibold text-primary'
 											: 'border-border bg-background/60 text-muted-foreground hover:text-foreground'
@@ -604,11 +597,11 @@
 
 					<!-- Incoming Vouch Requests -->
 					<div class="space-y-2 border-t border-border/60 pt-2.5">
-						<p class="text-[11px] font-semibold text-foreground">
+						<p class="text-xs font-semibold text-foreground">
 							Pending Requests ({sessionStore.incomingVouchRequests.length})
 						</p>
 						{#if sessionStore.incomingVouchRequests.length === 0}
-							<p class="text-[11px] text-muted-foreground">
+							<p class="text-xs text-muted-foreground">
 								No incoming vouch requests right now.
 							</p>
 						{:else}
@@ -620,11 +613,11 @@
 												<p class="truncate text-xs font-semibold text-foreground">
 													{req.requestedHandle ? `@${req.requestedHandle}` : 'Private handle'}
 												</p>
-												<p class="truncate font-mono text-[10px] text-muted-foreground">
+												<p class="truncate font-mono text-xs text-muted-foreground">
 													{truncatePk(req.subjectPubkey)}
 												</p>
 											</div>
-											<span class="shrink-0 font-mono text-[10px] text-amber-300">
+											<span class="shrink-0 font-mono text-xs text-amber-300">
 												{formatTimeRemaining(req.expiresAtMs)} left
 											</span>
 										</div>
@@ -634,7 +627,7 @@
 												size="sm"
 												disabled={isVouchingSubject === req.subjectPubkey}
 												onclick={() => handleApproveRequest(req.subjectPubkey)}
-												class="h-7 flex-1 cursor-pointer text-[11px] font-semibold"
+												class="h-7 flex-1 cursor-pointer text-xs font-semibold"
 											>
 												<UserCheck class="mr-1 h-3 w-3" />
 												{isVouchingSubject === req.subjectPubkey
@@ -647,7 +640,7 @@
 												variant="outline"
 												disabled={isVouchingSubject === req.subjectPubkey}
 												onclick={() => handleDeclineRequest(req.subjectPubkey)}
-												class="h-7 cursor-pointer px-2.5 text-[11px]"
+												class="h-7 cursor-pointer px-2.5 text-xs"
 											>
 												<X class="h-3 w-3" />
 											</Button>
@@ -663,7 +656,7 @@
 						<button
 							type="button"
 							onclick={() => (showManualVouch = !showManualVouch)}
-							class="cursor-pointer text-[11px] font-medium text-primary hover:underline"
+							class="cursor-pointer text-xs font-medium text-primary hover:underline"
 						>
 							{showManualVouch
 								? 'Hide manual pubkey vouch'
@@ -677,7 +670,7 @@
 									placeholder="Paste peer pubkey or araliya-vouch-request/v1 JSON"
 									autocapitalize="none"
 									autocomplete="off"
-									class="h-9 bg-background/70 font-mono text-[11px]"
+									class="h-9 bg-background/70 font-mono text-xs"
 								/>
 								<div class="flex gap-2">
 									<Button
@@ -685,7 +678,7 @@
 										size="sm"
 										disabled={isVouchingSubject === 'manual'}
 										onclick={() => handleManualVouch(true)}
-										class="h-8 flex-1 cursor-pointer text-[11px] font-semibold"
+										class="h-8 flex-1 cursor-pointer text-xs font-semibold"
 									>
 										<ShieldCheck class="mr-1 h-3.5 w-3.5" />
 										Vouch on Relay
@@ -696,7 +689,7 @@
 										variant="outline"
 										disabled={isVouchingSubject === 'manual'}
 										onclick={() => handleManualVouch(false)}
-										class="h-8 cursor-pointer text-[11px]"
+										class="h-8 cursor-pointer text-xs"
 									>
 										Offline Card
 									</Button>
@@ -707,18 +700,18 @@
 
 					<!-- Fallback Copyable VouchCard after Issuing -->
 					{#if lastIssuedCard}
-						<div class="space-y-2 rounded-lg border border-primary/40 bg-primary/10 p-2.5 text-[11px]">
+						<div class="space-y-2 rounded-lg border border-primary/40 bg-primary/10 p-2.5 text-xs">
 							<div class="flex items-center justify-between gap-2">
 								<span class="font-semibold text-foreground">Fallback VouchCard Ready</span>
 								<button
 									type="button"
 									onclick={() => (lastIssuedCard = null)}
-									class="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground"
+									class="cursor-pointer text-xs text-muted-foreground hover:text-foreground"
 								>
 									Dismiss
 								</button>
 							</div>
-							<p class="truncate font-mono text-[10px] text-muted-foreground">
+							<p class="truncate font-mono text-xs text-muted-foreground">
 								{lastIssuedCard.vouchCardToken}
 							</p>
 							<div class="flex gap-2">
@@ -731,7 +724,7 @@
 											'vouch token',
 											lastIssuedCard?.vouchCardToken ?? ''
 										)}
-									class="h-7 flex-1 cursor-pointer text-[10px]"
+									class="h-7 flex-1 cursor-pointer text-xs"
 								>
 									<Copy class="mr-1 h-3 w-3" />
 									Copy Token
@@ -743,7 +736,7 @@
 										variant="outline"
 										onclick={() =>
 											copyLabelledText('offline vouch link', lastIssuedInviteLink)}
-										class="h-7 flex-1 cursor-pointer text-[10px]"
+										class="h-7 flex-1 cursor-pointer text-xs"
 									>
 										<Link2 class="mr-1 h-3 w-3" />
 										Copy Vouch Link
@@ -762,12 +755,12 @@
 							Waiting for Human Vouch
 						</span>
 						{#if sessionStore.pendingVouchRequest}
-							<span class="font-mono text-[10px] text-amber-300">
+							<span class="font-mono text-xs text-amber-300">
 								{formatTimeRemaining(sessionStore.pendingVouchRequest.expiresAtMs)} left
 							</span>
 						{/if}
 					</div>
-					<p class="text-[11px] leading-relaxed text-muted-foreground">
+					<p class="text-xs leading-relaxed text-muted-foreground">
 						Profile edits below are encrypted locally on your device and will sync automatically as soon as
 						{sessionStore.pendingVouchRequest?.voucherHandle
 							? `@${sessionStore.pendingVouchRequest.voucherHandle}`
@@ -781,7 +774,7 @@
 							variant="outline"
 							disabled={sessionStore.isCheckingVouch}
 							onclick={() => sessionStore.checkAndAutoCompleteVouch()}
-							class="h-8 flex-1 cursor-pointer text-[11px]"
+							class="h-8 flex-1 cursor-pointer text-xs"
 						>
 							<RefreshCw
 								class={`mr-1 h-3 w-3 ${sessionStore.isCheckingVouch ? 'animate-spin' : ''}`}
@@ -797,7 +790,7 @@
 									'public key',
 									sessionStore.identity?.userPubkey ?? ''
 								)}
-							class="h-8 cursor-pointer text-[11px]"
+							class="h-8 cursor-pointer text-xs"
 						>
 							<Copy class="mr-1 h-3 w-3" />
 							Copy Pubkey
@@ -809,13 +802,13 @@
 							placeholder="araliya-vouch-card:v1:..."
 							autocapitalize="none"
 							autocomplete="off"
-							class="h-8 flex-1 bg-background/70 font-mono text-[11px]"
+							class="h-8 flex-1 bg-background/70 font-mono text-xs"
 						/>
 						<Button
 							type="submit"
 							size="sm"
 							disabled={isApplyingPendingToken}
-							class="h-8 cursor-pointer text-[11px]"
+							class="h-8 cursor-pointer text-xs"
 						>
 							Apply
 						</Button>
@@ -836,7 +829,7 @@
 							<button
 								type="button"
 								onclick={() => handleToggleFieldVisibility(field.key)}
-								class={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+								class={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider ${
 									field.visibility === 'public'
 										? 'border-primary/40 bg-primary/15 text-primary'
 										: 'border-border bg-secondary text-muted-foreground'
@@ -863,7 +856,7 @@
 							class="h-9 bg-background/60 text-xs"
 						/>
 						{#if field.key === 'username'}
-							<p class="text-[11px] leading-relaxed text-muted-foreground">
+							<p class="text-xs leading-relaxed text-muted-foreground">
 								Public handle is searchable in the Users directory; private handle keeps the account hidden.
 							</p>
 						{/if}
@@ -877,7 +870,7 @@
 					Ledger Storage Snapshot
 				</div>
 				<Separator />
-				<div class="grid grid-cols-2 gap-2 text-[11px]">
+				<div class="grid grid-cols-2 gap-2 text-xs">
 					<div class="rounded-lg border border-border/60 bg-background/60 p-2.5">
 						<p class="mb-1 flex items-center gap-1 font-semibold text-primary">
 							<Globe class="h-3 w-3" />
@@ -901,37 +894,12 @@
 		{:else}
 			<div class="space-y-2.5 rounded-xl border border-border/75 bg-card/85 p-3.5">
 				<div class="flex items-center justify-between">
-					<span class="text-xs font-semibold">Theme &amp; Look-and-Feel</span>
-					<span class="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-						<HardDrive class="h-3 w-3" />
-						Local only
-					</span>
+					<div>
+						<p class="text-sm font-semibold">Theme &amp; typography</p>
+						<p class="text-xs text-muted-foreground">Saved only on this device</p>
+					</div>
 				</div>
-				<div class="grid grid-cols-2 gap-2">
-					{#each themeStore.availableThemes as theme (theme.id)}
-						{@const active = themeStore.themeId === theme.id}
-						<button
-							type="button"
-							onclick={() => handleSelectTheme(theme.id)}
-							class={`flex cursor-pointer items-center justify-between rounded-lg border px-2.5 py-2 text-left text-xs transition-colors ${
-								active
-									? 'border-primary bg-primary/15 font-semibold text-foreground'
-									: 'border-border bg-background/60 text-muted-foreground hover:text-foreground'
-							}`}
-						>
-							<span class="truncate">{theme.name.split(' ')[0]}</span>
-							<span class="flex items-center gap-1">
-								<span
-									class="h-3 w-3 rounded-full border border-white/20"
-									style={`background-color: ${theme.swatches.primary};`}
-								></span>
-								{#if active}
-									<Check class="h-3 w-3 text-primary" />
-								{/if}
-							</span>
-						</button>
-					{/each}
-				</div>
+				<ThemePicker />
 			</div>
 
 			<div class="space-y-2.5 rounded-xl border border-border/75 bg-card/85 p-3.5">
@@ -939,7 +907,7 @@
 					<KeyRound class="h-3.5 w-3.5 text-primary" />
 					Live Relay &amp; Identity
 				</div>
-				<div class="space-y-1 rounded-lg bg-background/60 p-2.5 font-mono text-[10px] text-muted-foreground">
+				<div class="space-y-1 rounded-lg bg-background/60 p-2.5 font-mono text-xs text-muted-foreground">
 					<div class="flex items-center justify-between gap-2">
 						<p class="truncate">pk: {sessionStore.identity?.userPubkey ?? '—'}</p>
 						{#if sessionStore.identity?.userPubkey}
@@ -963,15 +931,15 @@
 				</div>
 
 				{#if exportedRecoveryKey}
-					<div class="space-y-2 rounded-lg border border-primary/30 bg-background/70 p-2.5 font-mono text-[10px]">
+					<div class="space-y-2 rounded-lg border border-primary/30 bg-background/70 p-2.5 font-mono text-xs">
 						<div class="flex items-center justify-between gap-2">
-							<span class="font-sans text-[11px] font-semibold text-primary">
+							<span class="font-sans text-xs font-semibold text-primary">
 								Recovery Key (keep secret)
 							</span>
 							<button
 								type="button"
 								onclick={() => (exportedRecoveryKey = null)}
-								class="cursor-pointer font-sans text-[10px] text-muted-foreground hover:text-foreground"
+								class="cursor-pointer font-sans text-xs text-muted-foreground hover:text-foreground"
 							>
 								Hide
 							</button>

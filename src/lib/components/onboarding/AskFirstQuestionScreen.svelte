@@ -121,7 +121,7 @@ import { ArrowRight, Coins, Plus, Sparkles, Trash2, Zap } from 'lucide-svelte';
 	<div class="my-auto space-y-4 py-1">
 		<div class="flex items-start justify-between gap-2">
 			<div class="space-y-1">
-				<p class="font-mono text-[11px] uppercase tracking-widest text-primary">
+				<p class="font-mono text-xs uppercase tracking-widest text-primary">
 					Stage 4 · Add Your Own Question
 				</p>
 				<h1 class="font-heading text-2xl font-bold tracking-tight">
@@ -130,7 +130,7 @@ import { ArrowRight, Coins, Plus, Sparkles, Trash2, Zap } from 'lucide-svelte';
 			</div>
 
 			{#if sessionStore.demoTokenBalance > 0}
-				<span class="inline-flex shrink-0 items-center gap-1 rounded-full border border-accent/40 bg-accent/15 px-2.5 py-1 font-mono text-[11px] font-semibold text-accent">
+				<span class="inline-flex shrink-0 items-center gap-1 rounded-full border border-accent/40 bg-accent/15 px-2.5 py-1 font-mono text-xs font-semibold text-accent">
 					<Coins class="h-3 w-3" />
 					{sessionStore.demoTokenBalance}
 				</span>
@@ -153,7 +153,7 @@ import { ArrowRight, Coins, Plus, Sparkles, Trash2, Zap } from 'lucide-svelte';
 				<Label class="text-xs font-semibold">Choices</Label>
 				{#each choices as choice, idx (idx)}
 					<div class="flex items-center gap-2">
-						<span class="w-4 text-center font-mono text-[11px] text-muted-foreground">
+						<span class="w-4 text-center font-mono text-xs text-muted-foreground">
 							{idx + 1}.
 						</span>
 						<Input
@@ -197,7 +197,7 @@ import { ArrowRight, Coins, Plus, Sparkles, Trash2, Zap } from 'lucide-svelte';
 				<Zap class="h-3.5 w-3.5 text-accent" />
 				Sponsorship is a preview only
 			</div>
-			<p class="text-[11px] leading-relaxed text-muted-foreground">
+			<p class="text-xs leading-relaxed text-muted-foreground">
 				Publishing stores the question text and choices only. Reference links, sponsorship, token credits, and payments are not currently saved or processed.
 			</p>
 		</div>
@@ -205,7 +205,7 @@ import { ArrowRight, Coins, Plus, Sparkles, Trash2, Zap } from 'lucide-svelte';
 
 	<div class="space-y-2 pb-2">
 		{#if !sessionStore.isAdmitted}
-			<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-[11px] leading-relaxed text-amber-200">
+			<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
 				Your vouch is still pending — you can browse the commons read-only right now, and ask questions once vouched.
 			</div>
 			<Button
@@ -254,7 +254,7 @@ import { ArrowRight, Coins, Plus, Sparkles, Trash2, Zap } from 'lucide-svelte';
 			class="w-full max-w-md space-y-5 rounded-2xl border border-primary/30 bg-card p-5 shadow-2xl"
 		>
 			<div class="space-y-1.5">
-				<p class="font-mono text-[11px] uppercase tracking-widest text-primary">
+				<p class="font-mono text-xs uppercase tracking-widest text-primary">
 					A private question from Genesis
 				</p>
 				<h2 id="genesis-contribution-title" class="font-heading text-xl font-bold">

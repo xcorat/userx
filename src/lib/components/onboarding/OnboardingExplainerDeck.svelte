@@ -174,7 +174,7 @@
 					<!-- 4a.1: Simple PKI Explainer -->
 					<div class="space-y-5">
 						<div class="space-y-2 text-center">
-							<p class="font-mono text-[11px] font-medium tracking-[0.22em] text-[#6ee7b7]/85 uppercase">
+							<p class="font-mono text-xs font-medium tracking-[0.22em] text-[#6ee7b7]/85 uppercase">
 								Public Key Infrastructure · 1 / 2
 							</p>
 							<h2 class="font-serif-hero text-[clamp(1.75rem,4.5vw,2.75rem)] leading-[1.12] font-semibold text-[#f4f1ea]">
@@ -254,7 +254,7 @@
 					<!-- 4a.2: Secret Key Storage Choice -->
 					<div class="space-y-5">
 						<div class="space-y-2 text-center">
-							<p class="font-mono text-[11px] font-medium tracking-[0.22em] text-[#6ee7b7]/85 uppercase">
+							<p class="font-mono text-xs font-medium tracking-[0.22em] text-[#6ee7b7]/85 uppercase">
 								Public Key Infrastructure · 2 / 2
 							</p>
 							<h2 class="font-serif-hero text-[clamp(1.75rem,4.5vw,2.75rem)] leading-[1.12] font-semibold text-[#f4f1ea]">
@@ -291,7 +291,7 @@
 										<span class="text-sm font-semibold text-[#f4f1ea]">
 											Encrypt in this browser with a local password
 										</span>
-										<span class="rounded-full bg-[#6ee7b7]/20 px-2 py-0.5 font-mono text-[10px] font-semibold text-[#a7f3d0]">
+										<span class="rounded-full bg-[#6ee7b7]/20 px-2 py-0.5 font-mono text-xs font-semibold text-[#a7f3d0]">
 											Recommended
 										</span>
 									</div>
@@ -363,7 +363,7 @@
 				<!-- 4b: Decentralized Storage (1 slide) -->
 				<div class="space-y-5">
 					<div class="space-y-2 text-center">
-						<p class="font-mono text-[11px] font-medium tracking-[0.22em] text-[#6ee7b7]/85 uppercase">
+						<p class="font-mono text-xs font-medium tracking-[0.22em] text-[#6ee7b7]/85 uppercase">
 							Araliya net · Decentralized Storage
 						</p>
 						<h2 class="font-serif-hero text-[clamp(1.85rem,4.8vw,2.95rem)] leading-[1.12] font-semibold text-[#f4f1ea]">
@@ -447,7 +447,7 @@
 					<!-- 4c.1: Plain Ad-Based Model -->
 					<div class="space-y-5">
 						<div class="space-y-2 text-center">
-							<p class="font-mono text-[11px] font-medium tracking-[0.22em] text-[#93c5fd]/85 uppercase">
+							<p class="font-mono text-xs font-medium tracking-[0.22em] text-[#93c5fd]/85 uppercase">
 								Choice-Centered Value · 1 / 3
 							</p>
 							<h2 class="font-serif-hero text-[clamp(1.75rem,4.5vw,2.75rem)] leading-[1.12] font-semibold text-[#f4f1ea]">
@@ -511,7 +511,7 @@
 					<!-- 4c.2: The Question-Answer Model -->
 					<div class="space-y-5">
 						<div class="space-y-2 text-center">
-							<p class="font-mono text-[11px] font-medium tracking-[0.22em] text-[#6ee7b7]/85 uppercase">
+							<p class="font-mono text-xs font-medium tracking-[0.22em] text-[#6ee7b7]/85 uppercase">
 								Choice-Centered Value · 2 / 3
 							</p>
 							<h2 class="font-serif-hero text-[clamp(1.75rem,4.5vw,2.75rem)] leading-[1.12] font-semibold text-[#f4f1ea]">
@@ -521,16 +521,16 @@
 
 						<!-- Mock Q&A Preview Card -->
 						<div class="mx-auto w-full max-w-md space-y-3 rounded-2xl border border-[#6ee7b7]/30 bg-[#101c17]/90 p-4 shadow-lg shadow-black/30">
-							<div class="flex items-center justify-between gap-2 text-[11px]">
+							<div class="flex items-center justify-between gap-2 text-xs">
 								<span class="rounded-full bg-[#f5b841]/20 px-2.5 py-0.5 font-mono font-semibold text-[#f5b841]">
 									Sponsored Question
 								</span>
 								<div class="flex items-center gap-1.5">
-									<span class="inline-flex items-center gap-1 rounded-full border border-[#6ee7b7]/30 bg-[#182b23] px-2 py-0.5 text-[10px] text-[#a7f3d0]">
+									<span class="inline-flex items-center gap-1 rounded-full border border-[#6ee7b7]/30 bg-[#182b23] px-2 py-0.5 text-xs text-[#a7f3d0]">
 										<Lock class="h-2.5 w-2.5" />
 										Private
 									</span>
-									<span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-[#f4f1ea]/75">
+									<span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-[#f4f1ea]/75">
 										<Globe class="h-2.5 w-2.5" />
 										Public
 									</span>
@@ -586,7 +586,7 @@
 					<!-- 4c.3: Democratic Value Creation -->
 					<div class="space-y-5">
 						<div class="space-y-2 text-center">
-							<p class="font-mono text-[11px] font-medium tracking-[0.22em] text-[#f5b841]/90 uppercase">
+							<p class="font-mono text-xs font-medium tracking-[0.22em] text-[#f5b841]/90 uppercase">
 								Choice-Centered Value · 3 / 3
 							</p>
 							<h2 class="font-serif-hero text-[clamp(1.75rem,4.5vw,2.75rem)] leading-[1.12] font-semibold text-[#f4f1ea]">

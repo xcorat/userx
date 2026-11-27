@@ -55,12 +55,12 @@
 	}
 </script>
 
-<div class="flex shrink-0 items-center justify-between gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px]">
+<div class="flex shrink-0 items-center justify-between gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs">
 	<div class="flex min-w-0 items-center gap-1.5">
 		<Clock class="h-3.5 w-3.5 shrink-0 text-amber-400" />
 		<span class="truncate font-medium text-foreground">{targetLabel}</span>
 		{#if countdownLabel}
-			<span class="shrink-0 font-mono text-[10px] text-amber-300">· {countdownLabel}</span>
+			<span class="shrink-0 font-mono text-xs text-amber-300">· {countdownLabel}</span>
 		{/if}
 	</div>
 
@@ -69,7 +69,7 @@
 			type="button"
 			disabled={sessionStore.isCheckingVouch}
 			onclick={handleCheckNow}
-			class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-amber-500/35 bg-background/70 px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-background"
+			class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-amber-500/35 bg-background/70 px-2 py-0.5 text-xs font-semibold text-foreground hover:bg-background"
 		>
 			<RefreshCw class={`h-2.5 w-2.5 ${sessionStore.isCheckingVouch ? 'animate-spin' : ''}`} />
 			Check
@@ -77,7 +77,7 @@
 		<button
 			type="button"
 			onclick={openVouchDetails}
-			class="cursor-pointer rounded-md border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+			class="cursor-pointer rounded-md border border-border/70 bg-background/70 px-2 py-0.5 text-xs font-medium text-muted-foreground hover:text-foreground"
 		>
 			Vouch
 		</button>

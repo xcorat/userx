@@ -54,7 +54,7 @@
 
 <div
 	class="relative flex h-dvh w-full justify-center overflow-hidden bg-background text-foreground transition-colors duration-300"
-	style="font-family: var(--font-sans);"
+	style="font-family: var(--font-body);"
 >
 	<!-- Theme-specific UI Decorations -->
 	{#if decoration === 'grid'}
@@ -70,7 +70,7 @@
 		class={`relative z-10 flex h-full w-full flex-col overflow-hidden ${
 			fullBleed
 				? ''
-				: `max-w-[440px] ${
+				: `max-w-5xl ${
 						decoration === 'editorial'
 							? 'sm:border-x sm:border-border/80'
 							: 'sm:border-x sm:border-border/40'
@@ -88,42 +88,42 @@
 		{#if showMainNav}
 			<nav
 				aria-label="Primary navigation"
-				class="grid h-14 shrink-0 grid-cols-3 border-t border-border/80 bg-card/90 backdrop-blur-md"
+				class="grid h-16 shrink-0 grid-cols-3 border-t border-border/80 bg-card/90 backdrop-blur-md"
 			>
 				<button
 					type="button"
 					onclick={openFeed}
-					class={`flex cursor-pointer items-center justify-center gap-2 text-xs font-semibold transition-colors ${
+					class={`flex cursor-pointer items-center justify-center gap-2 text-sm font-semibold transition-colors ${
 						activeNav === 'feed'
 							? 'text-primary'
 							: 'text-muted-foreground hover:text-foreground'
 					}`}
 				>
-					<Flame class="h-4 w-4" />
+					<Flame class="h-5 w-5" />
 					Feed
 				</button>
 				<button
 					type="button"
 					onclick={openUsers}
-					class={`flex cursor-pointer items-center justify-center gap-2 text-xs font-semibold transition-colors ${
+					class={`flex cursor-pointer items-center justify-center gap-2 text-sm font-semibold transition-colors ${
 						activeNav === 'users'
 							? 'text-primary'
 							: 'text-muted-foreground hover:text-foreground'
 					}`}
 				>
-					<Users class="h-4 w-4" />
+					<Users class="h-5 w-5" />
 					Users
 				</button>
 				<button
 					type="button"
 					onclick={openDashboard}
-					class={`flex cursor-pointer items-center justify-center gap-2 text-xs font-semibold transition-colors ${
+					class={`flex cursor-pointer items-center justify-center gap-2 text-sm font-semibold transition-colors ${
 						activeNav === 'dashboard'
 							? 'text-primary'
 							: 'text-muted-foreground hover:text-foreground'
 					}`}
 				>
-					<LayoutDashboard class="h-4 w-4" />
+					<LayoutDashboard class="h-5 w-5" />
 					Dashboard
 				</button>
 			</nav>

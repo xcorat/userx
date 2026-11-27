@@ -42,13 +42,16 @@ class ThemeStore {
 		const root = document.documentElement;
 		root.dataset.theme = theme.id;
 		root.dataset.decoration = theme.decoration;
+		root.style.colorScheme = theme.colorScheme;
 
 		for (const [token, value] of Object.entries(theme.cssVars)) {
 			root.style.setProperty(token, value);
 		}
 
-		root.style.setProperty('--font-sans', theme.fontFamily);
-		root.style.setProperty('--font-heading', theme.headingFont);
+		root.style.setProperty('--font-body', theme.fonts.body);
+		root.style.setProperty('--font-display', theme.fonts.display);
+		root.style.setProperty('--font-serif-family', theme.fonts.serif);
+		root.style.setProperty('--font-mono-family', theme.fonts.mono);
 
 		const themeColorMeta = document.querySelector('meta[name="theme-color"]');
 		if (themeColorMeta) {

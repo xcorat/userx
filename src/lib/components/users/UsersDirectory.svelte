@@ -268,18 +268,18 @@
 	});
 </script>
 
-<div class="flex h-full flex-col overflow-hidden px-4 pt-3 pb-2">
+<div class="flex h-full flex-col overflow-hidden px-5 pt-4 pb-3 md:px-8">
 	{#if selectedUser === null}
 		<!-- Header -->
 		<header class="flex items-center justify-between gap-2 pb-3">
 			<div class="min-w-0">
 				<div class="flex items-center gap-2">
-					<h1 class="font-heading text-lg font-bold tracking-tight">Users</h1>
-					<Badge variant="outline" class="font-mono text-[10px]">
+					<h1 class="font-heading text-xl font-bold tracking-tight">Users</h1>
+					<Badge variant="outline" class="font-mono text-xs">
 						{users.length} public
 					</Badge>
 				</div>
-				<p class="text-[11px] text-muted-foreground">
+				<p class="text-xs text-muted-foreground">
 					Public handles on this relay
 				</p>
 			</div>
@@ -310,7 +310,7 @@
 				placeholder="Search public @handles…"
 				autocapitalize="none"
 				autocomplete="off"
-				class="h-9 bg-card/80 pr-9 pl-9 text-xs"
+				class="h-11 bg-card/80 pr-9 pl-9 text-sm"
 			/>
 			{#if searchQuery}
 				<button
@@ -351,7 +351,7 @@
 						<p class="text-xs font-semibold text-foreground">
 							{cleanedQuery ? `No loaded handles match "${cleanedQuery}"` : 'No public handles found'}
 						</p>
-						<p class="text-[11px] leading-relaxed text-muted-foreground">
+						<p class="text-xs leading-relaxed text-muted-foreground">
 							Accounts with private handles stay hidden from the directory.
 						</p>
 					</div>
@@ -380,7 +380,7 @@
 					<button
 						type="button"
 						onclick={() => openUserProfile(user)}
-						class="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border/75 bg-card/85 p-3 text-left transition-colors hover:border-primary/45 hover:bg-card"
+						class="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border/75 bg-card/85 p-4 text-left transition-colors hover:border-primary/45 hover:bg-card"
 					>
 						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 font-heading text-sm font-bold text-primary">
 							{username.slice(0, 1).toUpperCase()}
@@ -388,23 +388,23 @@
 
 						<div class="min-w-0 flex-1 space-y-0.5">
 							<div class="flex flex-wrap items-center gap-1.5">
-								<span class="truncate text-sm font-semibold text-foreground">
+								<span class="truncate text-base font-semibold text-foreground">
 									@{username}
 								</span>
 								{#if isMe}
-									<Badge variant="secondary" class="px-1.5 py-0 text-[10px]">
+									<Badge variant="secondary" class="px-1.5 py-0 text-xs">
 										You
 									</Badge>
 								{/if}
 								{#if isGenesis}
-									<Badge variant="outline" class="border-primary/40 px-1.5 py-0 text-[10px] text-primary">
+									<Badge variant="outline" class="border-primary/40 px-1.5 py-0 text-xs text-primary">
 										<ShieldCheck class="mr-0.5 h-2.5 w-2.5" />
 										Genesis
 									</Badge>
 								{/if}
 							</div>
 
-							<p class="truncate text-[11px] text-muted-foreground">
+							<p class="truncate text-xs text-muted-foreground">
 								{#if showDisplayName}
 									<span>{user.displayName}</span>
 									<span class="mx-1">·</span>
@@ -425,7 +425,7 @@
 							variant="ghost"
 							disabled={isSearchingExact}
 							onclick={() => searchRelayByHandle()}
-							class="h-8 w-full cursor-pointer text-[11px] text-muted-foreground hover:text-foreground"
+							class="h-8 w-full cursor-pointer text-xs text-muted-foreground hover:text-foreground"
 						>
 							<Search class="mr-1.5 h-3 w-3" />
 							{isSearchingExact ? 'Searching relay…' : `Search relay for exact @${cleanedQuery}`}
@@ -499,12 +499,12 @@
 								@{username}
 							</h2>
 							{#if isMe}
-								<Badge variant="secondary" class="px-1.5 py-0 text-[10px]">
+								<Badge variant="secondary" class="px-1.5 py-0 text-xs">
 									You
 								</Badge>
 							{/if}
 							{#if isGenesis}
-								<Badge variant="outline" class="border-primary/40 px-1.5 py-0 text-[10px] text-primary">
+								<Badge variant="outline" class="border-primary/40 px-1.5 py-0 text-xs text-primary">
 									<ShieldCheck class="mr-0.5 h-2.5 w-2.5" />
 									Genesis
 								</Badge>
@@ -517,7 +517,7 @@
 							</p>
 						{/if}
 
-						<div class="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+						<div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
 							<span class="inline-flex items-center gap-1 text-primary">
 								<Globe class="h-3 w-3" />
 								Public Handle
@@ -535,7 +535,7 @@
 						size="sm"
 						variant="outline"
 						onclick={() => selectedUser && copyText('handle', `@${displayUsername(selectedUser)}`)}
-						class="h-8 flex-1 cursor-pointer text-[11px]"
+						class="h-8 flex-1 cursor-pointer text-xs"
 					>
 						<Copy class="mr-1.5 h-3 w-3" />
 						Copy @handle
@@ -545,7 +545,7 @@
 						size="sm"
 						variant="outline"
 						onclick={() => selectedUser && copyText('public key', selectedUser.userPubkeyHex)}
-						class="h-8 flex-1 cursor-pointer text-[11px]"
+						class="h-8 flex-1 cursor-pointer text-xs"
 					>
 						<KeyRound class="mr-1.5 h-3 w-3" />
 						Copy Pubkey
@@ -555,10 +555,10 @@
 				<Separator />
 
 				<div class="space-y-1">
-					<p class="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+					<p class="font-mono text-xs uppercase tracking-wider text-muted-foreground">
 						Public Key
 					</p>
-					<p class="rounded-lg border border-border/70 bg-background/70 p-2.5 font-mono text-[11px] break-all text-foreground/90">
+					<p class="rounded-lg border border-border/70 bg-background/70 p-2.5 font-mono text-xs break-all text-foreground/90">
 						{selectedUser.userPubkeyHex}
 					</p>
 				</div>
@@ -601,7 +601,7 @@
 						<HelpCircle class="h-4 w-4 text-primary" />
 						Public Questions Authored
 					</div>
-					<Badge variant="outline" class="font-mono text-[10px]">
+					<Badge variant="outline" class="font-mono text-xs">
 						{selectedUserQuestions.length}
 					</Badge>
 				</div>
@@ -617,7 +617,7 @@
 								<p class="text-xs font-medium leading-snug text-foreground">
 									{q.text}
 								</p>
-								<p class="font-mono text-[10px] text-muted-foreground">
+								<p class="font-mono text-xs text-muted-foreground">
 									{totalQuestionResponses(q)} public {totalQuestionResponses(q) === 1 ? 'response' : 'responses'}
 								</p>
 							</div>

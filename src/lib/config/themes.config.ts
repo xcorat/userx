@@ -10,8 +10,14 @@ export const THEMES: ThemeConfig[] = [
 		id: 'forest',
 		name: 'Forest Dark',
 		description: 'Deep canopy slate, botanical emerald highlights & warm golden-hour accents.',
-		fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif",
-		headingFont: "'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif",
+		colorScheme: 'dark',
+		fonts: {
+			body: "'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif",
+			display: "'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif",
+			serif: "'Fraunces', Georgia, 'Times New Roman', serif",
+			mono: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+			preview: 'Inter + Plus Jakarta Sans'
+		},
 		decoration: 'aura',
 		swatches: {
 			bg: '#08120e',
@@ -46,8 +52,14 @@ export const THEMES: ThemeConfig[] = [
 		id: 'obsidian',
 		name: 'Obsidian Terminal',
 		description: 'High-contrast midnight slate, crisp monospace accents & subtle tactical grid.',
-		fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif",
-		headingFont: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+		colorScheme: 'dark',
+		fonts: {
+			body: "'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif",
+			display: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+			serif: "'Fraunces', Georgia, 'Times New Roman', serif",
+			mono: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+			preview: 'Inter + JetBrains Mono'
+		},
 		decoration: 'grid',
 		swatches: {
 			bg: '#09090b',
@@ -82,8 +94,14 @@ export const THEMES: ThemeConfig[] = [
 		id: 'solaris',
 		name: 'Solaris Editorial',
 		description: 'Warm archival paper, expressive serif headlines & classic bookish framing.',
-		fontFamily: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
-		headingFont: "'Georgia', 'Times New Roman', serif",
+		colorScheme: 'light',
+		fonts: {
+			body: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
+			display: "'Fraunces', Georgia, 'Times New Roman', serif",
+			serif: "'Fraunces', Georgia, 'Times New Roman', serif",
+			mono: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+			preview: 'Plus Jakarta Sans + Fraunces'
+		},
 		decoration: 'editorial',
 		swatches: {
 			bg: '#faf6ef',
@@ -118,8 +136,14 @@ export const THEMES: ThemeConfig[] = [
 		id: 'araliya',
 		name: 'Araliya Cosmic',
 		description: 'Deep indigo space palette, rounded geometric type & ambient radial aura.',
-		fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif",
-		headingFont: "'Inter', ui-sans-serif, system-ui, sans-serif",
+		colorScheme: 'dark',
+		fonts: {
+			body: "'Inter', ui-sans-serif, system-ui, sans-serif",
+			display: "'Inter', ui-sans-serif, system-ui, sans-serif",
+			serif: "'Fraunces', Georgia, 'Times New Roman', serif",
+			mono: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+			preview: 'Inter'
+		},
 		decoration: 'aura',
 		swatches: {
 			bg: '#070318',
@@ -154,8 +178,14 @@ export const THEMES: ThemeConfig[] = [
 		id: 'monolith',
 		name: 'Monolith Minimal',
 		description: 'Pure daylight ink & stone, distraction-free spacing & sharp corners.',
-		fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
-		headingFont: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+		colorScheme: 'light',
+		fonts: {
+			body: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+			display: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+			serif: "Georgia, 'Times New Roman', serif",
+			mono: "ui-monospace, SFMono-Regular, Menlo, monospace",
+			preview: 'System UI'
+		},
 		decoration: 'minimal',
 		swatches: {
 			bg: '#f8fafc',
@@ -184,6 +214,48 @@ export const THEMES: ThemeConfig[] = [
 			'--input': '#cbd5e1',
 			'--ring': '#0f172a',
 			'--radius': '0.375rem'
+		}
+	},
+	{
+		id: 'friendly',
+		name: 'Soft & Friendly',
+		description: 'Warm, approachable type with rounded headings and a calm mint palette.',
+		colorScheme: 'dark',
+		fonts: {
+			body: "'Nunito', ui-sans-serif, system-ui, sans-serif",
+			display: "'Fredoka', 'Nunito', ui-sans-serif, system-ui, sans-serif",
+			serif: "'Fraunces', Georgia, 'Times New Roman', serif",
+			mono: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+			preview: 'Nunito + Fredoka'
+		},
+		decoration: 'aura',
+		swatches: {
+			bg: '#101a1a',
+			card: '#192727',
+			primary: '#5eead4',
+			accent: '#fbbf24',
+			fg: '#ecfdfb'
+		},
+		cssVars: {
+			'--background': '#101a1a',
+			'--foreground': '#ecfdfb',
+			'--card': '#192727',
+			'--card-foreground': '#ecfdfb',
+			'--popover': '#192727',
+			'--popover-foreground': '#ecfdfb',
+			'--primary': '#5eead4',
+			'--primary-foreground': '#062a27',
+			'--secondary': '#203432',
+			'--secondary-foreground': '#d5fffa',
+			'--muted': '#1b302f',
+			'--muted-foreground': '#a8c8c4',
+			'--accent': '#fbbf24',
+			'--accent-foreground': '#241902',
+			'--destructive': '#fb7185',
+			'--border': '#31504c',
+			'--input': '#31504c',
+			'--ring': '#5eead4',
+			'--radius': '1.25rem'
 		}
 	}
 ];

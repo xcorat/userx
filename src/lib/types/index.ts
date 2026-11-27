@@ -194,7 +194,13 @@ export interface VouchInspection {
 	error?: string;
 }
 
-export type ThemeId = 'forest' | 'araliya' | 'obsidian' | 'solaris' | 'monolith';
+export type ThemeId =
+	| 'forest'
+	| 'araliya'
+	| 'obsidian'
+	| 'solaris'
+	| 'monolith'
+	| 'friendly';
 
 export type ThemeDecoration = 'grid' | 'editorial' | 'aura' | 'minimal';
 
@@ -206,12 +212,20 @@ export interface ThemeSwatches {
 	fg: string;
 }
 
+export interface ThemeFonts {
+	body: string;
+	display: string;
+	serif: string;
+	mono: string;
+	preview: string;
+}
+
 export interface ThemeConfig {
 	id: ThemeId;
 	name: string;
 	description: string;
-	fontFamily: string;
-	headingFont: string;
+	colorScheme: 'dark' | 'light';
+	fonts: ThemeFonts;
 	decoration: ThemeDecoration;
 	swatches: ThemeSwatches;
 	cssVars: Record<string, string>;
